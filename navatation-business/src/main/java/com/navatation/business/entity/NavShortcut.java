@@ -1,0 +1,33 @@
+package com.navatation.business.entity;
+
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
+import java.time.LocalDateTime;
+
+/** @Author admin
+ * @CreateTime 2026-05-15
+ * @Description 导航快捷方式实体 */
+@Data
+@TableName("navatation_nav_shortcut")
+public class NavShortcut {
+    @TableId(type = IdType.AUTO)
+    private Long shortcutId;
+    private Long categoryId;
+    private Long userId;
+    private String name;
+    private String url;
+    private String iconType;
+    private String iconValue;
+    private String iconColor;
+    private Integer sortOrder;
+    private Long clickCount;
+    private LocalDateTime lastClickAt;
+    @TableField(fill = FieldFill.INSERT)
+    private LocalDateTime createdAt;
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private LocalDateTime updatedAt;
+}

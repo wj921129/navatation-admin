@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.navatation.business.dto.LoginRequest;
 import com.navatation.business.dto.LoginVO;
 import com.navatation.business.dto.RefreshTokenRequest;
+import com.navatation.business.dto.ChangePasswordRequest;
 import com.navatation.business.dto.RegisterRequest;
 import com.navatation.business.dto.UserVO;
 import com.navatation.business.entity.User;
@@ -123,6 +124,27 @@ public class AuthService {
     }
 
     /**
+     * 修改密码
+     * @param userId 当前用户ID
+     * @param req 修改密码请求 */
+    @Transactional
+    public void changePassword(Long userId, ChangePasswordRequest req) {
+        if (!req.getNewPassword().equals(req.getConfirmPassword())) {
+            throw new BizException(ResultCode.BAD_REQUEST.getCode(), "两次输入新密码不一致");
+        }
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BizException(ResultCode.USER_NOT_FOUND);
+        }
+        if (!passwordEncoder.matches(req.getOldPassword(), user.getPassword())) {
+            throw new BizException(ResultCode.BAD_REQUEST.getCode(), "原密码错误");
+        }
+        user.setPassword(passwordEncoder.encode(req.getNewPassword()));
+        userMapper.updateById(user);
+        log.info("用户密码修改成功 userId={} username={}", user.getUserId(), user.getUsername());
+    }
+
+    /**
      * 刷新Token，验证RefreshToken后颁发新Token对
      * @param req 刷新Token请求
      * @return 新的登录响应 */
@@ -147,9 +169,17 @@ public class AuthService {
 
         redisTemplate.opsForValue().set(
                 "refresh_token:" + userId, newRefreshToken, 7, TimeUnit.DAYS);
+
+        UserVO userVO = new UserVO();
+        userVO.setUserId(user.getUserId());
+        userVO.setUsername(user.getUsername());
+        userVO.setAvatar(user.getAvatar());
+        userVO.setCreatedAt(user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
+
         LoginVO vo = new LoginVO();
         vo.setAccessToken(newAccessToken);
         vo.setRefreshToken(newRefreshToken);
+        vo.setUserInfo(userVO);
         vo.setExpiresIn(jwtTokenProvider.getAccessTokenExpire());
         log.info("Token刷新成功 userId={}", userId);
         return vo;

@@ -1,0 +1,11 @@
+
+The following files have been resolved:
+   com.navatation:navatation-common:jar:1.0.0-SNAPSHOT:compile[36m -- module navatation.common[0;1;33m (auto)[m
+   org.springframework.boot:spring-boot-starter-web:jar:3.3.5:compile[36m -- module spring.boot.starter.web[0;1m [auto][m
+   org.springframework.boot:spring-boot-starter-security:jar:3.3.5:compile[36m -- module spring.boot.starter.security[0;1m [auto][m
+   org.springframework.boot:spring-boot-starter-data-redis:jar:3.3.5:compile[36m -- module spring.boot.starter.data.redis[0;1m [auto][m
+   io.jsonwebtoken:jjwt-api:jar:0.12.6:compile[36m -- module jjwt.api[0;1;33m (auto)[m
+   io.jsonwebtoken:jjwt-impl:jar:0.12.6:runtime[36m -- module jjwt.impl[0;1;33m (auto)[m
+   io.jsonwebtoken:jjwt-jackson:jar:0.12.6:runtime[36m -- module jjwt.jackson[0;1;33m (auto)[m
+   org.projectlombok:lombok:jar:1.18.34:compile (optional)[36m -- module lombok[m
+

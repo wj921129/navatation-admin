@@ -18,7 +18,7 @@ USE `navatation`;
 -- 存储注册用户的基本信息
 -- ============================================================
 CREATE TABLE IF NOT EXISTS `navatation_user` (
-    `user_id`        BIGINT       UNSIGNED NOT NULL AUTO_INCREMENT  COMMENT '用户ID，主键',
+    `user_id`        BIGINT       UNSIGNED NOT NULL                COMMENT '用户ID，主键，雪花算法生成（18位数字，全局唯一）',
     `username`       VARCHAR(20)  NOT NULL                         COMMENT '用户名，3-20字符，字母数字下划线，唯一',
     `password`       VARCHAR(128) NOT NULL                         COMMENT '密码，BCrypt 加密存储',
     `email`          VARCHAR(128)          DEFAULT NULL            COMMENT '邮箱，用于密码找回',

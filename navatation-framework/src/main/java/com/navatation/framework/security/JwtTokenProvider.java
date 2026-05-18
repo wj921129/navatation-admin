@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.UUID;
 
 /** @Author admin
  * @CreateTime 2026-05-15
@@ -42,8 +43,9 @@ public class JwtTokenProvider {
     public String generateAccessToken(Long userId, String username) {
         Date now = new Date();
         return Jwts.builder()
-                .id(String.valueOf(userId))
+                .id(UUID.randomUUID().toString())
                 .subject(username)
+                .claim("userId", userId)
                 .issuedAt(now)
                 .expiration(new Date(now.getTime() + accessTokenExpire * 1000))
                 .signWith(secretKey)
@@ -57,7 +59,8 @@ public class JwtTokenProvider {
     public String generateRefreshToken(Long userId) {
         Date now = new Date();
         return Jwts.builder()
-                .id(String.valueOf(userId))
+                .id(UUID.randomUUID().toString())
+                .claim("userId", userId)
                 .issuedAt(now)
                 .expiration(new Date(now.getTime() + refreshTokenExpire * 1000))
                 .signWith(secretKey)
@@ -95,7 +98,7 @@ public class JwtTokenProvider {
      * @param token JWT字符串
      * @return 用户ID */
     public Long getUserIdFromToken(String token) {
-        return Long.valueOf(parseToken(token).getId());
+        return parseToken(token).get("userId", Long.class);
     }
 
     /**

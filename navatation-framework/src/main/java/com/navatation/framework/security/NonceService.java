@@ -41,14 +41,16 @@ public class NonceService {
 
     /**
      * 校验并消费 nonce
-     * 原子操作：检查存在 → 删除 → 返回结果
+     * 先 get 再 delete（兼容 Redis 6.2.0 以下版本，不支持 GETDEL 命令）
      * @param nonce 待消费的 nonce
      * @return true 表示 nonce 有效且已消费；false 表示 nonce 不存在或已消费
      */
     public boolean consumeNonce(String nonce) {
         String key = NONCE_PREFIX + nonce;
-        // 使用 getAndDelete 原子操作：存在则返回并删除，不存在返回 null
-        Object value = redisTemplate.opsForValue().getAndDelete(key);
+        Object value = redisTemplate.opsForValue().get(key);
+        if (value != null) {
+            redisTemplate.delete(key);
+        }
         boolean valid = value != null;
         if (valid) {
             log.debug("Nonce 已消费: {}", nonce);

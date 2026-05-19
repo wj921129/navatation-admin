@@ -6,8 +6,8 @@ import com.navatation.business.dto.BatchCreateRequest;
 import com.navatation.business.dto.CategoryRequest;
 import com.navatation.business.dto.CategoryVO;
 import com.navatation.business.dto.CreateShortcutItem;
-import com.navatation.business.dto.FaviconRequest;
 import com.navatation.business.dto.FaviconVO;
+import com.navatation.business.dto.IconUploadVO;
 import com.navatation.business.dto.RecommendCategoryVO;
 import com.navatation.business.dto.RecommendSiteVO;
 import com.navatation.business.dto.ShortcutVO;
@@ -23,13 +23,25 @@ import com.navatation.common.ResultCode;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /** @Author admin
@@ -44,8 +56,23 @@ public class NavService {
     private static final String ICON_TYPE_BUILTIN = "BUILTIN";
     private static final String DEFAULT_CATEGORY_NAME = "常用";
 
+    /** 允许上传的图标 MIME 类型白名单 */
+    private static final Set<String> ALLOWED_MIME_TYPES = Set.of(
+            "image/png", "image/jpeg", "image/gif", "image/webp",
+            "image/x-icon", "image/vnd.microsoft.icon", "image/svg+xml");
+
+    /** 图标文件大小上限：200KB */
+    private static final long MAX_ICON_SIZE = 200 * 1024;
+
+    /** 每小时每用户最大上传次数 */
+    private static final int MAX_UPLOADS_PER_HOUR = 30;
+
     private final NavCategoryMapper categoryMapper;
     private final NavShortcutMapper shortcutMapper;
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    @Value("${app.upload.path}")
+    private String uploadPath;
 
     /**
      * 查询用户所有分类及各自快捷方式数量
@@ -261,21 +288,128 @@ public class NavService {
         }
     }
 
+    private static final Pattern FAVICON_PATTERN = Pattern.compile(
+            "<link[^>]*rel=[\"'](?:shortcut\\s+)?icon[\"'][^>]*href=[\"']([^\"']+)[\"']",
+            Pattern.CASE_INSENSITIVE);
+
     /**
      * 根据URL抓取站点Favicon地址
+     * 先请求页面HTML解析 <link rel="icon"> 标签，若失败则回退到 /favicon.ico
      * @param url 站点URL
      * @return Favicon信息 */
     public FaviconVO fetchFavicon(String url) {
-        // 简化处理：使用常见 favicon 路径
         try {
             java.net.URI uri = new java.net.URI(url);
-            String faviconUrl = uri.getScheme() + "://" + uri.getHost() + "/favicon.ico";
+            String scheme = uri.getScheme();
+            String host = uri.getHost();
+            if (scheme == null || host == null) {
+                throw new BizException(ResultCode.BAD_REQUEST);
+            }
+
+            String faviconUrl = tryExtractFromHtml(url, scheme, host);
+            if (faviconUrl == null) {
+                faviconUrl = scheme + "://" + host + "/favicon.ico";
+            }
+
             FaviconVO vo = new FaviconVO();
             vo.setFaviconUrl(faviconUrl);
             vo.setSourceUrl(url);
             return vo;
+        } catch (BizException e) {
+            throw e;
         } catch (Exception e) {
             throw new BizException(ResultCode.BAD_REQUEST);
+        }
+    }
+
+    /** 请求页面HTML并解析 <link rel=\"icon\"> 标签，提取图标URL */
+    private String tryExtractFromHtml(String pageUrl, String scheme, String host) {
+        try {
+            org.springframework.web.client.RestTemplate rt = new org.springframework.web.client.RestTemplate();
+            rt.setRequestFactory(new org.springframework.http.client.SimpleClientHttpRequestFactory() {{
+                setConnectTimeout(5000);
+                setReadTimeout(5000);
+            }});
+            String html = rt.getForObject(pageUrl, String.class);
+            if (html == null || html.isEmpty()) return null;
+
+            Matcher matcher = FAVICON_PATTERN.matcher(html);
+            if (matcher.find()) {
+                return resolveFaviconUrl(matcher.group(1), scheme, host);
+            }
+        } catch (Exception e) {
+            log.warn("从页面 {} 解析Favicon失败: {}", pageUrl, e.getMessage());
+        }
+        return null;
+    }
+
+    /** 解析可能为相对路径的图标URL */
+    private static String resolveFaviconUrl(String href, String scheme, String host) {
+        if (href.startsWith("http://") || href.startsWith("https://")) {
+            return href;
+        }
+        if (href.startsWith("//")) {
+            return scheme + ":" + href;
+        }
+        String base = scheme + "://" + host;
+        return href.startsWith("/") ? base + href : base + "/" + href;
+    }
+
+    /** 支持的图片扩展名映射（MIME → 扩展名） */
+    private static final Map<String, String> MIME_TO_EXT = Map.of(
+            "image/png", "png",
+            "image/jpeg", "jpg",
+            "image/gif", "gif",
+            "image/webp", "webp",
+            "image/x-icon", "ico",
+            "image/vnd.microsoft.icon", "ico",
+            "image/svg+xml", "svg");
+
+    /**
+     * 上传图标文件
+     * 安全限制：文件类型白名单、大小上限 200KB、每用户每小时最多 30 次
+     * @param userId 用户ID
+     * @param file 图标文件
+     * @return 图标可访问URL */
+    public IconUploadVO uploadIcon(Long userId, MultipartFile file) {
+        // 1. 文件类型校验
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_MIME_TYPES.contains(contentType)) {
+            log.warn("图标上传类型不合法 userId={}, contentType={}", userId, contentType);
+            throw new BizException(ResultCode.BAD_REQUEST.getCode(), "不支持的图片格式，仅允许 PNG/JPEG/GIF/WebP/ICO/SVG");
+        }
+
+        // 2. 文件大小校验
+        if (file.getSize() > MAX_ICON_SIZE) {
+            log.warn("图标上传超出大小限制 userId={}, size={}", userId, file.getSize());
+            throw new BizException(ResultCode.BAD_REQUEST.getCode(), "图标文件不能超过 200KB");
+        }
+
+        // 3. 上传频率限制（Redis 计数器）
+        String rateKey = "rate:icon_upload:" + userId;
+        Long count = redisTemplate.opsForValue().increment(rateKey);
+        if (count != null && count == 1) {
+            redisTemplate.expire(rateKey, 1, TimeUnit.HOURS);
+        }
+        if (count != null && count > MAX_UPLOADS_PER_HOUR) {
+            log.warn("图标上传频率超限 userId={}, count={}", userId, count);
+            throw new BizException(ResultCode.TOO_MANY_REQUESTS);
+        }
+
+        // 4. 保存文件
+        try {
+            String ext = MIME_TO_EXT.getOrDefault(contentType, "png");
+            String dir = uploadPath + "/icons/user_" + userId;
+            Files.createDirectories(Paths.get(dir));
+            String filename = UUID.randomUUID() + "." + ext;
+            Path filepath = Paths.get(dir, filename);
+            file.transferTo(filepath.toFile());
+            log.info("图标上传成功 userId={}, path={}", userId, filepath);
+
+            return new IconUploadVO("/uploads/icons/user_" + userId + "/" + filename);
+        } catch (IOException e) {
+            log.error("图标文件保存失败 userId={}", userId, e);
+            throw new BizException(ResultCode.INTERNAL_ERROR);
         }
     }
 

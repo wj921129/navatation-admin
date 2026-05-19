@@ -6,6 +6,7 @@ import com.navatation.business.dto.CategoryRequest;
 import com.navatation.business.dto.CategoryVO;
 import com.navatation.business.dto.FaviconRequest;
 import com.navatation.business.dto.FaviconVO;
+import com.navatation.business.dto.IconUploadVO;
 import com.navatation.business.dto.RecommendCategoryVO;
 import com.navatation.business.dto.ShortcutVO;
 import com.navatation.business.dto.SortRequest;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -143,6 +145,17 @@ public class NavController {
         FaviconVO result = navService.fetchFavicon(req.getUrl());
         log.info("获取Favicon 出参:faviconUrl={}", result.getFaviconUrl());
         return Result.success(result);
+    }
+
+    // ---- Icon Upload ----
+    @PostMapping("/icon/upload")
+    public Result<IconUploadVO> uploadIcon(@RequestHeader("Authorization") String auth,
+                                            @RequestParam("file") MultipartFile file) {
+        Long userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
+        log.info("上传图标 入参:userId={},filename={},size={}", userId, file.getOriginalFilename(), file.getSize());
+        IconUploadVO result = navService.uploadIcon(userId, file);
+        log.info("上传图标 出参:iconUrl={}", result.getIconUrl());
+        return Result.success("上传成功", result);
     }
 
     // ---- Recommended ----

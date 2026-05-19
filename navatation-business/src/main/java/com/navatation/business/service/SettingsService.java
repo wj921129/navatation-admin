@@ -9,6 +9,7 @@ import com.navatation.business.mapper.UserConfigMapper;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -29,6 +30,9 @@ public class SettingsService {
     private static final Logger log = LoggerFactory.getLogger(SettingsService.class);
 
     private final UserConfigMapper userConfigMapper;
+
+    @Value("${app.upload.path}")
+    private String uploadPath;
 
     /**
      * 获取用户设置，不存在则创建默认配置
@@ -80,14 +84,14 @@ public class SettingsService {
      * @return 壁纸URL */
     public WallpaperVO uploadWallpaper(Long userId, MultipartFile file) {
         try {
-            String uploadDir = "uploads/wallpapers/user_" + userId;
+            String uploadDir = uploadPath + "/wallpapers/user_" + userId;
             Files.createDirectories(Paths.get(uploadDir));
             String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
             Path filepath = Paths.get(uploadDir, filename);
             file.transferTo(filepath.toFile());
 
             WallpaperVO vo = new WallpaperVO();
-            vo.setWallpaperUrl("/" + uploadDir + "/" + filename);
+            vo.setWallpaperUrl("/uploads/wallpapers/user_" + userId + "/" + filename);
             return vo;
         } catch (IOException e) {
             log.error("壁纸上传失败 userId={}", userId, e);

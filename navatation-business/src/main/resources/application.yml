@@ -33,6 +33,8 @@ mybatis-plus:
 app:
   rsa:
     key-path: ./rsa
+  upload:
+    path: E:/data/navatation
   jwt:
     secret: navatation-jwt-secret-key-2026-must-be-at-least-256-bits-long
     access-token-expire: 7200

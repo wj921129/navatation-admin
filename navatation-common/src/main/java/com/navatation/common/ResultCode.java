@@ -24,7 +24,8 @@ public enum ResultCode {
     EMAIL_NOT_MATCH(40001, "用户名与绑定邮箱不匹配"),
     EMAIL_EMPTY(40002, "用户未绑定邮箱，无法找回密码"),
     NONCE_INVALID(40003, "请求已过期，请重新操作"),
-    ENCRYPTION_ERROR(40004, "数据解密失败");
+    ENCRYPTION_ERROR(40004, "数据解密失败"),
+    TOO_MANY_REQUESTS(429, "操作太频繁，请稍后再试");
 
     private final int code;
     private final String message;

@@ -5,7 +5,7 @@ import lombok.Data;
 
 /**
  * 加密注册请求
- * username 明文传输，密码通过 RSA 加密后传输
+ * username 明文传输，密码通过 RSA-OAEP/SHA-256 (MGF1 SHA-256) 加密后传输
  */
 @Data
 public class EncryptedRegisterRequest {

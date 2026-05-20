@@ -403,7 +403,7 @@ public class NavService {
             Files.createDirectories(Paths.get(dir));
             String filename = UUID.randomUUID() + "." + ext;
             Path filepath = Paths.get(dir, filename);
-            file.transferTo(filepath.toFile());
+            file.transferTo(filepath.toAbsolutePath().toFile());
             log.info("图标上传成功 userId={}, path={}", userId, filepath);
 
             return new IconUploadVO("/uploads/icons/user_" + userId + "/" + filename);

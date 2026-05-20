@@ -4,7 +4,7 @@
   <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
       <charset>UTF-8</charset>
-      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger{36} - %msg%n</pattern>
+      <pattern>[%level] [%X{traceId}] [%d{yyyy-MM-dd HH:mm:ss.SSS}] [%logger{36}.%M] %msg%n</pattern>
     </encoder>
   </appender>
 
@@ -16,15 +16,47 @@
     </rollingPolicy>
     <encoder>
       <charset>UTF-8</charset>
-      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger{36} - %msg%n</pattern>
+      <pattern>[%level] [%X{traceId}] [%d{yyyy-MM-dd HH:mm:ss.SSS}] [%logger{36}.%M] %msg%n</pattern>
     </encoder>
   </appender>
 
-  <!-- 应用日志级别 -->
+  <!-- ==================== 业务日志 ==================== -->
+  <!-- 应用业务代码：DEBUG 级别，可观察完整业务流程 -->
   <logger name="com.navatation" level="DEBUG"/>
+
+  <!-- ==================== MyBatis SQL 日志（核心分层） ==================== -->
+  <!--
+    MyBatis 通过 SLF4J 输出 SQL 时，日志名称为 Mapper 接口的全限定名。
+    DEBUG 级别输出: ==> Preparing（SQL 语句）、==> Parameters（参数值）
+    TRACE 级别输出: <== Columns、<== Row（逐行结果集，非常冗余）
+    因此只需将 Mapper 包设为 DEBUG，即可看到 SQL + 参数，但不会打印逐行结果。
+  -->
+  <logger name="com.navatation.business.mapper" level="DEBUG"/>
+
+  <!-- MyBatis 内部管理日志（SqlSession 创建/关闭/事务同步等）：降为 WARN，减少干扰 -->
+  <logger name="org.apache.ibatis" level="WARN"/>
+  <logger name="org.mybatis.spring" level="WARN"/>
+
+  <!-- ==================== 第三方框架日志降噪 ==================== -->
+  <!-- 数据库连接池 HikariCP：仅保留警告及以上 -->
+  <logger name="com.zaxxer.hikari" level="WARN"/>
+
+  <!-- Spring 框架核心：INFO 级别 -->
+  <logger name="org.springframework" level="INFO"/>
+
+  <!-- Spring Security：仅保留警告 -->
+  <logger name="org.springframework.security" level="WARN"/>
+
+  <!-- Tomcat / Servlet 容器：INFO 级别 -->
+  <logger name="org.apache.catalina" level="INFO"/>
+  <logger name="org.apache.coyote" level="INFO"/>
+
+  <!-- Hibernate Validator：仅保留警告 -->
+  <logger name="org.hibernate.validator" level="WARN"/>
 
   <root level="INFO">
     <appender-ref ref="CONSOLE"/>
     <appender-ref ref="FILE"/>
   </root>
 </configuration>
+

@@ -31,8 +31,11 @@ public class SettingsService {
 
     private final UserConfigMapper userConfigMapper;
 
-    @Value("${app.upload.path}")
-    private String uploadPath;
+    @Value("${app.upload.wallpaper-path}")
+    private String wallpaperPath;
+
+    @Value("${app.upload.local-wallpaper-path}")
+    private String localWallpaperPath;
 
     /**
      * 获取用户设置，不存在则创建默认配置
@@ -84,18 +87,58 @@ public class SettingsService {
      * @return 壁纸URL */
     public WallpaperVO uploadWallpaper(Long userId, MultipartFile file) {
         try {
-            String uploadDir = uploadPath + "/wallpapers/user_" + userId;
-            Files.createDirectories(Paths.get(uploadDir));
-            String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
-            Path filepath = Paths.get(uploadDir, filename);
-            file.transferTo(filepath.toFile());
-
+            String targetDir = wallpaperPath + java.io.File.separator + "U" + userId;
+            String uniqueFileName = com.navatation.common.FileUploadUtil.saveFile(file, targetDir);
+            
             WallpaperVO vo = new WallpaperVO();
-            vo.setWallpaperUrl("/uploads/wallpapers/user_" + userId + "/" + filename);
+            vo.setWallpaperUrl("/uploads/back_ground/custom/U" + userId + "/" + uniqueFileName);
+            log.info("壁纸上传成功 userId={}, filename={}", userId, uniqueFileName);
             return vo;
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("壁纸上传失败 userId={}", userId, e);
             throw new RuntimeException("壁纸上传失败", e);
+        }
+    }
+
+    /**
+     * 随机从本地壁纸目录中选择一个壁纸返回
+     * @return 壁纸VO */
+    public WallpaperVO getRandomWallpaper() {
+        try {
+            File dir = new File(localWallpaperPath);
+            if (!dir.exists()) {
+                // 目录不存在则自动创建，支持3次重试
+                com.navatation.common.FileUploadUtil.createDirectoryWithRetry(localWallpaperPath);
+            }
+
+            // 过滤合法图片文件
+            File[] files = dir.listFiles((dirObj, name) -> {
+                String lower = name.toLowerCase();
+                return lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg")
+                        || lower.endsWith(".webp") || lower.endsWith(".gif");
+            });
+
+            // 卫语句：如果没有找到任何壁纸文件，返回系统默认兜底壁纸
+            if (files == null || files.length == 0) {
+                log.warn("本地壁纸目录为空，返回系统默认兜底壁纸: {}", localWallpaperPath);
+                WallpaperVO vo = new WallpaperVO();
+                vo.setWallpaperUrl("https://images.unsplash.com/photo-1598439473183-42c9301db5dc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=2400");
+                return vo;
+            }
+
+            // 随机选择一个
+            int idx = java.util.concurrent.ThreadLocalRandom.current().nextInt(files.length);
+            File chosenFile = files[idx];
+
+            WallpaperVO vo = new WallpaperVO();
+            vo.setWallpaperUrl("/uploads/back_ground/local/" + chosenFile.getName());
+            log.info("随机壁纸获取成功 filename={}", chosenFile.getName());
+            return vo;
+        } catch (Exception e) {
+            log.error("获取随机壁纸异常，进行兜底返回", e);
+            WallpaperVO vo = new WallpaperVO();
+            vo.setWallpaperUrl("https://images.unsplash.com/photo-1598439473183-42c9301db5dc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=2400");
+            return vo;
         }
     }
 

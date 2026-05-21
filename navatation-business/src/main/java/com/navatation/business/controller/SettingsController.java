@@ -71,4 +71,12 @@ public class SettingsController {
         log.info("上传壁纸 出参:wallpaperUrl={}", result.getWallpaperUrl());
         return Result.success("上传成功", result);
     }
+
+    @GetMapping("/wallpaper/random")
+    public Result<WallpaperVO> getRandomWallpaper() {
+        log.info("获取随机壁纸 入参:无");
+        WallpaperVO result = settingsService.getRandomWallpaper();
+        log.info("获取随机壁纸 出参:wallpaperUrl={}", result.getWallpaperUrl());
+        return Result.success("获取随机壁纸成功", result);
+    }
 }

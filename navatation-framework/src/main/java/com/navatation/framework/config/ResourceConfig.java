@@ -13,12 +13,24 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class ResourceConfig implements WebMvcConfigurer {
 
-    @Value("${app.upload.path}")
-    private String uploadPath;
+    @Value("${app.upload.icon-path}")
+    private String iconPath;
+
+    @Value("${app.upload.wallpaper-path}")
+    private String wallpaperPath;
+
+    @Value("${app.upload.local-wallpaper-path}")
+    private String localWallpaperPath;
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:" + uploadPath + "/");
+        registry.addResourceHandler("/uploads/icon/custom/**")
+                .addResourceLocations("file:" + iconPath + "/");
+
+        registry.addResourceHandler("/uploads/back_ground/custom/**")
+                .addResourceLocations("file:" + wallpaperPath + "/");
+
+        registry.addResourceHandler("/uploads/back_ground/local/**")
+                .addResourceLocations("file:" + localWallpaperPath + "/");
     }
 }

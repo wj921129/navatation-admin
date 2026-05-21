@@ -70,10 +70,8 @@ public class NavService {
     private final NavCategoryMapper categoryMapper;
     private final NavShortcutMapper shortcutMapper;
     private final RedisTemplate<String, Object> redisTemplate;
-
-    @Value("${app.upload.path}")
-    private String uploadPath;
-
+    @Value("${app.upload.icon-path}")
+    private String iconPath;
     /**
      * 查询用户所有分类及各自快捷方式数量
      * @param userId 用户ID
@@ -197,6 +195,12 @@ public class NavService {
                 categoryMapper.insert(defaultCat);
             }
             categoryId = defaultCat.getCategoryId();
+        } else {
+            // 校验 categoryId 是否属于当前用户，防止水平越权
+            NavCategory cat = categoryMapper.selectById(categoryId);
+            if (cat == null || !cat.getUserId().equals(userId)) {
+                throw new BizException(ResultCode.NOT_FOUND);
+            }
         }
 
         int maxSort = shortcutMapper.selectList(
@@ -398,16 +402,12 @@ public class NavService {
 
         // 4. 保存文件
         try {
-            String ext = MIME_TO_EXT.getOrDefault(contentType, "png");
-            String dir = uploadPath + "/icons/user_" + userId;
-            Files.createDirectories(Paths.get(dir));
-            String filename = UUID.randomUUID() + "." + ext;
-            Path filepath = Paths.get(dir, filename);
-            file.transferTo(filepath.toAbsolutePath().toFile());
-            log.info("图标上传成功 userId={}, path={}", userId, filepath);
+            String targetDir = iconPath + java.io.File.separator + "U" + userId;
+            String uniqueFileName = com.navatation.common.FileUploadUtil.saveFile(file, targetDir);
+            log.info("图标上传成功 userId={}, filename={}", userId, uniqueFileName);
 
-            return new IconUploadVO("/uploads/icons/user_" + userId + "/" + filename);
-        } catch (IOException e) {
+            return new IconUploadVO("/uploads/icon/custom/U" + userId + "/" + uniqueFileName);
+        } catch (Exception e) {
             log.error("图标文件保存失败 userId={}", userId, e);
             throw new BizException(ResultCode.INTERNAL_ERROR);
         }

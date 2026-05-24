@@ -17,5 +17,6 @@ public class SettingsVO {
     private Integer iconTextGap;
     private Integer textSize;
     private Integer iconsMarginTop;
+    private Integer iconsMarginX;
     private String theme;
 }

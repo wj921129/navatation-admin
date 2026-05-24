@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS `navatation_user_config` (
     `search_engine`           VARCHAR(16)  NOT NULL DEFAULT 'google'        COMMENT '默认搜索引擎：google, baidu, bing',
     `background_image`        VARCHAR(2048)         DEFAULT NULL            COMMENT '壁纸URL或OSS路径',
     `background_type`         VARCHAR(16)  NOT NULL DEFAULT 'URL'           COMMENT '壁纸类型：URL-链接, UPLOAD-上传, SYSTEM-系统默认',
-    `search_box_width`        INT          NOT NULL DEFAULT 100             COMMENT '搜索框宽度百分比，60-100',
+    `search_box_width`        INT          NOT NULL DEFAULT 50              COMMENT '搜索框宽度屏幕占比(%)，20-100',
     `search_box_height`       INT          NOT NULL DEFAULT 64              COMMENT '搜索框高度像素，48-80',
     `search_box_margin_top`   INT          NOT NULL DEFAULT 192             COMMENT '搜索框距顶部距离像素，100-300',
     `icon_size`               INT          NOT NULL DEFAULT 64              COMMENT '图标大小像素，48-96',
@@ -97,6 +97,7 @@ CREATE TABLE IF NOT EXISTS `navatation_user_config` (
     `icon_text_gap`           INT          NOT NULL DEFAULT 12              COMMENT '图标与文字间距像素，4-20',
     `text_size`               INT          NOT NULL DEFAULT 14              COMMENT '文字大小像素，10-18',
     `icons_margin_top`        INT          NOT NULL DEFAULT 64              COMMENT '导航区距搜索框距离像素，24-96',
+    `icons_margin_x`          INT          NOT NULL DEFAULT 10              COMMENT '导航区左右边距百分比，0-40',
     `theme`                   VARCHAR(16)  NOT NULL DEFAULT 'dark'          COMMENT '主题模式：light-浅色, dark-深色, auto-跟随系统',
     `created_at`              DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_at`              DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -221,3 +222,10 @@ INSERT INTO `navatation_recommend_site` (`category_id`, `name`, `url`, `icon_typ
 (8, 'Slack',  'https://slack.com',  'BUILTIN', 'Briefcase', '#4A154B', 2),
 (8, 'Trello', 'https://trello.com', 'BUILTIN', 'Briefcase', '#0052CC', 3),
 (8, 'Figma',  'https://figma.com',  'BUILTIN', 'Briefcase', '#F24E1E', 4);
+
+-- ============================================================
+-- 存量用户数据适配：前端响应式搜索框占比修改
+-- ============================================================
+-- 由于搜索框从基于 768px 的百分比变更为全屏宽度的真实百分比，
+-- 将存量用户的设置宽度按比例缩小 (50%)，避免存量用户搜索框过度撑满屏幕。
+UPDATE `navatation_user_config` SET `search_box_width` = ROUND(`search_box_width` * 0.5) WHERE `search_box_width` > 50;

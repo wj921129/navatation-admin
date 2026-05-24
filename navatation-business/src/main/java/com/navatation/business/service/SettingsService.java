@@ -1,6 +1,7 @@
 package com.navatation.business.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.navatation.business.constant.SettingsConstants;
 import com.navatation.business.dto.SettingsRequest;
 import com.navatation.business.dto.SettingsVO;
 import com.navatation.business.dto.WallpaperVO;
@@ -122,7 +123,7 @@ public class SettingsService {
             if (files == null || files.length == 0) {
                 log.warn("本地壁纸目录为空，返回系统默认兜底壁纸: {}", localWallpaperPath);
                 WallpaperVO vo = new WallpaperVO();
-                vo.setWallpaperUrl("https://images.unsplash.com/photo-1598439473183-42c9301db5dc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=2400");
+                vo.setWallpaperUrl(SettingsConstants.DEFAULT_WALLPAPER);
                 return vo;
             }
 
@@ -137,7 +138,7 @@ public class SettingsService {
         } catch (Exception e) {
             log.error("获取随机壁纸异常，进行兜底返回", e);
             WallpaperVO vo = new WallpaperVO();
-            vo.setWallpaperUrl("https://images.unsplash.com/photo-1598439473183-42c9301db5dc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=2400");
+            vo.setWallpaperUrl(SettingsConstants.DEFAULT_WALLPAPER);
             return vo;
         }
     }
@@ -146,19 +147,20 @@ public class SettingsService {
     private UserConfig createDefault(Long userId) {
         UserConfig config = new UserConfig();
         config.setUserId(userId);
-        config.setSearchEngine("google");
-        config.setSearchBoxWidth(100);
-        config.setSearchBoxHeight(64);
-        config.setSearchBoxMarginTop(192);
-        config.setIconSize(64);
-        config.setIconRadius(50);
-        config.setIconSpacingX(32);
-        config.setIconSpacingY(48);
-        config.setIconTextGap(12);
-        config.setTextSize(14);
-        config.setIconsMarginTop(64);
-        config.setTheme("dark");
-        config.setBackgroundType("URL");
+        config.setSearchEngine(SettingsConstants.DEFAULT_SEARCH_ENGINE);
+        config.setSearchBoxWidth(SettingsConstants.DEFAULT_SEARCH_BOX_WIDTH);
+        config.setSearchBoxHeight(SettingsConstants.DEFAULT_SEARCH_BOX_HEIGHT);
+        config.setSearchBoxMarginTop(SettingsConstants.DEFAULT_SEARCH_BOX_MARGIN_TOP);
+        config.setIconSize(SettingsConstants.DEFAULT_ICON_SIZE);
+        config.setIconRadius(SettingsConstants.DEFAULT_ICON_RADIUS);
+        config.setIconSpacingX(SettingsConstants.DEFAULT_ICON_SPACING_X);
+        config.setIconSpacingY(SettingsConstants.DEFAULT_ICON_SPACING_Y);
+        config.setIconTextGap(SettingsConstants.DEFAULT_ICON_TEXT_GAP);
+        config.setTextSize(SettingsConstants.DEFAULT_TEXT_SIZE);
+        config.setIconsMarginTop(SettingsConstants.DEFAULT_ICONS_MARGIN_TOP);
+        config.setIconsMarginX(SettingsConstants.DEFAULT_ICONS_MARGIN_X);
+        config.setTheme(SettingsConstants.DEFAULT_THEME);
+        config.setBackgroundType(SettingsConstants.DEFAULT_BACKGROUND_TYPE);
         userConfigMapper.insert(config);
         return config;
     }
@@ -204,6 +206,9 @@ public class SettingsService {
         if (req.getIconsMarginTop() != null) {
             config.setIconsMarginTop(req.getIconsMarginTop());
         }
+        if (req.getIconsMarginX() != null) {
+            config.setIconsMarginX(req.getIconsMarginX());
+        }
         if (req.getTheme() != null) {
             config.setTheme(req.getTheme());
         }
@@ -225,6 +230,7 @@ public class SettingsService {
         vo.setIconTextGap(config.getIconTextGap());
         vo.setTextSize(config.getTextSize());
         vo.setIconsMarginTop(config.getIconsMarginTop());
+        vo.setIconsMarginX(config.getIconsMarginX());
         vo.setTheme(config.getTheme());
         return vo;
     }

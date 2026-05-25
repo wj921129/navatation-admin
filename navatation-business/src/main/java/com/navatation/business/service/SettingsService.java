@@ -7,6 +7,7 @@ import com.navatation.business.dto.SettingsVO;
 import com.navatation.business.dto.WallpaperVO;
 import com.navatation.business.entity.UserConfig;
 import com.navatation.business.mapper.UserConfigMapper;
+import com.navatation.common.IdUtils;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,15 +16,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.UUID;
 
-/** @Author admin
+/**
+ * @Author admin
  * @CreateTime 2026-05-15
- * @Description 用户设置服务，处理用户配置的查询、保存、局部更新及壁纸上传 */
+ * @Description 用户设置服务，处理用户配置的查询、保存、局部更新及壁纸上传
+ */
 @Service
 @RequiredArgsConstructor
 public class SettingsService {
@@ -41,8 +39,9 @@ public class SettingsService {
     /**
      * 获取用户设置，不存在则创建默认配置
      * @param userId 用户ID
-     * @return 用户设置 */
-    public SettingsVO getSettings(Long userId) {
+     * @return 用户设置
+     */
+    public SettingsVO getSettings(String userId) {
         UserConfig config = userConfigMapper.selectOne(
                 new LambdaQueryWrapper<UserConfig>().eq(UserConfig::getUserId, userId));
         if (config == null) {
@@ -54,8 +53,9 @@ public class SettingsService {
     /**
      * 全量保存用户设置
      * @param userId 用户ID
-     * @param req 设置请求 */
-    public void saveSettings(Long userId, SettingsRequest req) {
+     * @param req 设置请求
+     */
+    public void saveSettings(String userId, SettingsRequest req) {
         UserConfig config = userConfigMapper.selectOne(
                 new LambdaQueryWrapper<UserConfig>().eq(UserConfig::getUserId, userId));
         if (config == null) {
@@ -69,8 +69,9 @@ public class SettingsService {
     /**
      * 局部更新用户设置（仅更新非null字段）
      * @param userId 用户ID
-     * @param req 设置请求 */
-    public void patchSettings(Long userId, SettingsRequest req) {
+     * @param req 设置请求
+     */
+    public void patchSettings(String userId, SettingsRequest req) {
         UserConfig config = userConfigMapper.selectOne(
                 new LambdaQueryWrapper<UserConfig>().eq(UserConfig::getUserId, userId));
         if (config == null) {
@@ -85,8 +86,9 @@ public class SettingsService {
      * 上传壁纸文件
      * @param userId 用户ID
      * @param file 壁纸文件
-     * @return 壁纸URL */
-    public WallpaperVO uploadWallpaper(Long userId, MultipartFile file) {
+     * @return 壁纸URL
+     */
+    public WallpaperVO uploadWallpaper(String userId, MultipartFile file) {
         try {
             String targetDir = wallpaperPath + java.io.File.separator + "U" + userId;
             String uniqueFileName = com.navatation.common.FileUploadUtil.saveFile(file, targetDir);
@@ -103,7 +105,8 @@ public class SettingsService {
 
     /**
      * 随机从本地壁纸目录中选择一个壁纸返回
-     * @return 壁纸VO */
+     * @return 壁纸VO
+     */
     public WallpaperVO getRandomWallpaper() {
         try {
             File dir = new File(localWallpaperPath);
@@ -144,8 +147,9 @@ public class SettingsService {
     }
 
     /** 创建默认用户配置 */
-    private UserConfig createDefault(Long userId) {
+    private UserConfig createDefault(String userId) {
         UserConfig config = new UserConfig();
+        config.setConfigId(IdUtils.genConfigId());
         config.setUserId(userId);
         config.setSearchEngine(SettingsConstants.DEFAULT_SEARCH_ENGINE);
         config.setSearchBoxWidth(SettingsConstants.DEFAULT_SEARCH_BOX_WIDTH);

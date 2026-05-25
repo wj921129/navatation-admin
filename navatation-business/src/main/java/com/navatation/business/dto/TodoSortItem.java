@@ -4,6 +4,6 @@ import lombok.Data;
 
 @Data
 public class TodoSortItem {
-    private Long todoId;
+    private String todoId;
     private Integer sortOrder;
 }

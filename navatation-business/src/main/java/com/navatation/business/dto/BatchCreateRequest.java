@@ -5,6 +5,6 @@ import java.util.List;
 
 @Data
 public class BatchCreateRequest {
-    private Long categoryId;
+    private String categoryId;
     private List<CreateShortcutItem> shortcuts;
 }

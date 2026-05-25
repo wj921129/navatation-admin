@@ -12,6 +12,7 @@ import com.navatation.business.entity.TodoItem;
 import com.navatation.business.mapper.TodoItemMapper;
 import com.navatation.common.BizException;
 import com.navatation.common.ResultCode;
+import com.navatation.common.IdUtils;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,9 +25,11 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/** @Author admin
+/**
+ * @Author admin
  * @CreateTime 2026-05-15
- * @Description 待办事项服务，处理待办项的CRUD、完成状态切换、排序及批量清除已完成项 */
+ * @Description 待办事项服务，处理待办项的CRUD、完成状态切换、排序及批量清除已完成项
+ */
 @Service
 @RequiredArgsConstructor
 public class TodoService {
@@ -39,8 +42,9 @@ public class TodoService {
      * 查询待办列表，可按状态筛选
      * @param userId 用户ID
      * @param status 状态筛选（active/completed/null）
-     * @return 待办列表 */
-    public List<TodoVO> getList(Long userId, String status) {
+     * @return 待办列表
+     */
+    public List<TodoVO> getList(String userId, String status) {
         LambdaQueryWrapper<TodoItem> wrapper = new LambdaQueryWrapper<TodoItem>()
                 .eq(TodoItem::getUserId, userId)
                 .orderByAsc(TodoItem::getSortOrder);
@@ -60,13 +64,15 @@ public class TodoService {
      * 创建待办项
      * @param userId 用户ID
      * @param req 创建请求
-     * @return 创建的待办项 */
-    public TodoVO create(Long userId, TodoCreateRequest req) {
+     * @return 创建的待办项
+     */
+    public TodoVO create(String userId, TodoCreateRequest req) {
         int maxSort = todoItemMapper.selectList(
                 new LambdaQueryWrapper<TodoItem>().eq(TodoItem::getUserId, userId))
                 .stream().mapToInt(TodoItem::getSortOrder).max().orElse(0);
 
         TodoItem item = new TodoItem();
+        item.setTodoId(IdUtils.genTodoId());
         item.setUserId(userId);
         item.setContent(req.getContent());
         item.setCompleted(false);
@@ -80,8 +86,9 @@ public class TodoService {
      * 更新待办内容
      * @param userId 用户ID
      * @param todoId 待办ID
-     * @param req 更新请求 */
-    public void update(Long userId, Long todoId, TodoUpdateRequest req) {
+     * @param req 更新请求
+     */
+    public void update(String userId, String todoId, TodoUpdateRequest req) {
         TodoItem item = todoItemMapper.selectById(todoId);
         if (item == null || !item.getUserId().equals(userId)) {
             throw new BizException(ResultCode.NOT_FOUND);
@@ -95,8 +102,9 @@ public class TodoService {
      * 切换待办完成状态
      * @param userId 用户ID
      * @param todoId 待办ID
-     * @return 切换后的状态 */
-    public ToggleVO toggle(Long userId, Long todoId) {
+     * @return 切换后的状态
+     */
+    public ToggleVO toggle(String userId, String todoId) {
         TodoItem item = todoItemMapper.selectById(todoId);
         if (item == null || !item.getUserId().equals(userId)) {
             throw new BizException(ResultCode.NOT_FOUND);
@@ -115,8 +123,9 @@ public class TodoService {
     /**
      * 删除待办项
      * @param userId 用户ID
-     * @param todoId 待办ID */
-    public void delete(Long userId, Long todoId) {
+     * @param todoId 待办ID
+     */
+    public void delete(String userId, String todoId) {
         TodoItem item = todoItemMapper.selectById(todoId);
         if (item == null || !item.getUserId().equals(userId)) {
             throw new BizException(ResultCode.NOT_FOUND);
@@ -128,12 +137,13 @@ public class TodoService {
     /**
      * 批量更新待办排序
      * @param userId 用户ID
-     * @param req 排序请求 */
+     * @param req 排序请求
+     */
     @Transactional
-    public void sort(Long userId, TodoSortRequest req) {
+    public void sort(String userId, TodoSortRequest req) {
         // 批量查询所有待排序的待办项
-        List<Long> ids = req.getItems().stream().map(TodoSortItem::getTodoId).collect(Collectors.toList());
-        Map<Long, TodoItem> itemMap = todoItemMapper.selectBatchIds(ids).stream()
+        List<String> ids = req.getItems().stream().map(TodoSortItem::getTodoId).collect(Collectors.toList());
+        Map<String, TodoItem> itemMap = todoItemMapper.selectBatchIds(ids).stream()
                 .filter(i -> i.getUserId().equals(userId))
                 .collect(Collectors.toMap(TodoItem::getTodoId, Function.identity()));
 
@@ -149,14 +159,15 @@ public class TodoService {
     /**
      * 批量清除已完成待办项
      * @param userId 用户ID
-     * @return 删除数量 */
-    public DeleteCountVO clearCompleted(Long userId) {
+     * @return 删除数量
+     */
+    public DeleteCountVO clearCompleted(String userId) {
         List<TodoItem> completed = todoItemMapper.selectList(
                 new LambdaQueryWrapper<TodoItem>()
                         .eq(TodoItem::getUserId, userId)
                         .eq(TodoItem::getCompleted, true));
         // 批量删除已完成待办项
-        List<Long> ids = completed.stream().map(TodoItem::getTodoId).collect(Collectors.toList());
+        List<String> ids = completed.stream().map(TodoItem::getTodoId).collect(Collectors.toList());
         if (!ids.isEmpty()) {
             todoItemMapper.deleteBatchIds(ids);
             log.info("清除已完成待办成功 userId={} count={}", userId, ids.size());

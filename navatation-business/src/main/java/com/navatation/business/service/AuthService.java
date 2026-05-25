@@ -14,6 +14,7 @@ import com.navatation.business.mapper.UserConfigMapper;
 import com.navatation.business.mapper.UserMapper;
 import com.navatation.common.BizException;
 import com.navatation.common.ResultCode;
+import com.navatation.common.IdUtils;
 import com.navatation.framework.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -26,9 +27,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
 
-/** @Author admin
+/**
+ * @Author admin
  * @CreateTime 2026-05-15
- * @Description 认证服务，处理用户注册、登录、登出、Token刷新等核心认证逻辑 */
+ * @Description 认证服务，处理用户注册、登录、登出、Token刷新等核心认证逻辑
+ */
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -48,7 +51,8 @@ public class AuthService {
     /**
      * 用户登录，校验用户名密码并生成Token对
      * @param req 登录请求
-     * @return 登录响应（含Token和用户信息） */
+     * @return 登录响应（含Token和用户信息）
+     */
     @Transactional
     public LoginVO login(LoginRequest req) {
         User user = userMapper.selectOne(
@@ -90,7 +94,8 @@ public class AuthService {
 
     /**
      * 用户注册，创建用户、默认配置和默认分类
-     * @param req 注册请求 */
+     * @param req 注册请求
+     */
     @Transactional
     public void register(RegisterRequest req) {
         if (!req.getPassword().equals(req.getConfirmPassword())) {
@@ -103,6 +108,7 @@ public class AuthService {
         }
 
         User user = new User();
+        user.setUserId(IdUtils.genUserId());
         user.setUsername(req.getUsername());
         user.setPassword(passwordEncoder.encode(req.getPassword()));
         user.setStatus(USER_STATUS_ENABLED);
@@ -110,12 +116,14 @@ public class AuthService {
 
         // 创建用户默认配置
         UserConfig config = new UserConfig();
+        config.setConfigId(IdUtils.genConfigId());
         config.setUserId(user.getUserId());
         userConfigMapper.insert(config);
 
         // 创建用户默认分类
         com.navatation.business.entity.NavCategory defaultCategory =
                 new com.navatation.business.entity.NavCategory();
+        defaultCategory.setCategoryId(IdUtils.genCategoryId());
         defaultCategory.setUserId(user.getUserId());
         defaultCategory.setName("常用");
         defaultCategory.setSortOrder(0);
@@ -126,9 +134,10 @@ public class AuthService {
     /**
      * 修改密码
      * @param userId 当前用户ID
-     * @param req 修改密码请求 */
+     * @param req 修改密码请求
+     */
     @Transactional
-    public void changePassword(Long userId, ChangePasswordRequest req) {
+    public void changePassword(String userId, ChangePasswordRequest req) {
         if (!req.getNewPassword().equals(req.getConfirmPassword())) {
             throw new BizException(ResultCode.BAD_REQUEST.getCode(), "两次输入新密码不一致");
         }
@@ -147,12 +156,13 @@ public class AuthService {
     /**
      * 刷新Token，验证RefreshToken后颁发新Token对
      * @param req 刷新Token请求
-     * @return 新的登录响应 */
+     * @return 新的登录响应
+     */
     public LoginVO refresh(RefreshTokenRequest req) {
         if (!jwtTokenProvider.validateToken(req.getRefreshToken())) {
             throw new BizException(ResultCode.TOKEN_INVALID);
         }
-        Long userId = jwtTokenProvider.getUserIdFromToken(req.getRefreshToken());
+        String userId = jwtTokenProvider.getUserIdFromToken(req.getRefreshToken());
         String storedToken = (String) redisTemplate.opsForValue().get("refresh_token:" + userId);
 
         if (storedToken == null || !storedToken.equals(req.getRefreshToken())) {
@@ -188,8 +198,9 @@ public class AuthService {
     /**
      * 用户登出，将AccessToken加入黑名单并移除RefreshToken
      * @param userId 用户ID
-     * @param token 待作废的AccessToken */
-    public void logout(Long userId, String token) {
+     * @param token 待作废的AccessToken
+     */
+    public void logout(String userId, String token) {
         String tokenId;
         try {
             tokenId = jwtTokenProvider.parseToken(token).getId();
@@ -208,8 +219,9 @@ public class AuthService {
     /**
      * 获取当前登录用户信息
      * @param userId 用户ID
-     * @return 用户信息 */
-    public UserVO getCurrentUser(Long userId) {
+     * @return 用户信息
+     */
+    public UserVO getCurrentUser(String userId) {
         User user = userMapper.selectById(userId);
         if (user == null) {
             throw new BizException(ResultCode.USER_NOT_FOUND);

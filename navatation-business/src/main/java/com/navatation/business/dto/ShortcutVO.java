@@ -4,8 +4,8 @@ import lombok.Data;
 
 @Data
 public class ShortcutVO {
-    private Long shortcutId;
-    private Long categoryId;
+    private String shortcutId;
+    private String categoryId;
     private String name;
     private String url;
     private String iconType;

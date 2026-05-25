@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class TodoVO {
-    private Long todoId;
+    private String todoId;
     private String content;
     private Boolean completed;
     private Integer sortOrder;

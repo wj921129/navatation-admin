@@ -4,6 +4,6 @@ import lombok.Data;
 
 @Data
 public class BatchCreateItemVO {
-    private Long shortcutId;
+    private String shortcutId;
     private String name;
 }

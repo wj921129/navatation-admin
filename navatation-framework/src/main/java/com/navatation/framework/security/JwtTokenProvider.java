@@ -14,9 +14,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.UUID;
 
-/** @Author admin
+/**
+ * @Author admin
  * @CreateTime 2026-05-15
- * @Description JWT Token 工具类，负责AccessToken和RefreshToken的生成、解析与校验 */
+ * @Description JWT Token 工具类，负责AccessToken和RefreshToken的生成、解析与校验
+ */
 @Component
 public class JwtTokenProvider {
 
@@ -39,8 +41,9 @@ public class JwtTokenProvider {
      * 生成访问令牌
      * @param userId 用户ID
      * @param username 用户名
-     * @return JWT AccessToken */
-    public String generateAccessToken(Long userId, String username) {
+     * @return JWT AccessToken
+     */
+    public String generateAccessToken(String userId, String username) {
         Date now = new Date();
         return Jwts.builder()
                 .id(UUID.randomUUID().toString())
@@ -55,8 +58,9 @@ public class JwtTokenProvider {
     /**
      * 生成刷新令牌
      * @param userId 用户ID
-     * @return JWT RefreshToken */
-    public String generateRefreshToken(Long userId) {
+     * @return JWT RefreshToken
+     */
+    public String generateRefreshToken(String userId) {
         Date now = new Date();
         return Jwts.builder()
                 .id(UUID.randomUUID().toString())
@@ -70,7 +74,8 @@ public class JwtTokenProvider {
     /**
      * 解析Token载荷
      * @param token JWT字符串
-     * @return Claims载荷 */
+     * @return Claims载荷
+     */
     public Claims parseToken(String token) {
         return Jwts.parser()
                 .verifyWith(secretKey)
@@ -82,7 +87,8 @@ public class JwtTokenProvider {
     /**
      * 校验Token是否有效
      * @param token JWT字符串
-     * @return true有效/false无效 */
+     * @return true有效/false无效
+     */
     public boolean validateToken(String token) {
         try {
             parseToken(token);
@@ -96,14 +102,17 @@ public class JwtTokenProvider {
     /**
      * 从Token中提取用户ID
      * @param token JWT字符串
-     * @return 用户ID */
-    public Long getUserIdFromToken(String token) {
-        return parseToken(token).get("userId", Long.class);
+     * @return 用户ID
+     */
+    public String getUserIdFromToken(String token) {
+        Object userIdObj = parseToken(token).get("userId");
+        return userIdObj != null ? userIdObj.toString() : null;
     }
 
     /**
      * 获取AccessToken过期时间（秒）
-     * @return 过期秒数 */
+     * @return 过期秒数
+     */
     public long getAccessTokenExpire() {
         return accessTokenExpire;
     }
@@ -111,7 +120,8 @@ public class JwtTokenProvider {
     /**
      * 从 Authorization 请求头中提取 Token 字符串（去除 Bearer 前缀）
      * @param authHeader Authorization 请求头
-     * @return Token 字符串 */
+     * @return Token 字符串
+     */
     public String extractTokenFromHeader(String authHeader) {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             return authHeader.substring(7);
@@ -122,8 +132,9 @@ public class JwtTokenProvider {
     /**
      * 从 Authorization 请求头中直接获取用户ID
      * @param authHeader Authorization 请求头
-     * @return 用户ID */
-    public Long getUserIdFromAuthHeader(String authHeader) {
+     * @return 用户ID
+     */
+    public String getUserIdFromAuthHeader(String authHeader) {
         String token = extractTokenFromHeader(authHeader);
         return getUserIdFromToken(token);
     }

@@ -8,14 +8,19 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import java.time.LocalDateTime;
 
-/** @Author admin
+/**
+ * @Author admin
  * @CreateTime 2026-05-15
- * @Description 用户实体 */
+ * @Description 用户实体
+ */
 @Data
 @TableName("navatation_user")
 public class User {
-    @TableId(type = IdType.ASSIGN_ID)
-    private Long userId;
+    private Long rowId;
+    
+    @TableId(type = IdType.INPUT)
+    private String userId;
+    
     private String username;
     private String password;
     private String email;
@@ -23,8 +28,10 @@ public class User {
     private Integer status;
     private LocalDateTime lastLoginAt;
     private String lastLoginIp;
+    
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
+    
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 }

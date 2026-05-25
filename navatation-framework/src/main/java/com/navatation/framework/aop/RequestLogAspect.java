@@ -109,8 +109,8 @@ public class RequestLogAspect {
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             try {
-                Long userId = jwtTokenProvider.getUserIdFromAuthHeader(authHeader);
-                return userId != null ? userId.toString() : "Anonymous";
+                String userId = jwtTokenProvider.getUserIdFromAuthHeader(authHeader);
+                return userId != null ? userId : "Anonymous";
             } catch (Exception e) {
                 // Token 无效或过期时直接降级为匿名访问，不破坏正常业务响应
                 return "Anonymous";

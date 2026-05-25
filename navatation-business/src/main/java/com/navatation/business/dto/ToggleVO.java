@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class ToggleVO {
-    private Long todoId;
+    private String todoId;
     private Boolean completed;
     private String completedAt;
 }

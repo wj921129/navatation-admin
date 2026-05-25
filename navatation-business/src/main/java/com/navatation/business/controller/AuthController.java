@@ -100,7 +100,7 @@ public class AuthController {
     public Result<?> changePassword(
             @RequestHeader("Authorization") String authHeader,
             @Valid @RequestBody EncryptedChangePasswordRequest req) {
-        Long userId = jwtTokenProvider.getUserIdFromAuthHeader(authHeader);
+        String userId = jwtTokenProvider.getUserIdFromAuthHeader(authHeader);
         log.info("用户修改密码 入参:userId={}", userId);
 
         // 1. 校验并消费 nonce
@@ -176,7 +176,7 @@ public class AuthController {
 
     @PostMapping("/logout")
     public Result<?> logout(@RequestHeader("Authorization") String authHeader) {
-        Long userId = jwtTokenProvider.getUserIdFromAuthHeader(authHeader);
+        String userId = jwtTokenProvider.getUserIdFromAuthHeader(authHeader);
         log.info("用户登出 入参:userId={}", userId);
         String token = jwtTokenProvider.extractTokenFromHeader(authHeader);
         authService.logout(userId, token);
@@ -186,7 +186,7 @@ public class AuthController {
 
     @GetMapping("/me")
     public Result<UserVO> me(@RequestHeader("Authorization") String authHeader) {
-        Long userId = jwtTokenProvider.getUserIdFromAuthHeader(authHeader);
+        String userId = jwtTokenProvider.getUserIdFromAuthHeader(authHeader);
         log.info("获取当前用户 入参:userId={}", userId);
         UserVO userVO = authService.getCurrentUser(userId);
         log.info("获取当前用户 出参:username={}", userVO.getUsername());

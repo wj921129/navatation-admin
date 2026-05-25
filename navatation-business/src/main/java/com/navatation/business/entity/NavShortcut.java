@@ -8,16 +8,21 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import java.time.LocalDateTime;
 
-/** @Author admin
+/**
+ * @Author admin
  * @CreateTime 2026-05-15
- * @Description 导航快捷方式实体 */
+ * @Description 导航快捷方式实体
+ */
 @Data
 @TableName("navatation_nav_shortcut")
 public class NavShortcut {
-    @TableId(type = IdType.AUTO)
-    private Long shortcutId;
-    private Long categoryId;
-    private Long userId;
+    private Long rowId;
+
+    @TableId(type = IdType.INPUT)
+    private String shortcutId;
+    
+    private String categoryId;
+    private String userId;
     private String name;
     private String url;
     private String iconType;
@@ -26,8 +31,10 @@ public class NavShortcut {
     private Integer sortOrder;
     private Long clickCount;
     private LocalDateTime lastClickAt;
+    
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
+    
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 }

@@ -31,9 +31,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
-/** @Author admin
+/**
+ * @Author admin
  * @CreateTime 2026-05-15
- * @Description 导航控制器，处理分类和快捷方式的CRUD、排序、Favicon获取及推荐站点 */
+ * @Description 导航控制器，处理分类和快捷方式的CRUD、排序、Favicon获取及推荐站点
+ */
 @RestController
 @RequestMapping("/api/v1/nav")
 @RequiredArgsConstructor
@@ -47,7 +49,7 @@ public class NavController {
     // ---- Category ----
     @GetMapping("/categories")
     public Result<List<CategoryVO>> getCategories(@RequestHeader("Authorization") String auth) {
-        Long userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
+        String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("获取分类列表 入参:userId={}", userId);
         List<CategoryVO> result = navService.getCategories(userId);
         log.info("获取分类列表 出参:count={}", result.size());
@@ -57,7 +59,7 @@ public class NavController {
     @PostMapping("/categories")
     public Result<CategoryVO> createCategory(@RequestHeader("Authorization") String auth,
                                               @RequestBody CategoryRequest req) {
-        Long userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
+        String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("创建分类 入参:userId={},name={}", userId, req.getName());
         CategoryVO result = navService.createCategory(userId, req);
         log.info("创建分类 出参:categoryId={}", result.getCategoryId());
@@ -66,9 +68,9 @@ public class NavController {
 
     @PutMapping("/categories/{categoryId}")
     public Result<?> updateCategory(@RequestHeader("Authorization") String auth,
-                                     @PathVariable Long categoryId,
+                                     @PathVariable String categoryId,
                                      @RequestBody CategoryRequest req) {
-        Long userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
+        String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("更新分类 入参:userId={},categoryId={}", userId, categoryId);
         navService.updateCategory(userId, categoryId, req);
         log.info("更新分类 出参:success=true");
@@ -77,8 +79,8 @@ public class NavController {
 
     @DeleteMapping("/categories/{categoryId}")
     public Result<?> deleteCategory(@RequestHeader("Authorization") String auth,
-                                     @PathVariable Long categoryId) {
-        Long userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
+                                     @PathVariable String categoryId) {
+        String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("删除分类 入参:userId={},categoryId={}", userId, categoryId);
         navService.deleteCategory(userId, categoryId);
         log.info("删除分类 出参:success=true");
@@ -88,8 +90,8 @@ public class NavController {
     // ---- Shortcut ----
     @GetMapping("/shortcuts")
     public Result<List<ShortcutVO>> getShortcuts(@RequestHeader("Authorization") String auth,
-                                                  @RequestParam(required = false) Long categoryId) {
-        Long userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
+                                                  @RequestParam(required = false) String categoryId) {
+        String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("获取快捷方式列表 入参:userId={},categoryId={}", userId, categoryId);
         List<ShortcutVO> result = navService.getShortcuts(userId, categoryId);
         log.info("获取快捷方式列表 出参:count={}", result.size());
@@ -99,7 +101,7 @@ public class NavController {
     @PostMapping("/shortcuts/batch")
     public Result<List<BatchCreateItemVO>> batchCreate(@RequestHeader("Authorization") String auth,
                                                  @RequestBody BatchCreateRequest req) {
-        Long userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
+        String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("批量创建快捷方式 入参:userId={},count={}", userId, req.getShortcuts().size());
         List<BatchCreateItemVO> result = navService.batchCreate(userId, req);
         log.info("批量创建快捷方式 出参:count={}", result.size());
@@ -108,9 +110,9 @@ public class NavController {
 
     @PutMapping("/shortcuts/{shortcutId}")
     public Result<ShortcutVO> updateShortcut(@RequestHeader("Authorization") String auth,
-                                              @PathVariable Long shortcutId,
+                                              @PathVariable String shortcutId,
                                               @RequestBody UpdateShortcutRequest req) {
-        Long userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
+        String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("更新快捷方式 入参:userId={},shortcutId={}", userId, shortcutId);
         ShortcutVO result = navService.updateShortcut(userId, shortcutId, req);
         log.info("更新快捷方式 出参:name={}", result.getName());
@@ -119,8 +121,8 @@ public class NavController {
 
     @DeleteMapping("/shortcuts/{shortcutId}")
     public Result<?> deleteShortcut(@RequestHeader("Authorization") String auth,
-                                     @PathVariable Long shortcutId) {
-        Long userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
+                                     @PathVariable String shortcutId) {
+        String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("删除快捷方式 入参:userId={},shortcutId={}", userId, shortcutId);
         navService.deleteShortcut(userId, shortcutId);
         log.info("删除快捷方式 出参:success=true");
@@ -130,7 +132,7 @@ public class NavController {
     @PutMapping("/shortcuts/sort")
     public Result<?> sortShortcuts(@RequestHeader("Authorization") String auth,
                                     @RequestBody SortRequest req) {
-        Long userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
+        String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("快捷方式排序 入参:userId={},count={}", userId, req.getItems().size());
         navService.sortShortcuts(userId, req);
         log.info("快捷方式排序 出参:success=true");
@@ -151,7 +153,7 @@ public class NavController {
     @PostMapping("/icon/upload")
     public Result<IconUploadVO> uploadIcon(@RequestHeader("Authorization") String auth,
                                             @RequestParam("file") MultipartFile file) {
-        Long userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
+        String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("上传图标 入参:userId={},filename={},size={}", userId, file.getOriginalFilename(), file.getSize());
         IconUploadVO result = navService.uploadIcon(userId, file);
         log.info("上传图标 出参:iconUrl={}", result.getIconUrl());

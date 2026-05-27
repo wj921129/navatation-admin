@@ -29,6 +29,9 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -309,13 +312,9 @@ public class NavService {
         }
     }
 
-    private static final Pattern FAVICON_PATTERN = Pattern.compile(
-            "<link[^>]*rel=[\"'](?:shortcut\\s+)?icon[\"'][^>]*href=[\"']([^\"']+)[\"']",
-            Pattern.CASE_INSENSITIVE);
-
     /**
      * 根据URL抓取站点Favicon地址
-     * 先请求页面HTML解析 <link rel="icon"> 标签，若失败则回退到 /favicon.ico
+     * 先查询Redis缓存，若未命中则通过Jsoup请求页面HTML解析 <link rel="icon"> 标签，若失败则回退到 /favicon.ico
      * @param url 站点URL
      * @return Favicon信息
      */
@@ -328,9 +327,32 @@ public class NavService {
                 throw new BizException(ResultCode.BAD_REQUEST);
             }
 
+            // 1. 先尝试从 Redis 缓存中获取
+            String cacheKey = "favicon:" + host;
+            try {
+                String cachedUrl = (String) redisTemplate.opsForValue().get(cacheKey);
+                if (cachedUrl != null) {
+                    log.info("Favicon 缓存命中 host: {} -> {}", host, cachedUrl);
+                    FaviconVO vo = new FaviconVO();
+                    vo.setFaviconUrl(cachedUrl);
+                    vo.setSourceUrl(url);
+                    return vo;
+                }
+            } catch (Exception e) {
+                log.warn("从 Redis 读取 Favicon 缓存失败: {}", e.getMessage());
+            }
+
+            // 2. 缓存未命中，进行网络爬取与解析
             String faviconUrl = tryExtractFromHtml(url, scheme, host);
             if (faviconUrl == null) {
                 faviconUrl = scheme + "://" + host + "/favicon.ico";
+            }
+
+            // 3. 将结果写入 Redis 缓存（缓存 7 天）
+            try {
+                redisTemplate.opsForValue().set(cacheKey, faviconUrl, 7, TimeUnit.DAYS);
+            } catch (Exception e) {
+                log.warn("写入 Redis Favicon 缓存失败: {}", e.getMessage());
             }
 
             FaviconVO vo = new FaviconVO();
@@ -344,23 +366,31 @@ public class NavService {
         }
     }
 
-    /** 请求页面HTML并解析 <link rel=\"icon\"> 标签，提取图标URL */
+    /** 请求页面HTML并使用 Jsoup 解析 <link rel="icon"> 标签，提取图标URL */
     private String tryExtractFromHtml(String pageUrl, String scheme, String host) {
         try {
-            org.springframework.web.client.RestTemplate rt = new org.springframework.web.client.RestTemplate();
-            rt.setRequestFactory(new org.springframework.http.client.SimpleClientHttpRequestFactory() {{
-                setConnectTimeout(5000);
-                setReadTimeout(5000);
-            }});
-            String html = rt.getForObject(pageUrl, String.class);
-            if (html == null || html.isEmpty()) return null;
+            Document doc = Jsoup.connect(pageUrl)
+                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                    .referrer("https://www.google.com")
+                    .timeout(5000)
+                    .followRedirects(true)
+                    .get();
 
-            Matcher matcher = FAVICON_PATTERN.matcher(html);
-            if (matcher.find()) {
-                return resolveFaviconUrl(matcher.group(1), scheme, host);
+            // 优先匹配 apple-touch-icon (通常是高清图标)
+            Element iconElement = doc.selectFirst("link[rel~=(?i)^(apple-touch-icon|apple-touch-icon-precomposed)$]");
+            if (iconElement == null) {
+                // 其次匹配普通的 icon 或 shortcut icon
+                iconElement = doc.selectFirst("link[rel~=(?i)^(shortcut )?icon$]");
+            }
+
+            if (iconElement != null) {
+                String href = iconElement.attr("href");
+                if (href != null && !href.isEmpty()) {
+                    return resolveFaviconUrl(href, scheme, host);
+                }
             }
         } catch (Exception e) {
-            log.warn("从页面 {} 解析Favicon失败: {}", pageUrl, e.getMessage());
+            log.warn("从页面 {} 用 Jsoup 解析 Favicon 失败: {}", pageUrl, e.getMessage());
         }
         return null;
     }

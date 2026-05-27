@@ -1,5 +1,6 @@
 package com.navatation.framework.security;
 
+import com.navatation.common.RedisConstants;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -50,7 +51,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        if (Boolean.TRUE.equals(redisTemplate.hasKey("blacklist:" + tokenId))) {
+        if (Boolean.TRUE.equals(redisTemplate.hasKey(RedisConstants.KEY_AUTH_BLACKLIST + tokenId))) {
             filterChain.doFilter(request, response);
             return;
         }

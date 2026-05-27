@@ -13,6 +13,7 @@ import com.navatation.business.mapper.NavCategoryMapper;
 import com.navatation.business.mapper.UserConfigMapper;
 import com.navatation.business.mapper.UserMapper;
 import com.navatation.common.BizException;
+import com.navatation.common.RedisConstants;
 import com.navatation.common.ResultCode;
 import com.navatation.common.IdUtils;
 import com.navatation.framework.security.JwtTokenProvider;
@@ -69,7 +70,7 @@ public class AuthService {
 
         // 存储刷新Token到Redis
         redisTemplate.opsForValue().set(
-                "refresh_token:" + user.getUserId(),
+                RedisConstants.KEY_AUTH_REFRESH_TOKEN + user.getUserId(),
                 refreshToken,
                 7, TimeUnit.DAYS);
 
@@ -163,7 +164,7 @@ public class AuthService {
             throw new BizException(ResultCode.TOKEN_INVALID);
         }
         String userId = jwtTokenProvider.getUserIdFromToken(req.getRefreshToken());
-        String storedToken = (String) redisTemplate.opsForValue().get("refresh_token:" + userId);
+        String storedToken = (String) redisTemplate.opsForValue().get(RedisConstants.KEY_AUTH_REFRESH_TOKEN + userId);
 
         if (storedToken == null || !storedToken.equals(req.getRefreshToken())) {
             throw new BizException(ResultCode.TOKEN_INVALID);
@@ -178,7 +179,7 @@ public class AuthService {
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(userId);
 
         redisTemplate.opsForValue().set(
-                "refresh_token:" + userId, newRefreshToken, 7, TimeUnit.DAYS);
+                RedisConstants.KEY_AUTH_REFRESH_TOKEN + userId, newRefreshToken, 7, TimeUnit.DAYS);
 
         UserVO userVO = new UserVO();
         userVO.setUserId(user.getUserId());
@@ -210,9 +211,9 @@ public class AuthService {
         }
         // 将访问Token加入黑名单
         long remaining = jwtTokenProvider.getAccessTokenExpire();
-        redisTemplate.opsForValue().set("blacklist:" + tokenId, "1", remaining, TimeUnit.SECONDS);
+        redisTemplate.opsForValue().set(RedisConstants.KEY_AUTH_BLACKLIST + tokenId, "1", remaining, TimeUnit.SECONDS);
         // 移除刷新Token
-        redisTemplate.delete("refresh_token:" + userId);
+        redisTemplate.delete(RedisConstants.KEY_AUTH_REFRESH_TOKEN + userId);
         log.info("用户登出成功 userId={}", userId);
     }
 

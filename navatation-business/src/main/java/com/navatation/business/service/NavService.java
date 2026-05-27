@@ -19,6 +19,7 @@ import com.navatation.business.entity.NavShortcut;
 import com.navatation.business.mapper.NavCategoryMapper;
 import com.navatation.business.mapper.NavShortcutMapper;
 import com.navatation.common.BizException;
+import com.navatation.common.RedisConstants;
 import com.navatation.common.ResultCode;
 import com.navatation.common.IdUtils;
 import lombok.RequiredArgsConstructor;
@@ -328,7 +329,7 @@ public class NavService {
             }
 
             // 1. 先尝试从 Redis 缓存中获取
-            String cacheKey = "favicon:" + host;
+            String cacheKey = RedisConstants.KEY_NAV_FAVICON + host;
             try {
                 String cachedUrl = (String) redisTemplate.opsForValue().get(cacheKey);
                 if (cachedUrl != null) {
@@ -439,7 +440,7 @@ public class NavService {
         }
 
         // 3. 上传频率限制（Redis 计数器）
-        String rateKey = "rate:icon_upload:" + userId;
+        String rateKey = RedisConstants.KEY_NAV_RATE_UPLOAD + userId;
         Long count = redisTemplate.opsForValue().increment(rateKey);
         if (count != null && count == 1) {
             redisTemplate.expire(rateKey, 1, TimeUnit.HOURS);

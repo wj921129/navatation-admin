@@ -1,5 +1,6 @@
 package com.navatation.framework.security;
 
+import com.navatation.common.RedisConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -18,7 +19,7 @@ public class NonceService {
 
     private static final Logger log = LoggerFactory.getLogger(NonceService.class);
 
-    private static final String NONCE_PREFIX = "nonce:";
+    private static final String NONCE_PREFIX = RedisConstants.KEY_AUTH_NONCE;
     private static final long NONCE_TTL = 5;
     private static final TimeUnit NONCE_TTL_UNIT = TimeUnit.MINUTES;
 

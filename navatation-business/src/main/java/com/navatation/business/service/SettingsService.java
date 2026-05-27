@@ -90,11 +90,11 @@ public class SettingsService {
      */
     public WallpaperVO uploadWallpaper(String userId, MultipartFile file) {
         try {
-            String targetDir = wallpaperPath + java.io.File.separator + "U" + userId;
+            String targetDir = wallpaperPath + java.io.File.separator + userId;
             String uniqueFileName = com.navatation.common.FileUploadUtil.saveFile(file, targetDir);
             
             WallpaperVO vo = new WallpaperVO();
-            vo.setWallpaperUrl("/uploads/back_ground/custom/U" + userId + "/" + uniqueFileName);
+            vo.setWallpaperUrl("/uploads/back_ground/custom/" + userId + "/" + uniqueFileName);
             log.info("壁纸上传成功 userId={}, filename={}", userId, uniqueFileName);
             return vo;
         } catch (Exception e) {

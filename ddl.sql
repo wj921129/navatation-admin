@@ -235,3 +235,26 @@ INSERT INTO `navatation_recommend_site` (`site_id`, `category_id`, `name`, `url`
 -- 存量用户数据适配：前端响应式搜索框占比修改
 -- ============================================================
 UPDATE `navatation_user_config` SET `search_box_width` = ROUND(`search_box_width` * 0.5) WHERE `search_box_width` > 50;
+
+-- ============================================================
+-- 变更日期：2026-06-03
+-- 功能用途：8. 用户组件表 (navatation_user_widget)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `navatation_user_widget` (
+    `row_id`         BIGINT       UNSIGNED NOT NULL AUTO_INCREMENT  COMMENT '自增物理主键',
+    `widget_id`      VARCHAR(64)           NOT NULL                COMMENT '组件ID，业务逻辑主键，带前缀WG的随机22位纯数字字符串',
+    `user_id`        VARCHAR(64)           NOT NULL                COMMENT '所属用户ID，关联 navatation_user.user_id',
+    `type`           VARCHAR(32)           NOT NULL                COMMENT '组件类型，如：clock, weather, calendar',
+    `style`          VARCHAR(32)           NOT NULL                COMMENT '组件样式，如：analog, digital, flip, traditional',
+    `x`              DECIMAL(5, 2)         NOT NULL                COMMENT 'X轴百分比位置 (0.00 - 100.00)',
+    `y`              DECIMAL(5, 2)         NOT NULL                COMMENT 'Y轴百分比位置 (0.00 - 100.00)',
+    `meta`           VARCHAR(2048)         DEFAULT NULL            COMMENT '可选元数据，JSON字符串（用于扩展其他组件的专有属性）',
+    `created_at`     DATETIME              NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at`     DATETIME              NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`row_id`),
+    UNIQUE KEY `uk_widget_id` (`widget_id`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_user_type` (`user_id`, `type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='用户组件表 - 存储用户在桌面上自定义添加的组件信息';
+

@@ -68,4 +68,14 @@ public class IdUtils {
     public static String genRecommendSiteId() {
         return "RS" + getRandomDigits(22);
     }
+
+    /**
+     * 生成用户组件 ID (Widget ID) — 前缀 'WG'
+     *
+     * @return 带前缀 WG 的 22 位纯数字随机字符串
+     */
+    public static String genWidgetId() {
+        return "WG" + getRandomDigits(22);
+    }
 }
+

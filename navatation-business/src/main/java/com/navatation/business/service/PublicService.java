@@ -62,19 +62,8 @@ public class PublicService {
         }
         vo.setSettings(settingsVO);
         
-        // 游客统一使用推荐小组件表中的数据
-        List<com.navatation.business.dto.RecommendWidgetVO> recommendWidgets = recommendWidgetService.getRecommendWidgets();
-        List<WidgetVO> widgetVOs = new java.util.ArrayList<>();
-        for (com.navatation.business.dto.RecommendWidgetVO rw : recommendWidgets) {
-            WidgetVO wvo = new WidgetVO();
-            wvo.setWidgetId(rw.getWidgetId());
-            wvo.setType(rw.getWidgetType());
-            wvo.setStyle(rw.getWidgetStyle());
-            wvo.setX(rw.getLayoutX());
-            wvo.setY(rw.getLayoutY());
-            wvo.setMeta(rw.getWidgetData());
-            widgetVOs.add(wvo);
-        }
+        // 游客所有配置都与管理员首页样式同步，因此小组件直接使用管理员的组件配置
+        List<WidgetVO> widgetVOs = widgetService.getWidgets(adminId);
         vo.setWidgets(widgetVOs);
         
         vo.setCategories(navService.getCategories(adminId));

@@ -48,13 +48,6 @@ public class SettingsService {
      * @return 用户设置
      */
     public SettingsVO getSettings(String userId) {
-        User user = userMapper.selectById(userId);
-        if (user != null && "ADMIN".equals(user.getRole())) {
-            RecommendConfig rc = recommendConfigMapper.selectOne(new LambdaQueryWrapper<RecommendConfig>().last("LIMIT 1"));
-            if (rc == null) return new SettingsVO(); // fallback
-            return toVO(rc);
-        }
-
         UserConfig config = userConfigMapper.selectOne(
                 new LambdaQueryWrapper<UserConfig>().eq(UserConfig::getUserId, userId));
         if (config == null) {
@@ -69,17 +62,6 @@ public class SettingsService {
      * @param req 设置请求
      */
     public void saveSettings(String userId, SettingsRequest req) {
-        User user = userMapper.selectById(userId);
-        if (user != null && "ADMIN".equals(user.getRole())) {
-            RecommendConfig rc = recommendConfigMapper.selectOne(new LambdaQueryWrapper<RecommendConfig>().last("LIMIT 1"));
-            if (rc != null) {
-                applyRequest(rc, req);
-                recommendConfigMapper.updateById(rc);
-                log.info("保存推荐全局设置成功");
-            }
-            return;
-        }
-
         UserConfig config = userConfigMapper.selectOne(
                 new LambdaQueryWrapper<UserConfig>().eq(UserConfig::getUserId, userId));
         if (config == null) {
@@ -96,17 +78,6 @@ public class SettingsService {
      * @param req 设置请求
      */
     public void patchSettings(String userId, SettingsRequest req) {
-        User user = userMapper.selectById(userId);
-        if (user != null && "ADMIN".equals(user.getRole())) {
-            RecommendConfig rc = recommendConfigMapper.selectOne(new LambdaQueryWrapper<RecommendConfig>().last("LIMIT 1"));
-            if (rc != null) {
-                applyRequest(rc, req);
-                recommendConfigMapper.updateById(rc);
-                log.info("局部更新推荐全局设置成功");
-            }
-            return;
-        }
-
         UserConfig config = userConfigMapper.selectOne(
                 new LambdaQueryWrapper<UserConfig>().eq(UserConfig::getUserId, userId));
         if (config == null) {

@@ -57,6 +57,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
+import jakarta.annotation.PreDestroy;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -95,6 +104,26 @@ public class NavService {
     private final RecommendSiteMapper recommendSiteMapper;
     private final UserMapper userMapper;
     private final RedisTemplate<String, Object> redisTemplate;
+
+    /**
+     * 专门为批量抓取 Favicon 设计的独立有界线程池，防止 OOM 并提供反压
+     */
+    private final ExecutorService faviconExecutor = new ThreadPoolExecutor(
+            5,                      // 核心线程数
+            10,                     // 最大线程数
+            60L, TimeUnit.SECONDS,  // 闲置线程存活时间
+            new LinkedBlockingQueue<>(200), // 有界队列长度200，限制排队任务数，防止内存膨胀
+            new ThreadFactory() {
+                private final AtomicInteger count = new AtomicInteger(0);
+                @Override
+                public Thread newThread(Runnable r) {
+                    Thread t = new Thread(r, "favicon-crawler-" + count.incrementAndGet());
+                    t.setDaemon(true); // 设置为守护线程，JVM 退出时能自动退出
+                    return t;
+                }
+            },
+            new ThreadPoolExecutor.CallerRunsPolicy() // 拒绝策略：如果队列满了，由调用者线程直接执行抓取，提供自然反压，限制请求流入速度
+    );
 
     private boolean isAdmin(String userId) {
         User user = userMapper.selectById(userId);
@@ -566,6 +595,106 @@ public class NavService {
         } catch (Exception e) {
             throw new BizException(ResultCode.BAD_REQUEST);
         }
+    }
+
+    /**
+     * 批量抓取网址图标，限制单次上限以防止 OOM，设置超时控制以防止 Tomcat 线程积压
+     * 
+     * @param urls 待抓取的 URL 列表
+     * @return URL 到 FaviconVO 的映射 Map
+     */
+    public Map<String, FaviconVO> fetchFaviconsInBatch(List<String> urls) {
+        if (urls == null || urls.isEmpty()) {
+            return new ConcurrentHashMap<>();
+        }
+        if (urls.size() > 100) {
+            throw new BizException(ResultCode.BAD_REQUEST.getCode(), "单次批量刷新最多支持100个网址");
+        }
+
+        // 1. 去重，避免多线程抓取重复 URL
+        List<String> uniqueUrls = urls.stream()
+                .filter(u -> u != null && !u.trim().isEmpty())
+                .distinct()
+                .collect(Collectors.toList());
+
+        Map<String, FaviconVO> results = new ConcurrentHashMap<>();
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+
+        // 2. 异步并行抓取
+        for (String url : uniqueUrls) {
+            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                try {
+                    FaviconVO vo = fetchFavicon(url);
+                    results.put(url, vo);
+                } catch (Exception e) {
+                    log.warn("批量抓取单个 Favicon 异常 url: {}, error: {}", url, e.getMessage());
+                    FaviconVO fallbackVo = new FaviconVO();
+                    fallbackVo.setSourceUrl(url);
+                    // 抓取失败则回填默认的 /favicon.ico 兜底
+                    try {
+                        java.net.URI uri = new java.net.URI(url);
+                        String scheme = uri.getScheme();
+                        String host = uri.getHost();
+                        if (scheme != null && host != null) {
+                            fallbackVo.setFaviconUrl(scheme + "://" + host + "/favicon.ico");
+                        }
+                    } catch (Exception ex) {
+                        // 忽略
+                    }
+                    results.put(url, fallbackVo);
+                }
+            }, faviconExecutor);
+            futures.add(future);
+        }
+
+        // 3. 全局 15 秒超时控制，确保 Tomcat 线程被及时释放
+        try {
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                    .get(15, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            log.warn("批量抓取 Favicon 部分任务执行超时，已自动截断");
+        } catch (Exception e) {
+            log.error("批量抓取 Favicon 时发生并发等待异常", e);
+        }
+
+        // 对于没有被成功回填的 URL 补充兜底，确保前端拿到的 Map key 完整
+        for (String url : uniqueUrls) {
+            results.computeIfAbsent(url, u -> {
+                FaviconVO fallback = new FaviconVO();
+                fallback.setSourceUrl(u);
+                try {
+                    java.net.URI uri = new java.net.URI(u);
+                    String scheme = uri.getScheme();
+                    String host = uri.getHost();
+                    if (scheme != null && host != null) {
+                        fallback.setFaviconUrl(scheme + "://" + host + "/favicon.ico");
+                    }
+                } catch (Exception e) {
+                    // 忽略
+                }
+                return fallback;
+            });
+        }
+
+        return results;
+    }
+
+    /**
+     * 服务停用时优雅关闭线程池
+     */
+    @PreDestroy
+    public void destroyExecutor() {
+        log.info("正在关闭 NavService 批量抓取 Favicon 线程池...");
+        faviconExecutor.shutdown();
+        try {
+            if (!faviconExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                faviconExecutor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            faviconExecutor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+        log.info("NavService 批量抓取 Favicon 线程池已安全关闭。");
     }
 
     /** 请求页面HTML并使�?Jsoup 解析 <link rel="icon"> 标签，提取图标URL */

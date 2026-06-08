@@ -15,6 +15,7 @@ import com.navatation.business.dto.RecommendCategoryRequest;
 import com.navatation.business.dto.RecommendSiteRequest;
 import com.navatation.business.dto.RecommendSiteVO;
 import com.navatation.business.dto.BatchRecommendSiteSaveRequest;
+import com.navatation.business.dto.BatchFaviconRequest;
 import com.navatation.business.service.NavService;
 import com.navatation.common.Result;
 import com.navatation.framework.security.JwtTokenProvider;
@@ -35,6 +36,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @Author admin
@@ -151,6 +153,15 @@ public class NavController {
         log.info("获取Favicon 入参:url={}", req.getUrl());
         FaviconVO result = navService.fetchFavicon(req.getUrl());
         log.info("获取Favicon 出参:faviconUrl={}", result.getFaviconUrl());
+        return Result.success(result);
+    }
+
+    @PostMapping("/favicon/batch")
+    public Result<Map<String, FaviconVO>> fetchFaviconsInBatch(@RequestHeader("Authorization") String auth,
+                                                               @RequestBody @Valid BatchFaviconRequest req) {
+        log.info("批量获取Favicon 入参:urls count={}", req.getUrls() != null ? req.getUrls().size() : 0);
+        Map<String, FaviconVO> result = navService.fetchFaviconsInBatch(req.getUrls());
+        log.info("批量获取Favicon 出参:count={}", result.size());
         return Result.success(result);
     }
 

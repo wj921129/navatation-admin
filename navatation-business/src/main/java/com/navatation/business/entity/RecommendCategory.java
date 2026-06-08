@@ -24,7 +24,7 @@ public class RecommendCategory {
     private String name;
     @TableField("icon_name")
     private String icon;
-    private Integer sortOrder;
+    private Double sortOrder;
     
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

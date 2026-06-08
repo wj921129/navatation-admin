@@ -6,5 +6,5 @@ import lombok.Data;
 public class RecommendCategoryRequest {
     private String name;
     private String icon;
-    private Integer sortOrder;
+    private Double sortOrder;
 }

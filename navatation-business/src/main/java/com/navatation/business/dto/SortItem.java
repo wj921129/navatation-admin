@@ -5,5 +5,5 @@ import lombok.Data;
 @Data
 public class SortItem {
     private String shortcutId;
-    private Integer sortOrder;
+    private Double sortOrder;
 }

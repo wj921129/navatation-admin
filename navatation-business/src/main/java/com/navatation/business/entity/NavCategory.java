@@ -23,7 +23,7 @@ public class NavCategory {
     
     private String userId;
     private String name;
-    private Integer sortOrder;
+    private Double sortOrder;
     
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

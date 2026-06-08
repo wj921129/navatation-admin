@@ -11,6 +11,6 @@ public class ShortcutVO {
     private String iconType;
     private String iconValue;
     private String iconColor;
-    private Integer sortOrder;
+    private Double sortOrder;
     private String createdAt;
 }

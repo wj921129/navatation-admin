@@ -67,16 +67,16 @@ public class TodoService {
      * @return 创建的待办项
      */
     public TodoVO create(String userId, TodoCreateRequest req) {
-        int maxSort = todoItemMapper.selectList(
+        double maxSort = todoItemMapper.selectList(
                 new LambdaQueryWrapper<TodoItem>().eq(TodoItem::getUserId, userId))
-                .stream().mapToInt(TodoItem::getSortOrder).max().orElse(0);
+                .stream().mapToDouble(item -> item.getSortOrder() != null ? item.getSortOrder() : 0.0).max().orElse(0.0);
 
         TodoItem item = new TodoItem();
         item.setTodoId(IdUtils.genTodoId());
         item.setUserId(userId);
         item.setContent(req.getContent());
         item.setCompleted(false);
-        item.setSortOrder(maxSort + 1);
+        item.setSortOrder(maxSort + 1.0);
         todoItemMapper.insert(item);
         log.info("创建待办成功 userId={} todoId={}", userId, item.getTodoId());
         return toVO(item);

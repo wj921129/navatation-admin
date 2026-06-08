@@ -7,5 +7,5 @@ import lombok.Data;
 public class CategoryRequest {
     @NotBlank
     private String name;
-    private Integer sortOrder;
+    private Double sortOrder;
 }

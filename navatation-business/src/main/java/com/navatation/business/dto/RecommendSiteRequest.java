@@ -10,5 +10,5 @@ public class RecommendSiteRequest {
     private String iconType;
     private String iconValue;
     private String iconColor;
-    private Integer sortOrder;
+    private Double sortOrder;
 }

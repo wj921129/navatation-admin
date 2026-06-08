@@ -28,7 +28,7 @@ public class NavShortcut {
     private String iconType;
     private String iconValue;
     private String iconColor;
-    private Integer sortOrder;
+    private Double sortOrder;
     private Long clickCount;
     private LocalDateTime lastClickAt;
     

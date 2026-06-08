@@ -6,6 +6,6 @@ import lombok.Data;
 public class CategoryVO {
     private String categoryId;
     private String name;
-    private Integer sortOrder;
+    private Double sortOrder;
     private Integer shortcutCount;
 }

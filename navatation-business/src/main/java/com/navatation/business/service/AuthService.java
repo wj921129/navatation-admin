@@ -129,7 +129,7 @@ public class AuthService {
         defaultCategory.setCategoryId(IdUtils.genCategoryId());
         defaultCategory.setUserId(user.getUserId());
         defaultCategory.setName("常用");
-        defaultCategory.setSortOrder(0);
+        defaultCategory.setSortOrder(0.0);
         navCategoryMapper.insert(defaultCategory);
         log.info("用户注册成功 userId={} username={}", user.getUserId(), user.getUsername());
     }

@@ -27,7 +27,7 @@ public class RecommendSite {
     private String iconType;
     private String iconValue;
     private String iconColor;
-    private Integer sortOrder;
+    private Double sortOrder;
     
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

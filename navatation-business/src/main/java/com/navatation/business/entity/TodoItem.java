@@ -24,7 +24,7 @@ public class TodoItem {
     private String userId;
     private String content;
     private Boolean completed;
-    private Integer sortOrder;
+    private Double sortOrder;
     private LocalDateTime completedAt;
     
     @TableField(fill = FieldFill.INSERT)

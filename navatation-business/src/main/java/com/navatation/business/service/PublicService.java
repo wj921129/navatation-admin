@@ -5,8 +5,11 @@ import com.navatation.business.dto.CategoryVO;
 import com.navatation.business.dto.GuestConfigVO;
 import com.navatation.business.dto.ShortcutVO;
 import com.navatation.business.dto.WidgetVO;
+import com.navatation.business.entity.RecommendConfig;
+import com.navatation.business.mapper.RecommendConfigMapper;
 import com.navatation.business.entity.User;
 import com.navatation.business.mapper.UserMapper;
+import com.navatation.business.dto.SettingsVO;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +27,7 @@ public class PublicService {
     private final SettingsService settingsService;
     private final WidgetService widgetService;
     private final NavService navService;
+    private final RecommendConfigMapper recommendConfigMapper;
 
     public GuestConfigVO getGuestConfig() {
         // Find ADMIN user
@@ -35,7 +39,27 @@ public class PublicService {
 
         String adminId = admin.getUserId();
         GuestConfigVO vo = new GuestConfigVO();
-        vo.setSettings(settingsService.getSettings(adminId));
+        
+        RecommendConfig rc = recommendConfigMapper.selectOne(new LambdaQueryWrapper<RecommendConfig>().last("LIMIT 1"));
+        SettingsVO settingsVO = new SettingsVO();
+        if (rc != null) {
+            settingsVO.setSearchEngine(rc.getSearchEngine());
+            settingsVO.setBackgroundImage(rc.getBackgroundImage());
+            settingsVO.setBackgroundType(rc.getBackgroundType());
+            settingsVO.setSearchBoxWidth(rc.getSearchBoxWidth());
+            settingsVO.setSearchBoxHeight(rc.getSearchBoxHeight());
+            settingsVO.setSearchBoxMarginTop(rc.getSearchBoxMarginTop());
+            settingsVO.setIconSize(rc.getIconSize());
+            settingsVO.setIconRadius(rc.getIconRadius());
+            settingsVO.setIconSpacingX(rc.getIconSpacingX());
+            settingsVO.setIconSpacingY(rc.getIconSpacingY());
+            settingsVO.setIconTextGap(rc.getIconTextGap());
+            settingsVO.setTextSize(rc.getTextSize());
+            settingsVO.setIconsMarginTop(rc.getIconsMarginTop());
+            settingsVO.setIconsMarginX(rc.getIconsMarginX());
+            settingsVO.setTheme(rc.getTheme());
+        }
+        vo.setSettings(settingsVO);
         vo.setWidgets(widgetService.getWidgets(adminId));
         vo.setCategories(navService.getCategories(adminId));
         vo.setShortcuts(navService.getShortcuts(adminId, null));

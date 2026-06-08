@@ -11,5 +11,5 @@ public class RecommendSiteVO {
     private String iconType;
     private String iconValue;
     private String iconColor;
-    private Double sortOrder;
+
 }

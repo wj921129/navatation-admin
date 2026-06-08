@@ -828,7 +828,7 @@ public class NavService {
                 siteVO.setIconType(site.getIconType());
                 siteVO.setIconValue(site.getIconValue());
                 siteVO.setIconColor(site.getIconColor());
-                siteVO.setSortOrder(site.getSortOrder());
+
                 return siteVO;
             }).collect(Collectors.toList());
             vo.setSites(siteVOs);
@@ -898,7 +898,7 @@ public class NavService {
         site.setIconType(req.getIconType());
         site.setIconValue(req.getIconValue());
         site.setIconColor(req.getIconColor());
-        site.setSortOrder(req.getSortOrder() != null ? req.getSortOrder() : 0.0);
+        site.setSortOrder(0.0);
         recommendSiteMapper.insert(site);
         
         RecommendSiteVO vo = new RecommendSiteVO();
@@ -909,7 +909,7 @@ public class NavService {
         vo.setIconType(site.getIconType());
         vo.setIconValue(site.getIconValue());
         vo.setIconColor(site.getIconColor());
-        vo.setSortOrder(site.getSortOrder());
+
         return vo;
     }
     
@@ -928,7 +928,7 @@ public class NavService {
         if (req.getIconType() != null) site.setIconType(req.getIconType());
         if (req.getIconValue() != null) site.setIconValue(req.getIconValue());
         if (req.getIconColor() != null) site.setIconColor(req.getIconColor());
-        if (req.getSortOrder() != null) site.setSortOrder(req.getSortOrder());
+
         recommendSiteMapper.updateById(site);
     }
     
@@ -995,7 +995,10 @@ public class NavService {
         List<RecommendSite> insertList = new ArrayList<>();
         List<RecommendSite> updateList = new ArrayList<>();
         
-        for (RecommendSiteItem item : incomingSites) {
+        for (int i = 0; i < incomingSites.size(); i++) {
+            RecommendSiteItem item = incomingSites.get(i);
+            double currentSortOrder = (double) i + 1;
+            
             if (item.getSiteId() != null && !item.getSiteId().isEmpty() && existingMap.containsKey(item.getSiteId())) {
                 // 更新
                 RecommendSite dbSite = existingMap.get(item.getSiteId());
@@ -1004,7 +1007,7 @@ public class NavService {
                 dbSite.setIconType(item.getIconType());
                 dbSite.setIconValue(item.getIconValue());
                 dbSite.setIconColor(item.getIconColor());
-                dbSite.setSortOrder(item.getSortOrder() != null ? item.getSortOrder() : 0.0);
+                dbSite.setSortOrder(currentSortOrder);
                 updateList.add(dbSite);
             } else {
                 // 新增插入
@@ -1016,7 +1019,7 @@ public class NavService {
                 newSite.setIconType(item.getIconType() != null ? item.getIconType() : "FAVICON");
                 newSite.setIconValue(item.getIconValue());
                 newSite.setIconColor(item.getIconColor());
-                newSite.setSortOrder(item.getSortOrder() != null ? item.getSortOrder() : 0.0);
+                newSite.setSortOrder(currentSortOrder);
                 insertList.add(newSite);
             }
         }

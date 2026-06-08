@@ -34,7 +34,5 @@ public class RecommendSiteItem {
     /** 图标展示颜色（仅内置图标类型生效） */
     private String iconColor;
     
-    /** 排序序号（支持以小数形式精确排序） */
-    @NotNull(message = "排序序号不能为空")
-    private Double sortOrder;
+
 }

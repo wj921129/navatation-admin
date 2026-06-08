@@ -13,6 +13,7 @@ import com.navatation.business.dto.SortRequest;
 import com.navatation.business.dto.UpdateShortcutRequest;
 import com.navatation.business.dto.RecommendCategoryRequest;
 import com.navatation.business.dto.RecommendSiteRequest;
+import com.navatation.business.dto.RecommendSiteVO;
 import com.navatation.business.service.NavService;
 import com.navatation.common.Result;
 import com.navatation.framework.security.JwtTokenProvider;

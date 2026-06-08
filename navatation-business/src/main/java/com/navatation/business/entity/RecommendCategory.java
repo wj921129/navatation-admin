@@ -22,6 +22,7 @@ public class RecommendCategory {
     private String categoryId;
     
     private String name;
+    @TableField("icon_name")
     private String icon;
     private Integer sortOrder;
     

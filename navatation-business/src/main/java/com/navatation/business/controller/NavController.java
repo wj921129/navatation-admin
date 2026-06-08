@@ -14,9 +14,11 @@ import com.navatation.business.dto.UpdateShortcutRequest;
 import com.navatation.business.dto.RecommendCategoryRequest;
 import com.navatation.business.dto.RecommendSiteRequest;
 import com.navatation.business.dto.RecommendSiteVO;
+import com.navatation.business.dto.BatchRecommendSiteSaveRequest;
 import com.navatation.business.service.NavService;
 import com.navatation.common.Result;
 import com.navatation.framework.security.JwtTokenProvider;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -226,5 +228,24 @@ public class NavController {
         log.info("删除推荐网址 入参:userId={},siteId={}", userId, siteId);
         navService.deleteRecommendSite(userId, siteId);
         return Result.success("删除成功", null);
+    }
+
+    /**
+     * 批量保存指定分类下的推荐网址
+     *
+     * @param auth 认证Token
+     * @param categoryId 推荐分类ID
+     * @param req 批量保存推荐网址的请求数据
+     * @return 统一返回结果
+     */
+    @PostMapping("/recommended/categories/{categoryId}/sites/batch")
+    public Result<?> batchSaveRecommendSites(@RequestHeader("Authorization") String auth,
+                                             @PathVariable String categoryId,
+                                             @RequestBody @Valid BatchRecommendSiteSaveRequest req) {
+        String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
+        log.info("批量保存推荐网址 入参:userId={},categoryId={},count={}", userId, categoryId, req.getSites() != null ? req.getSites().size() : 0);
+        navService.batchSaveRecommendSites(userId, categoryId, req);
+        log.info("批量保存推荐网址 出参:success=true");
+        return Result.success("保存成功", null);
     }
 }

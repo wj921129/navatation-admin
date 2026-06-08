@@ -7,8 +7,8 @@ import com.navatation.business.dto.RefreshTokenRequest;
 import com.navatation.business.dto.ChangePasswordRequest;
 import com.navatation.business.dto.RegisterRequest;
 import com.navatation.business.dto.UserVO;
-import com.navatation.business.entity.User;
-import com.navatation.business.entity.UserConfig;
+import com.navatation.business.entity.user.User;
+import com.navatation.business.entity.user.UserConfig;
 import com.navatation.business.mapper.NavCategoryMapper;
 import com.navatation.business.mapper.UserConfigMapper;
 import com.navatation.business.mapper.UserMapper;
@@ -124,8 +124,8 @@ public class AuthService {
         userConfigMapper.insert(config);
 
         // 创建用户默认分类
-        com.navatation.business.entity.NavCategory defaultCategory =
-                new com.navatation.business.entity.NavCategory();
+        com.navatation.business.entity.nav.NavCategory defaultCategory =
+                new com.navatation.business.entity.nav.NavCategory();
         defaultCategory.setCategoryId(IdUtils.genCategoryId());
         defaultCategory.setUserId(user.getUserId());
         defaultCategory.setName("常用");

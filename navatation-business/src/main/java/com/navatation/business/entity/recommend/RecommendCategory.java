@@ -1,4 +1,4 @@
-package com.navatation.business.entity;
+package com.navatation.business.entity.recommend;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
@@ -10,27 +10,21 @@ import java.time.LocalDateTime;
 
 /**
  * @Author admin
- * @CreateTime 2026-05-15
- * @Description 导航快捷方式实体
+ * @CreateTime 2026-06-08
+ * @Description 推荐网址分类实体
  */
 @Data
-@TableName("navatation_nav_shortcut")
-public class NavShortcut {
+@TableName("navatation_recommend_category")
+public class RecommendCategory {
     private Long rowId;
-
-    @TableId(type = IdType.INPUT)
-    private String shortcutId;
     
+    @TableId(type = IdType.INPUT)
     private String categoryId;
-    private String userId;
+    
     private String name;
-    private String url;
-    private String iconType;
-    private String iconValue;
-    private String iconColor;
+    @TableField("icon_name")
+    private String icon;
     private Double sortOrder;
-    private Long clickCount;
-    private LocalDateTime lastClickAt;
     
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

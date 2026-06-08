@@ -1,4 +1,4 @@
-package com.navatation.business.entity;
+package com.navatation.business.entity.root;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
@@ -9,23 +9,21 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * @Author admin
- * @CreateTime 2026-05-15
- * @Description 待办事项实体
+ * @Author root
+ * @CreateTime 2026-06-08
+ * @Description 管理员导航分类实体
  */
 @Data
-@TableName("navatation_todo_item")
-public class TodoItem {
+@TableName("navatation_root_nav_category")
+public class RootCategory {
     private Long rowId;
 
     @TableId(type = IdType.INPUT)
-    private String todoId;
+    private String categoryId;
     
     private String userId;
-    private String content;
-    private Boolean completed;
+    private String name;
     private Double sortOrder;
-    private LocalDateTime completedAt;
     
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

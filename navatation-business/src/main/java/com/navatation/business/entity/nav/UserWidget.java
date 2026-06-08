@@ -1,4 +1,4 @@
-package com.navatation.business.entity;
+package com.navatation.business.entity.nav;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;

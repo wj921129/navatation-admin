@@ -8,7 +8,7 @@ import com.navatation.business.dto.TodoSortRequest;
 import com.navatation.business.dto.TodoUpdateRequest;
 import com.navatation.business.dto.TodoVO;
 import com.navatation.business.dto.ToggleVO;
-import com.navatation.business.entity.TodoItem;
+import com.navatation.business.entity.nav.TodoItem;
 import com.navatation.business.mapper.RootTodoItemMapper;
 import com.navatation.business.mapper.TodoItemMapper;
 import com.navatation.business.mapper.UserMapper;
@@ -43,7 +43,7 @@ public class TodoService {
     private final UserMapper userMapper;
 
     private boolean isAdmin(String userId) {
-        com.navatation.business.entity.User user = userMapper.selectById(userId);
+        com.navatation.business.entity.user.User user = userMapper.selectById(userId);
         return user != null && "ADMIN".equals(user.getRole());
     }
 
@@ -55,14 +55,14 @@ public class TodoService {
      */
     public List<TodoVO> getList(String userId, String status) {
         if (isAdmin(userId)) {
-            LambdaQueryWrapper<com.navatation.business.entity.RootTodoItem> wrapper = new LambdaQueryWrapper<com.navatation.business.entity.RootTodoItem>()
-                    .eq(com.navatation.business.entity.RootTodoItem::getUserId, userId)
-                    .orderByAsc(com.navatation.business.entity.RootTodoItem::getSortOrder);
+            LambdaQueryWrapper<com.navatation.business.entity.root.RootTodoItem> wrapper = new LambdaQueryWrapper<com.navatation.business.entity.root.RootTodoItem>()
+                    .eq(com.navatation.business.entity.root.RootTodoItem::getUserId, userId)
+                    .orderByAsc(com.navatation.business.entity.root.RootTodoItem::getSortOrder);
 
             if ("active".equals(status)) {
-                wrapper.eq(com.navatation.business.entity.RootTodoItem::getCompleted, false);
+                wrapper.eq(com.navatation.business.entity.root.RootTodoItem::getCompleted, false);
             } else if ("completed".equals(status)) {
-                wrapper.eq(com.navatation.business.entity.RootTodoItem::getCompleted, true);
+                wrapper.eq(com.navatation.business.entity.root.RootTodoItem::getCompleted, true);
             }
 
             return rootTodoItemMapper.selectList(wrapper).stream()
@@ -94,10 +94,10 @@ public class TodoService {
     public TodoVO create(String userId, TodoCreateRequest req) {
         if (isAdmin(userId)) {
             double maxSort = rootTodoItemMapper.selectList(
-                    new LambdaQueryWrapper<com.navatation.business.entity.RootTodoItem>().eq(com.navatation.business.entity.RootTodoItem::getUserId, userId))
+                    new LambdaQueryWrapper<com.navatation.business.entity.root.RootTodoItem>().eq(com.navatation.business.entity.root.RootTodoItem::getUserId, userId))
                     .stream().mapToDouble(item -> item.getSortOrder() != null ? item.getSortOrder() : 0.0).max().orElse(0.0);
 
-            com.navatation.business.entity.RootTodoItem item = new com.navatation.business.entity.RootTodoItem();
+            com.navatation.business.entity.root.RootTodoItem item = new com.navatation.business.entity.root.RootTodoItem();
             item.setTodoId(IdUtils.genTodoId());
             item.setUserId(userId);
             item.setContent(req.getContent());
@@ -131,7 +131,7 @@ public class TodoService {
      */
     public void update(String userId, String todoId, TodoUpdateRequest req) {
         if (isAdmin(userId)) {
-            com.navatation.business.entity.RootTodoItem item = rootTodoItemMapper.selectById(todoId);
+            com.navatation.business.entity.root.RootTodoItem item = rootTodoItemMapper.selectById(todoId);
             if (item == null || !item.getUserId().equals(userId)) {
                 throw new BizException(ResultCode.NOT_FOUND);
             }
@@ -158,7 +158,7 @@ public class TodoService {
      */
     public ToggleVO toggle(String userId, String todoId) {
         if (isAdmin(userId)) {
-            com.navatation.business.entity.RootTodoItem item = rootTodoItemMapper.selectById(todoId);
+            com.navatation.business.entity.root.RootTodoItem item = rootTodoItemMapper.selectById(todoId);
             if (item == null || !item.getUserId().equals(userId)) {
                 throw new BizException(ResultCode.NOT_FOUND);
             }
@@ -195,7 +195,7 @@ public class TodoService {
      */
     public void delete(String userId, String todoId) {
         if (isAdmin(userId)) {
-            com.navatation.business.entity.RootTodoItem item = rootTodoItemMapper.selectById(todoId);
+            com.navatation.business.entity.root.RootTodoItem item = rootTodoItemMapper.selectById(todoId);
             if (item == null || !item.getUserId().equals(userId)) {
                 throw new BizException(ResultCode.NOT_FOUND);
             }
@@ -222,12 +222,12 @@ public class TodoService {
         List<String> ids = req.getItems().stream().map(TodoSortItem::getTodoId).collect(Collectors.toList());
 
         if (isAdmin(userId)) {
-            Map<String, com.navatation.business.entity.RootTodoItem> itemMap = rootTodoItemMapper.selectBatchIds(ids).stream()
+            Map<String, com.navatation.business.entity.root.RootTodoItem> itemMap = rootTodoItemMapper.selectBatchIds(ids).stream()
                     .filter(i -> i.getUserId().equals(userId))
-                    .collect(Collectors.toMap(com.navatation.business.entity.RootTodoItem::getTodoId, Function.identity()));
+                    .collect(Collectors.toMap(com.navatation.business.entity.root.RootTodoItem::getTodoId, Function.identity()));
 
             for (TodoSortItem si : req.getItems()) {
-                com.navatation.business.entity.RootTodoItem item = itemMap.get(si.getTodoId());
+                com.navatation.business.entity.root.RootTodoItem item = itemMap.get(si.getTodoId());
                 if (item != null) {
                     item.setSortOrder(si.getSortOrder());
                     rootTodoItemMapper.updateById(item);
@@ -257,11 +257,11 @@ public class TodoService {
      */
     public DeleteCountVO clearCompleted(String userId) {
         if (isAdmin(userId)) {
-            List<com.navatation.business.entity.RootTodoItem> completed = rootTodoItemMapper.selectList(
-                    new LambdaQueryWrapper<com.navatation.business.entity.RootTodoItem>()
-                            .eq(com.navatation.business.entity.RootTodoItem::getUserId, userId)
-                            .eq(com.navatation.business.entity.RootTodoItem::getCompleted, true));
-            List<String> ids = completed.stream().map(com.navatation.business.entity.RootTodoItem::getTodoId).collect(Collectors.toList());
+            List<com.navatation.business.entity.root.RootTodoItem> completed = rootTodoItemMapper.selectList(
+                    new LambdaQueryWrapper<com.navatation.business.entity.root.RootTodoItem>()
+                            .eq(com.navatation.business.entity.root.RootTodoItem::getUserId, userId)
+                            .eq(com.navatation.business.entity.root.RootTodoItem::getCompleted, true));
+            List<String> ids = completed.stream().map(com.navatation.business.entity.root.RootTodoItem::getTodoId).collect(Collectors.toList());
             if (!ids.isEmpty()) {
                 rootTodoItemMapper.deleteBatchIds(ids);
                 log.info("清除管理员已完成待办成功 userId={} count={}", userId, ids.size());
@@ -298,7 +298,7 @@ public class TodoService {
         return vo;
     }
 
-    private TodoVO toVO(com.navatation.business.entity.RootTodoItem item) {
+    private TodoVO toVO(com.navatation.business.entity.root.RootTodoItem item) {
         TodoVO vo = new TodoVO();
         vo.setTodoId(item.getTodoId());
         vo.setContent(item.getContent());

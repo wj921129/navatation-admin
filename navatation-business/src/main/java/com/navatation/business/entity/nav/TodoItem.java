@@ -1,4 +1,4 @@
-package com.navatation.business.entity;
+package com.navatation.business.entity.nav;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
@@ -9,28 +9,23 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * @Author root
- * @CreateTime 2026-06-08
- * @Description 管理员快捷方式实体
+ * @Author admin
+ * @CreateTime 2026-05-15
+ * @Description 待办事项实体
  */
 @Data
-@TableName("navatation_root_nav_shortcut")
-public class RootShortcut {
+@TableName("navatation_todo_item")
+public class TodoItem {
     private Long rowId;
 
     @TableId(type = IdType.INPUT)
-    private String shortcutId;
+    private String todoId;
     
-    private String categoryId;
     private String userId;
-    private String name;
-    private String url;
-    private String iconType;
-    private String iconValue;
-    private String iconColor;
+    private String content;
+    private Boolean completed;
     private Double sortOrder;
-    private Long clickCount;
-    private LocalDateTime lastClickAt;
+    private LocalDateTime completedAt;
     
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

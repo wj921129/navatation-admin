@@ -5,9 +5,9 @@ import com.navatation.business.constant.SettingsConstants;
 import com.navatation.business.dto.SettingsRequest;
 import com.navatation.business.dto.SettingsVO;
 import com.navatation.business.dto.WallpaperVO;
-import com.navatation.business.entity.RecommendConfig;
-import com.navatation.business.entity.User;
-import com.navatation.business.entity.UserConfig;
+import com.navatation.business.entity.recommend.RecommendConfig;
+import com.navatation.business.entity.user.User;
+import com.navatation.business.entity.user.UserConfig;
 import com.navatation.business.mapper.RecommendConfigMapper;
 import com.navatation.business.mapper.RootConfigMapper;
 import com.navatation.business.mapper.UserConfigMapper;
@@ -56,8 +56,8 @@ public class SettingsService {
      */
     public SettingsVO getSettings(String userId) {
         if (isAdmin(userId)) {
-            com.navatation.business.entity.RootConfig rootConfig = rootConfigMapper.selectOne(
-                    new LambdaQueryWrapper<com.navatation.business.entity.RootConfig>().eq(com.navatation.business.entity.RootConfig::getUserId, userId));
+            com.navatation.business.entity.root.RootConfig rootConfig = rootConfigMapper.selectOne(
+                    new LambdaQueryWrapper<com.navatation.business.entity.root.RootConfig>().eq(com.navatation.business.entity.root.RootConfig::getUserId, userId));
             if (rootConfig == null) {
                 rootConfig = createDefaultRoot(userId);
             }
@@ -79,8 +79,8 @@ public class SettingsService {
      */
     public void saveSettings(String userId, SettingsRequest req) {
         if (isAdmin(userId)) {
-            com.navatation.business.entity.RootConfig rootConfig = rootConfigMapper.selectOne(
-                    new LambdaQueryWrapper<com.navatation.business.entity.RootConfig>().eq(com.navatation.business.entity.RootConfig::getUserId, userId));
+            com.navatation.business.entity.root.RootConfig rootConfig = rootConfigMapper.selectOne(
+                    new LambdaQueryWrapper<com.navatation.business.entity.root.RootConfig>().eq(com.navatation.business.entity.root.RootConfig::getUserId, userId));
             if (rootConfig == null) {
                 rootConfig = createDefaultRoot(userId);
             }
@@ -107,8 +107,8 @@ public class SettingsService {
      */
     public void patchSettings(String userId, SettingsRequest req) {
         if (isAdmin(userId)) {
-            com.navatation.business.entity.RootConfig rootConfig = rootConfigMapper.selectOne(
-                    new LambdaQueryWrapper<com.navatation.business.entity.RootConfig>().eq(com.navatation.business.entity.RootConfig::getUserId, userId));
+            com.navatation.business.entity.root.RootConfig rootConfig = rootConfigMapper.selectOne(
+                    new LambdaQueryWrapper<com.navatation.business.entity.root.RootConfig>().eq(com.navatation.business.entity.root.RootConfig::getUserId, userId));
             if (rootConfig == null) {
                 rootConfig = createDefaultRoot(userId);
             }
@@ -216,8 +216,8 @@ public class SettingsService {
     }
 
     /** 创建默认管理员配置 */
-    private com.navatation.business.entity.RootConfig createDefaultRoot(String userId) {
-        com.navatation.business.entity.RootConfig config = new com.navatation.business.entity.RootConfig();
+    private com.navatation.business.entity.root.RootConfig createDefaultRoot(String userId) {
+        com.navatation.business.entity.root.RootConfig config = new com.navatation.business.entity.root.RootConfig();
         config.setConfigId(IdUtils.genConfigId());
         config.setUserId(userId);
         config.setSearchEngine(SettingsConstants.DEFAULT_SEARCH_ENGINE);
@@ -308,7 +308,7 @@ public class SettingsService {
         return vo;
     }
 
-    private void applyRequest(com.navatation.business.entity.RootConfig config, SettingsRequest req) {
+    private void applyRequest(com.navatation.business.entity.root.RootConfig config, SettingsRequest req) {
         if (req.getSearchEngine() != null) config.setSearchEngine(req.getSearchEngine());
         if (req.getBackgroundImage() != null) config.setBackgroundImage(req.getBackgroundImage());
         if (req.getBackgroundType() != null) config.setBackgroundType(req.getBackgroundType());
@@ -326,7 +326,7 @@ public class SettingsService {
         if (req.getTheme() != null) config.setTheme(req.getTheme());
     }
 
-    private SettingsVO toVO(com.navatation.business.entity.RootConfig config) {
+    private SettingsVO toVO(com.navatation.business.entity.root.RootConfig config) {
         SettingsVO vo = new SettingsVO();
         vo.setSearchEngine(config.getSearchEngine());
         vo.setBackgroundImage(config.getBackgroundImage());

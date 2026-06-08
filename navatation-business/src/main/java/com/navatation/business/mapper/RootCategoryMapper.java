@@ -1,7 +1,7 @@
 package com.navatation.business.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.navatation.business.entity.RootCategory;
+import com.navatation.business.entity.root.RootCategory;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper

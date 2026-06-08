@@ -1,4 +1,4 @@
-package com.navatation.business.entity;
+package com.navatation.business.entity.root;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
@@ -6,29 +6,28 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * @Author admin
- * @CreateTime 2026-05-15
- * @Description 用户实体
+ * @Author root
+ * @CreateTime 2026-06-08
+ * @Description 管理员组件实体
  */
 @Data
-@TableName("navatation_user")
-public class User {
+@TableName("navatation_root_user_widget")
+public class RootWidget {
     private Long rowId;
-    
+
     @TableId(type = IdType.INPUT)
-    private String userId;
+    private String widgetId;
     
-    private String username;
-    private String password;
-    private String email;
-    private String avatar;
-    private Integer status;
-    private String role;
-    private LocalDateTime lastLoginAt;
-    private String lastLoginIp;
+    private String userId;
+    private String type;
+    private String style;
+    private BigDecimal x;
+    private BigDecimal y;
+    private String meta;
     
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

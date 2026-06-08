@@ -1,7 +1,7 @@
 package com.navatation.business.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.navatation.business.entity.UserConfig;
+import com.navatation.business.entity.user.UserConfig;
 import org.apache.ibatis.annotations.Mapper;
 
 /** @Author admin

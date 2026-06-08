@@ -1,7 +1,7 @@
 package com.navatation.business.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.navatation.business.entity.RootShortcut;
+import com.navatation.business.entity.root.RootShortcut;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper

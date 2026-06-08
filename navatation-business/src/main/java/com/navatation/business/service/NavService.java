@@ -1,6 +1,7 @@
 package com.navatation.business.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.toolkit.Db;
 import com.navatation.business.dto.BatchCreateItemVO;
 import com.navatation.business.dto.BatchCreateRequest;
 import com.navatation.business.dto.CategoryRequest;
@@ -14,8 +15,8 @@ import com.navatation.business.dto.ShortcutVO;
 import com.navatation.business.dto.SortItem;
 import com.navatation.business.dto.SortRequest;
 import com.navatation.business.dto.UpdateShortcutRequest;
-import com.navatation.business.entity.NavCategory;
-import com.navatation.business.entity.NavShortcut;
+import com.navatation.business.entity.nav.NavCategory;
+import com.navatation.business.entity.nav.NavShortcut;
 import com.navatation.business.mapper.NavCategoryMapper;
 import com.navatation.business.mapper.NavShortcutMapper;
 import com.navatation.business.mapper.RecommendCategoryMapper;
@@ -23,11 +24,13 @@ import com.navatation.business.mapper.RecommendSiteMapper;
 import com.navatation.business.mapper.RootCategoryMapper;
 import com.navatation.business.mapper.RootShortcutMapper;
 import com.navatation.business.mapper.UserMapper;
-import com.navatation.business.entity.RecommendCategory;
-import com.navatation.business.entity.RecommendSite;
-import com.navatation.business.entity.User;
+import com.navatation.business.entity.recommend.RecommendCategory;
+import com.navatation.business.entity.recommend.RecommendSite;
+import com.navatation.business.entity.user.User;
 import com.navatation.business.dto.RecommendCategoryRequest;
 import com.navatation.business.dto.RecommendSiteRequest;
+import com.navatation.business.dto.BatchRecommendSiteSaveRequest;
+import com.navatation.business.dto.RecommendSiteItem;
 import com.navatation.common.BizException;
 import com.navatation.common.RedisConstants;
 import com.navatation.common.ResultCode;
@@ -108,15 +111,15 @@ public class NavService {
      */
     public List<CategoryVO> getCategories(String userId) {
         if (isAdmin(userId)) {
-            List<com.navatation.business.entity.RootCategory> categories = rootCategoryMapper.selectList(
-                    new LambdaQueryWrapper<com.navatation.business.entity.RootCategory>()
-                            .eq(com.navatation.business.entity.RootCategory::getUserId, userId)
-                            .orderByAsc(com.navatation.business.entity.RootCategory::getSortOrder));
+            List<com.navatation.business.entity.root.RootCategory> categories = rootCategoryMapper.selectList(
+                    new LambdaQueryWrapper<com.navatation.business.entity.root.RootCategory>()
+                            .eq(com.navatation.business.entity.root.RootCategory::getUserId, userId)
+                            .orderByAsc(com.navatation.business.entity.root.RootCategory::getSortOrder));
 
-            List<String> categoryIds = categories.stream().map(com.navatation.business.entity.RootCategory::getCategoryId).collect(Collectors.toList());
+            List<String> categoryIds = categories.stream().map(com.navatation.business.entity.root.RootCategory::getCategoryId).collect(Collectors.toList());
             Map<String, Long> countMap = categoryIds.isEmpty() ? Map.of() :
-                    rootShortcutMapper.selectList(new LambdaQueryWrapper<com.navatation.business.entity.RootShortcut>().in(com.navatation.business.entity.RootShortcut::getCategoryId, categoryIds))
-                            .stream().collect(Collectors.groupingBy(com.navatation.business.entity.RootShortcut::getCategoryId, Collectors.counting()));
+                    rootShortcutMapper.selectList(new LambdaQueryWrapper<com.navatation.business.entity.root.RootShortcut>().in(com.navatation.business.entity.root.RootShortcut::getCategoryId, categoryIds))
+                            .stream().collect(Collectors.groupingBy(com.navatation.business.entity.root.RootShortcut::getCategoryId, Collectors.counting()));
 
             return categories.stream().map(c -> {
                 CategoryVO vo = new CategoryVO();
@@ -157,7 +160,7 @@ public class NavService {
      */
     public CategoryVO createCategory(String userId, CategoryRequest req) {
         if (isAdmin(userId)) {
-            com.navatation.business.entity.RootCategory category = new com.navatation.business.entity.RootCategory();
+            com.navatation.business.entity.root.RootCategory category = new com.navatation.business.entity.root.RootCategory();
             category.setCategoryId(IdUtils.genCategoryId());
             category.setUserId(userId);
             category.setName(req.getName());
@@ -197,7 +200,7 @@ public class NavService {
      */
     public void updateCategory(String userId, String categoryId, CategoryRequest req) {
         if (isAdmin(userId)) {
-            com.navatation.business.entity.RootCategory category = rootCategoryMapper.selectById(categoryId);
+            com.navatation.business.entity.root.RootCategory category = rootCategoryMapper.selectById(categoryId);
             if (category == null || !category.getUserId().equals(userId)) {
                 throw new BizException(ResultCode.NOT_FOUND);
             }
@@ -235,12 +238,12 @@ public class NavService {
     @Transactional
     public void deleteCategory(String userId, String categoryId) {
         if (isAdmin(userId)) {
-            com.navatation.business.entity.RootCategory category = rootCategoryMapper.selectById(categoryId);
+            com.navatation.business.entity.root.RootCategory category = rootCategoryMapper.selectById(categoryId);
             if (category == null || !category.getUserId().equals(userId)) {
                 throw new BizException(ResultCode.NOT_FOUND);
             }
-            rootShortcutMapper.delete(new LambdaQueryWrapper<com.navatation.business.entity.RootShortcut>()
-                    .eq(com.navatation.business.entity.RootShortcut::getCategoryId, categoryId));
+            rootShortcutMapper.delete(new LambdaQueryWrapper<com.navatation.business.entity.root.RootShortcut>()
+                    .eq(com.navatation.business.entity.root.RootShortcut::getCategoryId, categoryId));
             rootCategoryMapper.deleteById(categoryId);
             log.info("删除管理员分类成功 userId={} categoryId={}", userId, categoryId);
             return;
@@ -265,11 +268,11 @@ public class NavService {
      */
     public List<ShortcutVO> getShortcuts(String userId, String categoryId) {
         if (isAdmin(userId)) {
-            LambdaQueryWrapper<com.navatation.business.entity.RootShortcut> wrapper = new LambdaQueryWrapper<com.navatation.business.entity.RootShortcut>()
-                    .eq(com.navatation.business.entity.RootShortcut::getUserId, userId)
-                    .orderByAsc(com.navatation.business.entity.RootShortcut::getSortOrder);
+            LambdaQueryWrapper<com.navatation.business.entity.root.RootShortcut> wrapper = new LambdaQueryWrapper<com.navatation.business.entity.root.RootShortcut>()
+                    .eq(com.navatation.business.entity.root.RootShortcut::getUserId, userId)
+                    .orderByAsc(com.navatation.business.entity.root.RootShortcut::getSortOrder);
             if (categoryId != null && !categoryId.isEmpty()) {
-                wrapper.eq(com.navatation.business.entity.RootShortcut::getCategoryId, categoryId);
+                wrapper.eq(com.navatation.business.entity.root.RootShortcut::getCategoryId, categoryId);
             }
             return rootShortcutMapper.selectList(wrapper).stream()
                     .map(this::toShortcutVO)
@@ -299,12 +302,12 @@ public class NavService {
 
         if (isAdmin(userId)) {
             if (categoryId == null || categoryId.isEmpty()) {
-                com.navatation.business.entity.RootCategory defaultCat = rootCategoryMapper.selectOne(
-                        new LambdaQueryWrapper<com.navatation.business.entity.RootCategory>()
-                                .eq(com.navatation.business.entity.RootCategory::getUserId, userId)
-                                .eq(com.navatation.business.entity.RootCategory::getName, DEFAULT_CATEGORY_NAME));
+                com.navatation.business.entity.root.RootCategory defaultCat = rootCategoryMapper.selectOne(
+                        new LambdaQueryWrapper<com.navatation.business.entity.root.RootCategory>()
+                                .eq(com.navatation.business.entity.root.RootCategory::getUserId, userId)
+                                .eq(com.navatation.business.entity.root.RootCategory::getName, DEFAULT_CATEGORY_NAME));
                 if (defaultCat == null) {
-                    defaultCat = new com.navatation.business.entity.RootCategory();
+                    defaultCat = new com.navatation.business.entity.root.RootCategory();
                     defaultCat.setCategoryId(IdUtils.genCategoryId());
                     defaultCat.setUserId(userId);
                     defaultCat.setName(DEFAULT_CATEGORY_NAME);
@@ -313,20 +316,20 @@ public class NavService {
                 }
                 categoryId = defaultCat.getCategoryId();
             } else {
-                com.navatation.business.entity.RootCategory cat = rootCategoryMapper.selectById(categoryId);
+                com.navatation.business.entity.root.RootCategory cat = rootCategoryMapper.selectById(categoryId);
                 if (cat == null || !cat.getUserId().equals(userId)) {
                     throw new BizException(ResultCode.NOT_FOUND);
                 }
             }
 
             double maxSort = rootShortcutMapper.selectList(
-                    new LambdaQueryWrapper<com.navatation.business.entity.RootShortcut>()
-                            .eq(com.navatation.business.entity.RootShortcut::getCategoryId, categoryId))
+                    new LambdaQueryWrapper<com.navatation.business.entity.root.RootShortcut>()
+                            .eq(com.navatation.business.entity.root.RootShortcut::getCategoryId, categoryId))
                     .stream().mapToDouble(item -> item.getSortOrder() != null ? item.getSortOrder() : 0.0).max().orElse(0.0);
 
             List<BatchCreateItemVO> results = new ArrayList<>();
             for (CreateShortcutItem item : req.getShortcuts()) {
-                com.navatation.business.entity.RootShortcut shortcut = new com.navatation.business.entity.RootShortcut();
+                com.navatation.business.entity.root.RootShortcut shortcut = new com.navatation.business.entity.root.RootShortcut();
                 shortcut.setShortcutId(IdUtils.genShortcutId());
                 shortcut.setCategoryId(categoryId);
                 shortcut.setUserId(userId);
@@ -409,7 +412,7 @@ public class NavService {
      */
     public ShortcutVO updateShortcut(String userId, String shortcutId, UpdateShortcutRequest req) {
         if (isAdmin(userId)) {
-            com.navatation.business.entity.RootShortcut shortcut = rootShortcutMapper.selectById(shortcutId);
+            com.navatation.business.entity.root.RootShortcut shortcut = rootShortcutMapper.selectById(shortcutId);
             if (shortcut == null || !shortcut.getUserId().equals(userId)) {
                 throw new BizException(ResultCode.NOT_FOUND);
             }
@@ -456,7 +459,7 @@ public class NavService {
      */
     public void deleteShortcut(String userId, String shortcutId) {
         if (isAdmin(userId)) {
-            com.navatation.business.entity.RootShortcut shortcut = rootShortcutMapper.selectById(shortcutId);
+            com.navatation.business.entity.root.RootShortcut shortcut = rootShortcutMapper.selectById(shortcutId);
             if (shortcut == null || !shortcut.getUserId().equals(userId)) {
                 throw new BizException(ResultCode.NOT_FOUND);
             }
@@ -483,12 +486,12 @@ public class NavService {
         List<String> ids = req.getItems().stream().map(SortItem::getShortcutId).collect(Collectors.toList());
 
         if (isAdmin(userId)) {
-            Map<String, com.navatation.business.entity.RootShortcut> shortcutMap = rootShortcutMapper.selectBatchIds(ids).stream()
+            Map<String, com.navatation.business.entity.root.RootShortcut> shortcutMap = rootShortcutMapper.selectBatchIds(ids).stream()
                     .filter(s -> s.getUserId().equals(userId))
-                    .collect(Collectors.toMap(com.navatation.business.entity.RootShortcut::getShortcutId, Function.identity()));
+                    .collect(Collectors.toMap(com.navatation.business.entity.root.RootShortcut::getShortcutId, Function.identity()));
 
             for (SortItem item : req.getItems()) {
-                com.navatation.business.entity.RootShortcut shortcut = shortcutMap.get(item.getShortcutId());
+                com.navatation.business.entity.root.RootShortcut shortcut = shortcutMap.get(item.getShortcutId());
                 if (shortcut != null) {
                     shortcut.setSortOrder(item.getSortOrder());
                     rootShortcutMapper.updateById(shortcut);
@@ -812,6 +815,94 @@ public class NavService {
         recommendSiteMapper.deleteById(siteId);
     }
 
+    /**
+     * 批量保存指定推荐分类下的推荐网址
+     * 
+     * - 管理员批量维护时调用，自动执行差分覆盖逻辑：已删除项执行物理删除，已有项执行更新，新增项执行插入。
+     * 
+     * @param userId 操作用户ID
+     * @param categoryId 推荐分类ID
+     * @param req 批量保存数据
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void batchSaveRecommendSites(String userId, String categoryId, BatchRecommendSiteSaveRequest req) {
+        if (!isAdmin(userId)) {
+            throw new BizException(ResultCode.FORBIDDEN);
+        }
+        
+        // 1. 验证分类是否存在
+        RecommendCategory category = recommendCategoryMapper.selectById(categoryId);
+        if (category == null) {
+            throw new BizException(ResultCode.NOT_FOUND.getCode(), "推荐分类不存在");
+        }
+        
+        // 2. 查出当前数据库中该分类下的所有站点
+        List<RecommendSite> existingSites = recommendSiteMapper.selectList(
+                new LambdaQueryWrapper<RecommendSite>()
+                        .eq(RecommendSite::getCategoryId, categoryId));
+        
+        // 3. 提取传入的不为空的 siteId 集合
+        List<RecommendSiteItem> incomingSites = req.getSites() != null ? req.getSites() : new ArrayList<>();
+        Set<String> incomingSiteIds = incomingSites.stream()
+                .map(RecommendSiteItem::getSiteId)
+                .filter(id -> id != null && !id.isEmpty())
+                .collect(Collectors.toSet());
+        
+        // 4. 计算需要被物理删除的站点 siteId 列表
+        List<String> deleteIds = existingSites.stream()
+                .map(RecommendSite::getSiteId)
+                .filter(id -> !incomingSiteIds.contains(id))
+                .collect(Collectors.toList());
+        
+        if (!deleteIds.isEmpty()) {
+            recommendSiteMapper.deleteBatchIds(deleteIds);
+            log.info("管理员批量删除推荐网址成功 categoryId={}, deleteCount={}", categoryId, deleteIds.size());
+        }
+        
+        // 5. 对比进行更新或插入
+        Map<String, RecommendSite> existingMap = existingSites.stream()
+                .collect(Collectors.toMap(RecommendSite::getSiteId, Function.identity()));
+        
+        List<RecommendSite> insertList = new ArrayList<>();
+        List<RecommendSite> updateList = new ArrayList<>();
+        
+        for (RecommendSiteItem item : incomingSites) {
+            if (item.getSiteId() != null && !item.getSiteId().isEmpty() && existingMap.containsKey(item.getSiteId())) {
+                // 更新
+                RecommendSite dbSite = existingMap.get(item.getSiteId());
+                dbSite.setName(item.getName());
+                dbSite.setUrl(item.getUrl());
+                dbSite.setIconType(item.getIconType());
+                dbSite.setIconValue(item.getIconValue());
+                dbSite.setIconColor(item.getIconColor());
+                dbSite.setSortOrder(item.getSortOrder() != null ? item.getSortOrder() : 0.0);
+                updateList.add(dbSite);
+            } else {
+                // 新增插入
+                RecommendSite newSite = new RecommendSite();
+                newSite.setSiteId(IdUtils.genRecommendSiteId());
+                newSite.setCategoryId(categoryId);
+                newSite.setName(item.getName());
+                newSite.setUrl(item.getUrl());
+                newSite.setIconType(item.getIconType() != null ? item.getIconType() : "FAVICON");
+                newSite.setIconValue(item.getIconValue());
+                newSite.setIconColor(item.getIconColor());
+                newSite.setSortOrder(item.getSortOrder() != null ? item.getSortOrder() : 0.0);
+                insertList.add(newSite);
+            }
+        }
+        
+        if (!insertList.isEmpty()) {
+            Db.saveBatch(insertList);
+            log.info("管理员批量新增推荐网址成功 categoryId={}, insertCount={}", categoryId, insertList.size());
+        }
+        if (!updateList.isEmpty()) {
+            Db.updateBatchById(updateList);
+            log.info("管理员批量更新推荐网址成功 categoryId={}, updateCount={}", categoryId, updateList.size());
+        }
+        log.info("管理员批量保存推荐网址成功 categoryId={}, totalCount={}", categoryId, incomingSites.size());
+    }
+
 
 
     /** 实体转VO */
@@ -829,7 +920,7 @@ public class NavService {
         return vo;
     }
 
-    private ShortcutVO toShortcutVO(com.navatation.business.entity.RootShortcut s) {
+    private ShortcutVO toShortcutVO(com.navatation.business.entity.root.RootShortcut s) {
         ShortcutVO vo = new ShortcutVO();
         vo.setShortcutId(s.getShortcutId());
         vo.setCategoryId(s.getCategoryId());

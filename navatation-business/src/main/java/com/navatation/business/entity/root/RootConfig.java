@@ -1,4 +1,4 @@
-package com.navatation.business.entity;
+package com.navatation.business.entity.root;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
@@ -9,13 +9,13 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * @Author admin
- * @CreateTime 2026-05-15
- * @Description 用户配置实体，存储搜索、布局、主题等个性化设置
+ * @Author root
+ * @CreateTime 2026-06-08
+ * @Description 管理员配置实体
  */
 @Data
-@TableName("navatation_user_config")
-public class UserConfig {
+@TableName("navatation_root_config")
+public class RootConfig {
     private Long rowId;
 
     @TableId(type = IdType.INPUT)

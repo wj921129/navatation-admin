@@ -8,7 +8,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.navatation.business.dto.RecommendWidgetRequest;
 import com.navatation.business.dto.RecommendWidgetVO;
-import com.navatation.business.entity.RecommendWidget;
+import com.navatation.business.entity.recommend.RecommendWidget;
 import com.navatation.business.mapper.RecommendWidgetMapper;
 import com.navatation.common.IdUtils;
 import lombok.RequiredArgsConstructor;

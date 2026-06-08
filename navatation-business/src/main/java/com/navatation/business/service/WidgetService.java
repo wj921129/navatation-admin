@@ -8,7 +8,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.navatation.business.dto.WidgetRequest;
 import com.navatation.business.dto.WidgetVO;
-import com.navatation.business.entity.UserWidget;
+import com.navatation.business.entity.nav.UserWidget;
 import com.navatation.business.mapper.RootWidgetMapper;
 import com.navatation.business.mapper.UserWidgetMapper;
 import com.navatation.common.IdUtils;
@@ -41,7 +41,7 @@ public class WidgetService {
     private final RecommendWidgetService recommendWidgetService;
 
     private boolean isAdmin(String userId) {
-        com.navatation.business.entity.User user = userMapper.selectById(userId);
+        com.navatation.business.entity.user.User user = userMapper.selectById(userId);
         return user != null && "ADMIN".equals(user.getRole());
     }
 
@@ -53,9 +53,9 @@ public class WidgetService {
      */
     public List<WidgetVO> getWidgets(String userId) {
         if (isAdmin(userId)) {
-            List<com.navatation.business.entity.RootWidget> list = rootWidgetMapper.selectList(
-                    new LambdaQueryWrapper<com.navatation.business.entity.RootWidget>()
-                            .eq(com.navatation.business.entity.RootWidget::getUserId, userId)
+            List<com.navatation.business.entity.root.RootWidget> list = rootWidgetMapper.selectList(
+                    new LambdaQueryWrapper<com.navatation.business.entity.root.RootWidget>()
+                            .eq(com.navatation.business.entity.root.RootWidget::getUserId, userId)
             );
             if (CollectionUtils.isEmpty(list)) {
                 return Collections.emptyList();
@@ -82,7 +82,7 @@ public class WidgetService {
     @Transactional(rollbackFor = Exception.class)
     public void saveWidgets(String userId, List<WidgetRequest> requests) {
         if (isAdmin(userId)) {
-            rootWidgetMapper.delete(new LambdaQueryWrapper<com.navatation.business.entity.RootWidget>().eq(com.navatation.business.entity.RootWidget::getUserId, userId));
+            rootWidgetMapper.delete(new LambdaQueryWrapper<com.navatation.business.entity.root.RootWidget>().eq(com.navatation.business.entity.root.RootWidget::getUserId, userId));
 
             if (CollectionUtils.isEmpty(requests)) {
                 log.info("保存管理员组件 传入列表为空，清除管理员所有组件 userId={}", userId);
@@ -90,7 +90,7 @@ public class WidgetService {
             }
 
             for (WidgetRequest req : requests) {
-                com.navatation.business.entity.RootWidget entity = new com.navatation.business.entity.RootWidget();
+                com.navatation.business.entity.root.RootWidget entity = new com.navatation.business.entity.root.RootWidget();
                 entity.setUserId(userId);
                 entity.setType(req.getType());
                 entity.setStyle(req.getStyle());
@@ -180,7 +180,7 @@ public class WidgetService {
         return vo;
     }
 
-    private WidgetVO toVO(com.navatation.business.entity.RootWidget entity) {
+    private WidgetVO toVO(com.navatation.business.entity.root.RootWidget entity) {
         WidgetVO vo = new WidgetVO();
         vo.setWidgetId(entity.getWidgetId());
         vo.setType(entity.getType());

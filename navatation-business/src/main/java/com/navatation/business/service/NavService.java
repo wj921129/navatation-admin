@@ -1,4 +1,4 @@
-package com.navatation.business.service;
+﻿package com.navatation.business.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.navatation.business.dto.BatchCreateItemVO;
@@ -60,7 +60,7 @@ import java.util.stream.Collectors;
 /**
  * @Author admin
  * @CreateTime 2026-05-15
- * @Description 导航服务，处理分类和快捷方式的CRUD、排序、Favicon抓取及推荐站点管�?
+ * @Description 导航服务，处理分类和快捷方式的CRUD、排序、Favicon抓取及推荐站点管�?
  */
 @Service
 @RequiredArgsConstructor
@@ -71,15 +71,15 @@ public class NavService {
     private static final String ICON_TYPE_BUILTIN = "BUILTIN";
     private static final String DEFAULT_CATEGORY_NAME = "常用";
 
-    /** 允许上传的图�?MIME 类型白名�?*/
+    /** 允许上传的图�?MIME 类型白名�?*/
     private static final Set<String> ALLOWED_MIME_TYPES = Set.of(
             "image/png", "image/jpeg", "image/gif", "image/webp",
             "image/x-icon", "image/vnd.microsoft.icon", "image/svg+xml");
 
-    /** 图标文件大小上限�?00KB */
+    /** 图标文件大小上限�?00KB */
     private static final long MAX_ICON_SIZE = 200 * 1024;
 
-    /** 每小时每用户最大上传次�?*/
+    /** 每小时每用户最大上传次�?*/
     private static final int MAX_UPLOADS_PER_HOUR = 30;
 
     private final NavCategoryMapper categoryMapper;
@@ -124,7 +124,7 @@ public class NavService {
                         .eq(NavCategory::getUserId, userId)
                         .orderByAsc(NavCategory::getSortOrder));
 
-        // 批量查询各分类下的快捷方式数�?
+        // 批量查询各分类下的快捷方式数�?
         List<String> categoryIds = categories.stream().map(NavCategory::getCategoryId).collect(Collectors.toList());
         Map<String, Long> countMap = categoryIds.isEmpty() ? Map.of() :
                 shortcutMapper.selectList(new LambdaQueryWrapper<NavShortcut>().in(NavShortcut::getCategoryId, categoryIds))
@@ -144,7 +144,7 @@ public class NavService {
      * 创建分类
      * @param userId 用户ID
      * @param req 分类请求
-     * @return 创建的分�?
+     * @return 创建的分�?
      */
     public CategoryVO createCategory(String userId, CategoryRequest req) {
         if (isAdmin(userId)) {
@@ -180,7 +180,7 @@ public class NavService {
     }
 
     /**
-     * 更新分类名称或排�?
+     * 更新分类名称或排�?
      * @param userId 用户ID
      * @param categoryId 分类ID
      * @param req 分类请求
@@ -210,7 +210,7 @@ public class NavService {
     }
 
     /**
-     * 删除分类及其下所有快捷方�?
+     * 删除分类及其下所有快捷方�?
      * @param userId 用户ID
      * @param categoryId 分类ID
      */
@@ -228,7 +228,7 @@ public class NavService {
         if (category == null || !category.getUserId().equals(userId)) {
             throw new BizException(ResultCode.NOT_FOUND);
         }
-        // 删除该分类下的所有快捷方�?
+        // 删除该分类下的所有快捷方�?
         shortcutMapper.delete(new LambdaQueryWrapper<NavShortcut>()
                 .eq(NavShortcut::getCategoryId, categoryId));
         categoryMapper.deleteById(categoryId);
@@ -236,9 +236,9 @@ public class NavService {
     }
 
     /**
-     * 查询用户快捷方式列表，可按分类筛�?
+     * 查询用户快捷方式列表，可按分类筛�?
      * @param userId 用户ID
-     * @param categoryId 分类ID（可为null表示全部�?
+     * @param categoryId 分类ID（可为null表示全部�?
      * @return 快捷方式列表
      */
     public List<ShortcutVO> getShortcuts(String userId, String categoryId) {
@@ -337,7 +337,7 @@ public class NavService {
             }
             categoryId = defaultCat.getCategoryId();
         } else {
-            // 校验 categoryId 是否属于当前用户，防止水平越�?
+            // 校验 categoryId 是否属于当前用户，防止水平越�?
             NavCategory cat = categoryMapper.selectById(categoryId);
             if (cat == null || !cat.getUserId().equals(userId)) {
                 throw new BizException(ResultCode.NOT_FOUND);
@@ -399,6 +399,7 @@ public class NavService {
             vo.setIconType(site.getIconType());
             vo.setIconValue(site.getIconValue());
             vo.setIconColor(site.getIconColor());
+        vo.setSortOrder(site.getSortOrder());
             vo.setSortOrder(site.getSortOrder());
             return vo;
         }
@@ -466,7 +467,7 @@ public class NavService {
             return;
         }
 
-        // 批量查询所有待排序的快捷方�?
+        // 批量查询所有待排序的快捷方�?
         List<String> ids = req.getItems().stream().map(SortItem::getShortcutId).collect(Collectors.toList());
         Map<String, NavShortcut> shortcutMap = shortcutMapper.selectBatchIds(ids).stream()
                 .filter(s -> s.getUserId().equals(userId))
@@ -483,7 +484,7 @@ public class NavService {
 
     /**
      * 根据URL抓取站点Favicon地址
-     * 先查询Redis缓存，若未命中则通过Jsoup请求页面HTML解析 <link rel="icon"> 标签，若失败则回退�?/favicon.ico
+     * 先查询Redis缓存，若未命中则通过Jsoup请求页面HTML解析 <link rel="icon"> 标签，若失败则回退�?/favicon.ico
      * @param url 站点URL
      * @return Favicon信息
      */
@@ -496,7 +497,7 @@ public class NavService {
                 throw new BizException(ResultCode.BAD_REQUEST);
             }
 
-            // 1. 先尝试从 Redis 缓存中获�?
+            // 1. 先尝试从 Redis 缓存中获�?
             String cacheKey = RedisConstants.KEY_NAV_FAVICON + host;
             try {
                 String cachedUrl = (String) redisTemplate.opsForValue().get(cacheKey);
@@ -508,16 +509,16 @@ public class NavService {
                     return vo;
                 }
             } catch (Exception e) {
-                log.warn("�?Redis 读取 Favicon 缓存失败: {}", e.getMessage());
+                log.warn("�?Redis 读取 Favicon 缓存失败: {}", e.getMessage());
             }
 
-            // 2. 缓存未命中，进行网络爬取与解�?
+            // 2. 缓存未命中，进行网络爬取与解�?
             String faviconUrl = tryExtractFromHtml(url, scheme, host);
             if (faviconUrl == null) {
                 faviconUrl = scheme + "://" + host + "/favicon.ico";
             }
 
-            // 3. 将结果写�?Redis 缓存（缓�?7 天）
+            // 3. 将结果写�?Redis 缓存（缓�?7 天）
             try {
                 redisTemplate.opsForValue().set(cacheKey, faviconUrl, 7, TimeUnit.DAYS);
             } catch (Exception e) {
@@ -535,7 +536,7 @@ public class NavService {
         }
     }
 
-    /** 请求页面HTML并使�?Jsoup 解析 <link rel="icon"> 标签，提取图标URL */
+    /** 请求页面HTML并使�?Jsoup 解析 <link rel="icon"> 标签，提取图标URL */
     private String tryExtractFromHtml(String pageUrl, String scheme, String host) {
         try {
             Document doc = Jsoup.connect(pageUrl)
@@ -545,10 +546,10 @@ public class NavService {
                     .followRedirects(true)
                     .get();
 
-            // 优先匹配 apple-touch-icon (通常是高清图�?
+            // 优先匹配 apple-touch-icon (通常是高清图�?
             Element iconElement = doc.selectFirst("link[rel~=(?i)^(apple-touch-icon|apple-touch-icon-precomposed)$]");
             if (iconElement == null) {
-                // 其次匹配普通的 icon �?shortcut icon
+                // 其次匹配普通的 icon �?shortcut icon
                 iconElement = doc.selectFirst("link[rel~=(?i)^(shortcut )?icon$]");
             }
 
@@ -559,7 +560,7 @@ public class NavService {
                 }
             }
         } catch (Exception e) {
-            log.warn("从页�?{} �?Jsoup 解析 Favicon 失败: {}", pageUrl, e.getMessage());
+            log.warn("从页�?{} �?Jsoup 解析 Favicon 失败: {}", pageUrl, e.getMessage());
         }
         return null;
     }
@@ -576,7 +577,7 @@ public class NavService {
         return href.startsWith("/") ? base + href : base + "/" + href;
     }
 
-    /** 支持的图片扩展名映射（MIME �?扩展名） */
+    /** 支持的图片扩展名映射（MIME �?扩展名） */
     private static final Map<String, String> MIME_TO_EXT = Map.of(
             "image/png", "png",
             "image/jpeg", "jpg",
@@ -588,7 +589,7 @@ public class NavService {
 
     /**
      * 上传图标文件
-     * 安全限制：文件类型白名单、大小上�?200KB、每用户每小时最�?30 �?
+     * 安全限制：文件类型白名单、大小上�?200KB、每用户每小时最�?30 �?
      * @param userId 用户ID
      * @param file 图标文件
      * @return 图标可访问URL
@@ -597,7 +598,7 @@ public class NavService {
         // 1. 文件类型校验
         String contentType = file.getContentType();
         if (contentType == null || !ALLOWED_MIME_TYPES.contains(contentType)) {
-            log.warn("图标上传类型不合�?userId={}, contentType={}", userId, contentType);
+            log.warn("图标上传类型不合�?userId={}, contentType={}", userId, contentType);
             throw new BizException(ResultCode.BAD_REQUEST.getCode(), "不支持的图片格式，仅允许 PNG/JPEG/GIF/WebP/ICO/SVG");
         }
 
@@ -633,7 +634,7 @@ public class NavService {
 
     /**
      * 获取推荐站点列表
-     * @return 推荐分类及站点列�?
+     * @return 推荐分类及站点列�?
      */
     public List<RecommendCategoryVO> getRecommended() {
         List<RecommendCategory> categories = recommendCategoryMapper.selectList(
@@ -665,7 +666,9 @@ public class NavService {
                 siteVO.setUrl(site.getUrl());
                 siteVO.setIconType(site.getIconType());
                 siteVO.setIconValue(site.getIconValue());
-                siteVO.setIconColor(site.getIconColor());
+                sitevo.setIconColor(site.getIconColor());
+        vo.setSortOrder(site.getSortOrder());
+                siteVO.setSortOrder(site.getSortOrder());
                 return siteVO;
             }).collect(Collectors.toList());
             vo.setSites(siteVOs);
@@ -746,6 +749,7 @@ public class NavService {
         vo.setIconType(site.getIconType());
         vo.setIconValue(site.getIconValue());
         vo.setIconColor(site.getIconColor());
+        vo.setSortOrder(site.getSortOrder());
         return vo;
     }
     

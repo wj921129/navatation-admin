@@ -18,6 +18,14 @@ import com.navatation.business.entity.NavCategory;
 import com.navatation.business.entity.NavShortcut;
 import com.navatation.business.mapper.NavCategoryMapper;
 import com.navatation.business.mapper.NavShortcutMapper;
+import com.navatation.business.mapper.RecommendCategoryMapper;
+import com.navatation.business.mapper.RecommendSiteMapper;
+import com.navatation.business.mapper.UserMapper;
+import com.navatation.business.entity.RecommendCategory;
+import com.navatation.business.entity.RecommendSite;
+import com.navatation.business.entity.User;
+import com.navatation.business.dto.RecommendCategoryRequest;
+import com.navatation.business.dto.RecommendSiteRequest;
 import com.navatation.common.BizException;
 import com.navatation.common.RedisConstants;
 import com.navatation.common.ResultCode;
@@ -76,7 +84,15 @@ public class NavService {
 
     private final NavCategoryMapper categoryMapper;
     private final NavShortcutMapper shortcutMapper;
+    private final RecommendCategoryMapper recommendCategoryMapper;
+    private final RecommendSiteMapper recommendSiteMapper;
+    private final UserMapper userMapper;
     private final RedisTemplate<String, Object> redisTemplate;
+
+    private boolean isAdmin(String userId) {
+        User user = userMapper.selectById(userId);
+        return user != null && "ADMIN".equals(user.getRole());
+    }
 
     @Value("${app.upload.icon-path}")
     private String iconPath;
@@ -468,80 +484,151 @@ public class NavService {
      * @return 推荐分类及站点列表
      */
     public List<RecommendCategoryVO> getRecommended() {
-        // 返回硬编码的推荐数据（与前端 AddShortcutDialog 保持一致）
-        List<RecommendCategoryVO> categories = new ArrayList<>();
-
-        categories.add(buildCategory("RC1", "看视频", "Video",
-                site("YouTube", "https://youtube.com", "#FF0000"),
-                site("Netflix", "https://netflix.com", "#E50914"),
-                site("Bilibili", "https://bilibili.com", "#00A1D6"),
-                site("Twitch", "https://twitch.tv", "#9146FF")));
-
-        categories.add(buildCategory("RC2", "AI工具", "Cpu",
-                site("ChatGPT", "https://chat.openai.com", "#10A37F"),
-                site("Claude", "https://claude.ai", "#CC9B7A"),
-                site("Midjourney", "https://midjourney.com", "#000000"),
-                site("Gemini", "https://gemini.google.com", "#4285F4")));
-
-        categories.add(buildCategory("RC3", "Web开发", "Code",
-                site("GitHub", "https://github.com", "#181717"),
-                site("Stack Overflow", "https://stackoverflow.com", "#F58025"),
-                site("CodePen", "https://codepen.io", "#000000"),
-                site("MDN", "https://developer.mozilla.org", "#000000")));
-
-        categories.add(buildCategory("RC4", "购物", "ShoppingBag",
-                site("Amazon", "https://amazon.com", "#FF9900"),
-                site("淘宝", "https://taobao.com", "#FF6A00"),
-                site("京东", "https://jd.com", "#E3393C"),
-                site("eBay", "https://ebay.com", "#E53238")));
-
-        categories.add(buildCategory("RC5", "新闻资讯", "Newspaper",
-                site("Reddit", "https://reddit.com", "#FF4500"),
-                site("Hacker News", "https://news.ycombinator.com", "#FF6600"),
-                site("Medium", "https://medium.com", "#000000"),
-                site("BBC", "https://bbc.com", "#000000")));
-
-        categories.add(buildCategory("RC6", "游戏", "Gamepad2",
-                site("Steam", "https://store.steampowered.com", "#171A21"),
-                site("Epic Games", "https://epicgames.com", "#313131"),
-                site("IGN", "https://ign.com", "#D8281F"),
-                site("GameSpot", "https://gamespot.com", "#FF0000")));
-
-        categories.add(buildCategory("RC7", "音乐", "Music",
-                site("Spotify", "https://spotify.com", "#1DB954"),
-                site("Apple Music", "https://music.apple.com", "#FA243C"),
-                site("SoundCloud", "https://soundcloud.com", "#FF5500"),
-                site("YouTube Music", "https://music.youtube.com", "#FF0000")));
-
-        categories.add(buildCategory("RC8", "办公效率", "Briefcase",
-                site("Notion", "https://notion.so", "#000000"),
-                site("Slack", "https://slack.com", "#4A154B"),
-                site("Trello", "https://trello.com", "#0052CC"),
-                site("Figma", "https://figma.com", "#F24E1E")));
-
-        return categories;
+        List<RecommendCategory> categories = recommendCategoryMapper.selectList(
+                new LambdaQueryWrapper<RecommendCategory>().orderByAsc(RecommendCategory::getSortOrder));
+        if (categories.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        List<String> categoryIds = categories.stream().map(RecommendCategory::getCategoryId).collect(Collectors.toList());
+        List<RecommendSite> sites = recommendSiteMapper.selectList(
+                new LambdaQueryWrapper<RecommendSite>()
+                        .in(RecommendSite::getCategoryId, categoryIds)
+                        .orderByAsc(RecommendSite::getSortOrder));
+                        
+        Map<String, List<RecommendSite>> siteMap = sites.stream()
+                .collect(Collectors.groupingBy(RecommendSite::getCategoryId));
+                
+        return categories.stream().map(cat -> {
+            RecommendCategoryVO vo = new RecommendCategoryVO();
+            vo.setCategoryId(cat.getCategoryId());
+            vo.setCategoryName(cat.getName());
+            vo.setCategoryIcon(cat.getIcon());
+            vo.setSortOrder(cat.getSortOrder());
+            List<RecommendSiteVO> siteVOs = siteMap.getOrDefault(cat.getCategoryId(), new ArrayList<>()).stream().map(site -> {
+                RecommendSiteVO siteVO = new RecommendSiteVO();
+                siteVO.setSiteId(site.getSiteId());
+                siteVO.setCategoryId(site.getCategoryId());
+                siteVO.setName(site.getName());
+                siteVO.setUrl(site.getUrl());
+                siteVO.setIconType(site.getIconType());
+                siteVO.setIconValue(site.getIconValue());
+                siteVO.setIconColor(site.getIconColor());
+                return siteVO;
+            }).collect(Collectors.toList());
+            vo.setSites(siteVOs);
+            return vo;
+        }).collect(Collectors.toList());
     }
 
-    /** 构建推荐分类 */
-    private RecommendCategoryVO buildCategory(String id, String name, String icon, RecommendSiteVO... sites) {
+    @Transactional
+    public RecommendCategoryVO addRecommendCategory(String userId, RecommendCategoryRequest req) {
+        if (!isAdmin(userId)) {
+            throw new BizException(ResultCode.FORBIDDEN);
+        }
+        RecommendCategory cat = new RecommendCategory();
+        cat.setCategoryId(IdUtils.genRecommendCategoryId());
+        cat.setName(req.getName());
+        cat.setIcon(req.getIcon());
+        cat.setSortOrder(req.getSortOrder() != null ? req.getSortOrder() : 0);
+        recommendCategoryMapper.insert(cat);
+        
         RecommendCategoryVO vo = new RecommendCategoryVO();
-        vo.setCategoryId(id);
-        vo.setCategoryName(name);
-        vo.setCategoryIcon(icon);
-        vo.setSites(List.of(sites));
+        vo.setCategoryId(cat.getCategoryId());
+        vo.setCategoryName(cat.getName());
+        vo.setCategoryIcon(cat.getIcon());
+        vo.setSortOrder(cat.getSortOrder());
+        vo.setSites(new ArrayList<>());
         return vo;
+    }
+    
+    @Transactional
+    public void updateRecommendCategory(String userId, String categoryId, RecommendCategoryRequest req) {
+        if (!isAdmin(userId)) {
+            throw new BizException(ResultCode.FORBIDDEN);
+        }
+        RecommendCategory cat = recommendCategoryMapper.selectById(categoryId);
+        if (cat == null) {
+            throw new BizException(ResultCode.NOT_FOUND);
+        }
+        if (req.getName() != null) cat.setName(req.getName());
+        if (req.getIcon() != null) cat.setIcon(req.getIcon());
+        if (req.getSortOrder() != null) cat.setSortOrder(req.getSortOrder());
+        recommendCategoryMapper.updateById(cat);
+    }
+    
+    @Transactional
+    public void deleteRecommendCategory(String userId, String categoryId) {
+        if (!isAdmin(userId)) {
+            throw new BizException(ResultCode.FORBIDDEN);
+        }
+        RecommendCategory cat = recommendCategoryMapper.selectById(categoryId);
+        if (cat == null) {
+            throw new BizException(ResultCode.NOT_FOUND);
+        }
+        recommendSiteMapper.delete(new LambdaQueryWrapper<RecommendSite>().eq(RecommendSite::getCategoryId, categoryId));
+        recommendCategoryMapper.deleteById(categoryId);
+    }
+    
+    @Transactional
+    public RecommendSiteVO addRecommendSite(String userId, RecommendSiteRequest req) {
+        if (!isAdmin(userId)) {
+            throw new BizException(ResultCode.FORBIDDEN);
+        }
+        RecommendSite site = new RecommendSite();
+        site.setSiteId(IdUtils.genRecommendSiteId());
+        site.setCategoryId(req.getCategoryId());
+        site.setName(req.getName());
+        site.setUrl(req.getUrl());
+        site.setIconType(req.getIconType());
+        site.setIconValue(req.getIconValue());
+        site.setIconColor(req.getIconColor());
+        site.setSortOrder(req.getSortOrder() != null ? req.getSortOrder() : 0);
+        recommendSiteMapper.insert(site);
+        
+        RecommendSiteVO vo = new RecommendSiteVO();
+        vo.setSiteId(site.getSiteId());
+        vo.setCategoryId(site.getCategoryId());
+        vo.setName(site.getName());
+        vo.setUrl(site.getUrl());
+        vo.setIconType(site.getIconType());
+        vo.setIconValue(site.getIconValue());
+        vo.setIconColor(site.getIconColor());
+        return vo;
+    }
+    
+    @Transactional
+    public void updateRecommendSite(String userId, String siteId, RecommendSiteRequest req) {
+        if (!isAdmin(userId)) {
+            throw new BizException(ResultCode.FORBIDDEN);
+        }
+        RecommendSite site = recommendSiteMapper.selectById(siteId);
+        if (site == null) {
+            throw new BizException(ResultCode.NOT_FOUND);
+        }
+        if (req.getCategoryId() != null) site.setCategoryId(req.getCategoryId());
+        if (req.getName() != null) site.setName(req.getName());
+        if (req.getUrl() != null) site.setUrl(req.getUrl());
+        if (req.getIconType() != null) site.setIconType(req.getIconType());
+        if (req.getIconValue() != null) site.setIconValue(req.getIconValue());
+        if (req.getIconColor() != null) site.setIconColor(req.getIconColor());
+        if (req.getSortOrder() != null) site.setSortOrder(req.getSortOrder());
+        recommendSiteMapper.updateById(site);
+    }
+    
+    @Transactional
+    public void deleteRecommendSite(String userId, String siteId) {
+        if (!isAdmin(userId)) {
+            throw new BizException(ResultCode.FORBIDDEN);
+        }
+        RecommendSite site = recommendSiteMapper.selectById(siteId);
+        if (site == null) {
+            throw new BizException(ResultCode.NOT_FOUND);
+        }
+        recommendSiteMapper.deleteById(siteId);
     }
 
-    /** 构建推荐站点 */
-    private RecommendSiteVO site(String name, String url, String color) {
-        RecommendSiteVO vo = new RecommendSiteVO();
-        vo.setName(name);
-        vo.setUrl(url);
-        vo.setIconType("BUILTIN");
-        vo.setIconValue(name);
-        vo.setIconColor(color);
-        return vo;
-    }
+
 
     /** 实体转VO */
     private ShortcutVO toShortcutVO(NavShortcut s) {

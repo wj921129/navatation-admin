@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS `navatation_user` (
     `email`          VARCHAR(128)          DEFAULT NULL            COMMENT '邮箱，用于密码找回',
     `avatar`         VARCHAR(512)          DEFAULT NULL            COMMENT '头像URL，OSS地址',
     `status`         TINYINT               NOT NULL DEFAULT 1      COMMENT '账号状态：0-禁用, 1-正常',
+    `role`           VARCHAR(16)           NOT NULL DEFAULT 'USER' COMMENT '角色：USER-普通用户, ADMIN-超级管理员',
     `last_login_at`  DATETIME              DEFAULT NULL            COMMENT '最后登录时间',
     `last_login_ip`  VARCHAR(45)           DEFAULT NULL            COMMENT '最后登录IP',
     `created_at`     DATETIME              NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -258,3 +259,27 @@ CREATE TABLE IF NOT EXISTS `navatation_user_widget` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   COMMENT='用户组件表 - 存储用户在桌面上自定义添加的组件信息';
 
+-- ============================================================
+-- 初始化超级管理员及默认游客配置数据
+-- 密码明文：admin123
+-- ============================================================
+INSERT INTO `navatation_user` (`user_id`, `username`, `password`, `email`, `role`, `status`)
+VALUES ('U000000000000000000001', 'admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', 'admin@navatation.com', 'ADMIN', 1);
+
+INSERT INTO `navatation_user_config` (`config_id`, `user_id`, `search_engine`, `background_image`, `background_type`, `search_box_width`, `search_box_height`, `search_box_margin_top`, `icon_size`, `icon_radius`, `icon_spacing_x`, `icon_spacing_y`, `icon_text_gap`, `text_size`, `icons_margin_top`, `icons_margin_x`, `theme`)
+VALUES ('UC00000000000000000001', 'U000000000000000000001', 'google', 'https://images.unsplash.com/photo-1598439473183-42c9301db5dc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=2400', 'URL', 50, 64, 192, 64, 50, 32, 48, 12, 14, 64, 10, 'light');
+
+INSERT INTO `navatation_nav_category` (`category_id`, `user_id`, `name`, `sort_order`)
+VALUES ('CG00000000000000000001', 'U000000000000000000001', '常用', 0);
+
+-- 初始化超级管理员的默认快捷方式
+INSERT INTO `navatation_nav_shortcut` (`shortcut_id`, `category_id`, `user_id`, `name`, `url`, `icon_type`, `icon_value`, `icon_color`, `sort_order`) VALUES
+('SC00000000000000000001', 'CG00000000000000000001', 'U000000000000000000001', 'Google', 'https://google.com', 'BUILTIN', 'Search', '#4285F4', 1),
+('SC00000000000000000002', 'CG00000000000000000001', 'U000000000000000000001', 'YouTube', 'https://youtube.com', 'BUILTIN', 'Youtube', '#FF0000', 2),
+('SC00000000000000000003', 'CG00000000000000000001', 'U000000000000000000001', 'Facebook', 'https://facebook.com', 'BUILTIN', 'Facebook', '#1877F2', 3),
+('SC00000000000000000004', 'CG00000000000000000001', 'U000000000000000000001', 'Twitter', 'https://twitter.com', 'BUILTIN', 'Twitter', '#1DA1F2', 4),
+('SC00000000000000000005', 'CG00000000000000000001', 'U000000000000000000001', 'Instagram', 'https://instagram.com', 'BUILTIN', 'Instagram', '#E4405F', 5),
+('SC00000000000000000006', 'CG00000000000000000001', 'U000000000000000000001', 'LinkedIn', 'https://linkedin.com', 'BUILTIN', 'Linkedin', '#0A66C2', 6),
+('SC00000000000000000007', 'CG00000000000000000001', 'U000000000000000000001', 'GitHub', 'https://github.com', 'BUILTIN', 'Github', '#181717', 7),
+('SC00000000000000000008', 'CG00000000000000000001', 'U000000000000000000001', 'Amazon', 'https://amazon.com', 'BUILTIN', 'ShoppingCart', '#FF9900', 8),
+('SC00000000000000000009', 'CG00000000000000000001', 'U000000000000000000001', 'Netflix', 'https://netflix.com', 'BUILTIN', 'Film', '#E50914', 9);

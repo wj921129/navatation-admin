@@ -10,25 +10,24 @@ import java.time.LocalDateTime;
 
 /**
  * @Author admin
- * @CreateTime 2026-05-15
- * @Description 用户实体
+ * @CreateTime 2026-06-08
+ * @Description 推荐网址实体
  */
 @Data
-@TableName("navatation_user")
-public class User {
+@TableName("navatation_recommend_site")
+public class RecommendSite {
     private Long rowId;
     
     @TableId(type = IdType.INPUT)
-    private String userId;
+    private String siteId;
     
-    private String username;
-    private String password;
-    private String email;
-    private String avatar;
-    private Integer status;
-    private String role;
-    private LocalDateTime lastLoginAt;
-    private String lastLoginIp;
+    private String categoryId;
+    private String name;
+    private String url;
+    private String iconType;
+    private String iconValue;
+    private String iconColor;
+    private Integer sortOrder;
     
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

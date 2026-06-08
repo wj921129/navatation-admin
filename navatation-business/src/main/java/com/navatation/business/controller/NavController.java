@@ -11,6 +11,8 @@ import com.navatation.business.dto.RecommendCategoryVO;
 import com.navatation.business.dto.ShortcutVO;
 import com.navatation.business.dto.SortRequest;
 import com.navatation.business.dto.UpdateShortcutRequest;
+import com.navatation.business.dto.RecommendCategoryRequest;
+import com.navatation.business.dto.RecommendSiteRequest;
 import com.navatation.business.service.NavService;
 import com.navatation.common.Result;
 import com.navatation.framework.security.JwtTokenProvider;
@@ -167,5 +169,61 @@ public class NavController {
         List<RecommendCategoryVO> result = navService.getRecommended();
         log.info("获取推荐站点 出参:count={}", result.size());
         return Result.success(result);
+    }
+
+    @PostMapping("/recommended/categories")
+    public Result<RecommendCategoryVO> addRecommendCategory(@RequestHeader("Authorization") String auth,
+                                                            @RequestBody RecommendCategoryRequest req) {
+        String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
+        log.info("添加推荐分类 入参:userId={},name={}", userId, req.getName());
+        RecommendCategoryVO result = navService.addRecommendCategory(userId, req);
+        return Result.success("添加成功", result);
+    }
+
+    @PutMapping("/recommended/categories/{categoryId}")
+    public Result<?> updateRecommendCategory(@RequestHeader("Authorization") String auth,
+                                             @PathVariable String categoryId,
+                                             @RequestBody RecommendCategoryRequest req) {
+        String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
+        log.info("更新推荐分类 入参:userId={},categoryId={}", userId, categoryId);
+        navService.updateRecommendCategory(userId, categoryId, req);
+        return Result.success("更新成功", null);
+    }
+
+    @DeleteMapping("/recommended/categories/{categoryId}")
+    public Result<?> deleteRecommendCategory(@RequestHeader("Authorization") String auth,
+                                             @PathVariable String categoryId) {
+        String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
+        log.info("删除推荐分类 入参:userId={},categoryId={}", userId, categoryId);
+        navService.deleteRecommendCategory(userId, categoryId);
+        return Result.success("删除成功", null);
+    }
+
+    @PostMapping("/recommended/sites")
+    public Result<RecommendSiteVO> addRecommendSite(@RequestHeader("Authorization") String auth,
+                                                    @RequestBody RecommendSiteRequest req) {
+        String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
+        log.info("添加推荐网址 入参:userId={},name={}", userId, req.getName());
+        RecommendSiteVO result = navService.addRecommendSite(userId, req);
+        return Result.success("添加成功", result);
+    }
+
+    @PutMapping("/recommended/sites/{siteId}")
+    public Result<?> updateRecommendSite(@RequestHeader("Authorization") String auth,
+                                         @PathVariable String siteId,
+                                         @RequestBody RecommendSiteRequest req) {
+        String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
+        log.info("更新推荐网址 入参:userId={},siteId={}", userId, siteId);
+        navService.updateRecommendSite(userId, siteId, req);
+        return Result.success("更新成功", null);
+    }
+
+    @DeleteMapping("/recommended/sites/{siteId}")
+    public Result<?> deleteRecommendSite(@RequestHeader("Authorization") String auth,
+                                         @PathVariable String siteId) {
+        String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
+        log.info("删除推荐网址 入参:userId={},siteId={}", userId, siteId);
+        navService.deleteRecommendSite(userId, siteId);
+        return Result.success("删除成功", null);
     }
 }

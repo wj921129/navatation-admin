@@ -82,6 +82,7 @@ public class AuthService {
         userVO.setUserId(user.getUserId());
         userVO.setUsername(user.getUsername());
         userVO.setAvatar(user.getAvatar());
+        userVO.setRole(user.getRole());
         userVO.setCreatedAt(user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
 
         LoginVO vo = new LoginVO();
@@ -113,6 +114,7 @@ public class AuthService {
         user.setUsername(req.getUsername());
         user.setPassword(passwordEncoder.encode(req.getPassword()));
         user.setStatus(USER_STATUS_ENABLED);
+        user.setRole("USER");
         userMapper.insert(user);
 
         // 创建用户默认配置
@@ -185,6 +187,7 @@ public class AuthService {
         userVO.setUserId(user.getUserId());
         userVO.setUsername(user.getUsername());
         userVO.setAvatar(user.getAvatar());
+        userVO.setRole(user.getRole());
         userVO.setCreatedAt(user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
 
         LoginVO vo = new LoginVO();
@@ -231,6 +234,7 @@ public class AuthService {
         vo.setUserId(user.getUserId());
         vo.setUsername(user.getUsername());
         vo.setAvatar(user.getAvatar());
+        vo.setRole(user.getRole());
         vo.setCreatedAt(user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
         return vo;
     }

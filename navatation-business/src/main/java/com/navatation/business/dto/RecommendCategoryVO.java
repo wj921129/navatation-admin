@@ -8,5 +8,6 @@ public class RecommendCategoryVO {
     private String categoryId;
     private String categoryName;
     private String categoryIcon;
+    private Integer sortOrder;
     private List<RecommendSiteVO> sites;
 }

@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.navatation.business.dto.WidgetRequest;
 import com.navatation.business.dto.WidgetVO;
 import com.navatation.business.entity.UserWidget;
+import com.navatation.business.mapper.RootWidgetMapper;
 import com.navatation.business.mapper.UserWidgetMapper;
 import com.navatation.common.IdUtils;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,7 @@ public class WidgetService {
     private static final Logger log = LoggerFactory.getLogger(WidgetService.class);
 
     private final UserWidgetMapper widgetMapper;
+    private final RootWidgetMapper rootWidgetMapper;
     private final ObjectMapper objectMapper;
     private final com.navatation.business.mapper.UserMapper userMapper;
     private final RecommendWidgetService recommendWidgetService;
@@ -50,6 +52,17 @@ public class WidgetService {
      * @return 组件展现VO列表
      */
     public List<WidgetVO> getWidgets(String userId) {
+        if (isAdmin(userId)) {
+            List<com.navatation.business.entity.RootWidget> list = rootWidgetMapper.selectList(
+                    new LambdaQueryWrapper<com.navatation.business.entity.RootWidget>()
+                            .eq(com.navatation.business.entity.RootWidget::getUserId, userId)
+            );
+            if (CollectionUtils.isEmpty(list)) {
+                return Collections.emptyList();
+            }
+            return list.stream().map(this::toVO).collect(Collectors.toList());
+        }
+
         List<UserWidget> list = widgetMapper.selectList(
                 new LambdaQueryWrapper<UserWidget>()
                         .eq(UserWidget::getUserId, userId)
@@ -68,6 +81,43 @@ public class WidgetService {
      */
     @Transactional(rollbackFor = Exception.class)
     public void saveWidgets(String userId, List<WidgetRequest> requests) {
+        if (isAdmin(userId)) {
+            rootWidgetMapper.delete(new LambdaQueryWrapper<com.navatation.business.entity.RootWidget>().eq(com.navatation.business.entity.RootWidget::getUserId, userId));
+
+            if (CollectionUtils.isEmpty(requests)) {
+                log.info("保存管理员组件 传入列表为空，清除管理员所有组件 userId={}", userId);
+                return;
+            }
+
+            for (WidgetRequest req : requests) {
+                com.navatation.business.entity.RootWidget entity = new com.navatation.business.entity.RootWidget();
+                entity.setUserId(userId);
+                entity.setType(req.getType());
+                entity.setStyle(req.getStyle());
+                entity.setX(req.getX());
+                entity.setY(req.getY());
+
+                String widgetId = req.getWidgetId();
+                if (StringUtils.isBlank(widgetId) || !widgetId.startsWith("WG")) {
+                    entity.setWidgetId(IdUtils.genWidgetId());
+                } else {
+                    entity.setWidgetId(widgetId);
+                }
+
+                if (req.getMeta() != null) {
+                    try {
+                        entity.setMeta(objectMapper.writeValueAsString(req.getMeta()));
+                    } catch (JsonProcessingException e) {
+                        log.error("组件元数据序列化失败 userId={}", userId, e);
+                        entity.setMeta("{}");
+                    }
+                }
+                rootWidgetMapper.insert(entity);
+            }
+            log.info("保存管理员组件成功 userId={}, count={}", userId, requests.size());
+            return;
+        }
+
         widgetMapper.delete(new LambdaQueryWrapper<UserWidget>().eq(UserWidget::getUserId, userId));
 
         if (CollectionUtils.isEmpty(requests)) {
@@ -107,6 +157,30 @@ public class WidgetService {
      * 将 UserWidget 实体对象转换为 WidgetVO 对象
      */
     private WidgetVO toVO(UserWidget entity) {
+        WidgetVO vo = new WidgetVO();
+        vo.setWidgetId(entity.getWidgetId());
+        vo.setType(entity.getType());
+        vo.setStyle(entity.getStyle());
+        vo.setX(entity.getX());
+        vo.setY(entity.getY());
+
+        String metaStr = entity.getMeta();
+        if (StringUtils.isBlank(metaStr)) {
+            vo.setMeta(Collections.emptyMap());
+            return vo;
+        }
+
+        try {
+            Map<String, Object> metaMap = objectMapper.readValue(metaStr, new TypeReference<Map<String, Object>>() {});
+            vo.setMeta(metaMap);
+        } catch (JsonProcessingException e) {
+            log.error("组件元数据反序列化失败 widgetId={}", entity.getWidgetId(), e);
+            vo.setMeta(Collections.emptyMap());
+        }
+        return vo;
+    }
+
+    private WidgetVO toVO(com.navatation.business.entity.RootWidget entity) {
         WidgetVO vo = new WidgetVO();
         vo.setWidgetId(entity.getWidgetId());
         vo.setType(entity.getType());

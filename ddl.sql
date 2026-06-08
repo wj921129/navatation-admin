@@ -175,11 +175,108 @@ CREATE TABLE IF NOT EXISTS `navatation_user_widget` (
     PRIMARY KEY (`row_id`),
     UNIQUE KEY `uk_widget_id` (`widget_id`),
     KEY `idx_user_id` (`user_id`),
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `navatation_root_config` (
+    `row_id`                  BIGINT       UNSIGNED NOT NULL AUTO_INCREMENT  COMMENT '自增物理主键',
+    `config_id`               VARCHAR(64)           NOT NULL                COMMENT '配置ID，业务逻辑主键，带前缀UC的随机UUID',
+    `user_id`                 VARCHAR(64)           NOT NULL                COMMENT '所属用户ID，关联 navatation_user.user_id，唯一',
+    `search_engine`           VARCHAR(16)           NOT NULL DEFAULT 'google' COMMENT '默认搜索引擎',
+    `background_image`        VARCHAR(2048)         DEFAULT NULL            COMMENT '壁纸URL',
+    `background_type`         VARCHAR(16)           NOT NULL DEFAULT 'URL'  COMMENT '壁纸类型',
+    `search_box_width`        INT                   NOT NULL DEFAULT 50     COMMENT '搜索框宽度屏幕占比(%)',
+    `search_box_height`       INT                   NOT NULL DEFAULT 64     COMMENT '搜索框高度像素',
+    `search_box_margin_top`   INT                   NOT NULL DEFAULT 192    COMMENT '搜索框距顶部距离像素',
+    `icon_size`               INT                   NOT NULL DEFAULT 64     COMMENT '图标大小像素',
+    `icon_radius`             INT                   NOT NULL DEFAULT 50     COMMENT '图标圆角百分比',
+    `icon_spacing_x`          INT                   NOT NULL DEFAULT 32     COMMENT '图标水平间距像素',
+    `icon_spacing_y`          INT                   NOT NULL DEFAULT 48     COMMENT '图标垂直间距像素',
+    `icon_text_gap`           INT                   NOT NULL DEFAULT 12     COMMENT '图标与文字间距像素',
+    `text_size`               INT                   NOT NULL DEFAULT 14     COMMENT '文字大小像素',
+    `icons_margin_top`        INT                   NOT NULL DEFAULT 64     COMMENT '导航区距搜索框距离像素',
+    `icons_margin_x`          INT                   NOT NULL DEFAULT 10     COMMENT '导航区左右边距百分比',
+    `theme`                   VARCHAR(16)           NOT NULL DEFAULT 'dark' COMMENT '主题模式',
+    `created_at`              DATETIME              NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at`              DATETIME              NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`row_id`),
+    UNIQUE KEY `uk_config_id` (`config_id`),
+    UNIQUE KEY `uk_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `navatation_root_nav_category` (
+    `row_id`         BIGINT       UNSIGNED NOT NULL AUTO_INCREMENT  COMMENT '自增物理主键',
+    `category_id`    VARCHAR(64)           NOT NULL                COMMENT '分类ID，业务逻辑主键，带前缀CG的随机UUID',
+    `user_id`        VARCHAR(64)           NOT NULL                COMMENT '所属用户ID，关联 navatation_user.user_id',
+    `name`           VARCHAR(32)           NOT NULL                COMMENT '分类名称，如：常用、工作、娱乐',
+    `sort_order`     DOUBLE                NOT NULL DEFAULT 0.0    COMMENT '排序序号，越小越靠前',
+    `created_at`     DATETIME              NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at`     DATETIME              NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`row_id`),
+    UNIQUE KEY `uk_category_id` (`category_id`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_user_sort` (`user_id`, `sort_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `navatation_root_nav_shortcut` (
+    `row_id`         BIGINT       UNSIGNED NOT NULL AUTO_INCREMENT  COMMENT '自增物理主键',
+    `shortcut_id`    VARCHAR(64)           NOT NULL                COMMENT '快捷方式ID，业务逻辑主键，带前缀SC的随机UUID',
+    `category_id`    VARCHAR(64)           NOT NULL                COMMENT '所属分类ID，关联 navatation_root_nav_category.category_id',
+    `user_id`        VARCHAR(64)           NOT NULL                COMMENT '所属用户ID，关联 navatation_user.user_id（冗余字段，加速查询）',
+    `name`           VARCHAR(64)           NOT NULL                COMMENT '网站名称，显示在图标下方',
+    `url`            VARCHAR(2048)         NOT NULL                COMMENT '网站URL，点击跳转目标',
+    `icon_type`      VARCHAR(16)           NOT NULL DEFAULT 'BUILTIN' COMMENT '图标类型',
+    `icon_value`     VARCHAR(2048)         DEFAULT NULL            COMMENT '图标值',
+    `icon_color`     VARCHAR(7)            DEFAULT NULL            COMMENT '图标颜色',
+    `sort_order`     DOUBLE                NOT NULL DEFAULT 0.0    COMMENT '排序序号',
+    `click_count`    BIGINT       UNSIGNED NOT NULL DEFAULT 0      COMMENT '点击次数',
+    `last_click_at`  DATETIME              DEFAULT NULL            COMMENT '最后点击时间',
+    `created_at`     DATETIME              NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at`     DATETIME              NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`row_id`),
+    UNIQUE KEY `uk_shortcut_id` (`shortcut_id`),
+    KEY `idx_category_id` (`category_id`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_user_category_sort` (`user_id`, `category_id`, `sort_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `navatation_root_user_widget` (
+    `row_id`         BIGINT       UNSIGNED NOT NULL AUTO_INCREMENT  COMMENT '自增物理主键',
+    `widget_id`      VARCHAR(64)           NOT NULL                COMMENT '组件ID，业务逻辑主键，带前缀WG的随机22位纯数字字符串',
+    `user_id`        VARCHAR(64)           NOT NULL                COMMENT '所属用户ID，关联 navatation_user.user_id',
+    `type`           VARCHAR(32)           NOT NULL                COMMENT '组件类型，如：clock, weather, calendar',
+    `style`          VARCHAR(32)           NOT NULL                COMMENT '组件样式，如：analog, digital, flip, traditional',
+    `x`              DECIMAL(5, 2)         NOT NULL                COMMENT 'X轴百分比位置 (0.00 - 100.00)',
+    `y`              DECIMAL(5, 2)         NOT NULL                COMMENT 'Y轴百分比位置 (0.00 - 100.00)',
+    `meta`           VARCHAR(2048)         DEFAULT NULL            COMMENT '可选元数据，JSON字符串',
+    `created_at`     DATETIME              NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at`     DATETIME              NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`row_id`),
+    UNIQUE KEY `uk_widget_id` (`widget_id`),
+    KEY `idx_user_id` (`user_id`),
     KEY `idx_user_type` (`user_id`, `type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `navatation_root_todo_item` (
+    `row_id`         BIGINT       UNSIGNED NOT NULL AUTO_INCREMENT  COMMENT '自增物理主键',
+    `todo_id`        VARCHAR(64)           NOT NULL                COMMENT '待办ID，业务逻辑主键，带前缀TD的随机UUID',
+    `user_id`        VARCHAR(64)           NOT NULL                COMMENT '所属用户ID，关联 navatation_user.user_id',
+    `content`        VARCHAR(512)          NOT NULL                COMMENT '待办内容',
+    `completed`      TINYINT(1)            NOT NULL DEFAULT 0      COMMENT '完成状态',
+    `sort_order`     DOUBLE                NOT NULL DEFAULT 0.0    COMMENT '排序序号',
+    `completed_at`   DATETIME              DEFAULT NULL            COMMENT '完成时间',
+    `created_at`     DATETIME              NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at`     DATETIME              NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`row_id`),
+    UNIQUE KEY `uk_todo_id` (`todo_id`),
+    KEY `idx_user_completed` (`user_id`, `completed`),
+    KEY `idx_user_sort` (`user_id`, `sort_order`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `navatation_user` (`user_id`, `username`, `password`, `email`, `role`, `status`)
 VALUES ('U000000000000000000001', 'admin', '$2a$10$51BBmH3awGt4l6zFcVMELuB5xVszrWg7AG.hB4S/U97hA0yzdGyOW', 'admin@navatation.com', 'ADMIN', 1);
+
+INSERT INTO `navatation_root_config` (`config_id`, `user_id`, `search_engine`, `background_image`, `background_type`, `search_box_width`, `search_box_height`, `search_box_margin_top`, `icon_size`, `icon_radius`, `icon_spacing_x`, `icon_spacing_y`, `icon_text_gap`, `text_size`, `icons_margin_top`, `icons_margin_x`, `theme`)
+VALUES ('UC0000000000000000001', 'U000000000000000000001', 'google', 'https://images.unsplash.com/photo-1598439473183-42c9301db5dc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=2400', 'URL', 50, 64, 192, 64, 50, 32, 48, 12, 14, 64, 10, 'light');
 
 INSERT INTO `navatation_recommend_config` (`config_id`, `search_engine`, `background_image`, `background_type`, `search_box_width`, `search_box_height`, `search_box_margin_top`, `icon_size`, `icon_radius`, `icon_spacing_x`, `icon_spacing_y`, `icon_text_gap`, `text_size`, `icons_margin_top`, `icons_margin_x`, `theme`)
 VALUES ('RCG0000000000000000001', 'google', 'https://images.unsplash.com/photo-1598439473183-42c9301db5dc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=2400', 'URL', 50, 64, 192, 64, 50, 32, 48, 12, 14, 64, 10, 'light');

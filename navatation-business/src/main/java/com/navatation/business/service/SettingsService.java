@@ -9,6 +9,7 @@ import com.navatation.business.entity.RecommendConfig;
 import com.navatation.business.entity.User;
 import com.navatation.business.entity.UserConfig;
 import com.navatation.business.mapper.RecommendConfigMapper;
+import com.navatation.business.mapper.RootConfigMapper;
 import com.navatation.business.mapper.UserConfigMapper;
 import com.navatation.business.mapper.UserMapper;
 import com.navatation.common.IdUtils;
@@ -33,8 +34,14 @@ public class SettingsService {
     private static final Logger log = LoggerFactory.getLogger(SettingsService.class);
 
     private final UserConfigMapper userConfigMapper;
+    private final RootConfigMapper rootConfigMapper;
     private final RecommendConfigMapper recommendConfigMapper;
     private final UserMapper userMapper;
+
+    private boolean isAdmin(String userId) {
+        User user = userMapper.selectById(userId);
+        return user != null && "ADMIN".equals(user.getRole());
+    }
 
     @Value("${app.upload.wallpaper-path}")
     private String wallpaperPath;
@@ -48,6 +55,15 @@ public class SettingsService {
      * @return 用户设置
      */
     public SettingsVO getSettings(String userId) {
+        if (isAdmin(userId)) {
+            com.navatation.business.entity.RootConfig rootConfig = rootConfigMapper.selectOne(
+                    new LambdaQueryWrapper<com.navatation.business.entity.RootConfig>().eq(com.navatation.business.entity.RootConfig::getUserId, userId));
+            if (rootConfig == null) {
+                rootConfig = createDefaultRoot(userId);
+            }
+            return toVO(rootConfig);
+        }
+
         UserConfig config = userConfigMapper.selectOne(
                 new LambdaQueryWrapper<UserConfig>().eq(UserConfig::getUserId, userId));
         if (config == null) {
@@ -62,6 +78,18 @@ public class SettingsService {
      * @param req 设置请求
      */
     public void saveSettings(String userId, SettingsRequest req) {
+        if (isAdmin(userId)) {
+            com.navatation.business.entity.RootConfig rootConfig = rootConfigMapper.selectOne(
+                    new LambdaQueryWrapper<com.navatation.business.entity.RootConfig>().eq(com.navatation.business.entity.RootConfig::getUserId, userId));
+            if (rootConfig == null) {
+                rootConfig = createDefaultRoot(userId);
+            }
+            applyRequest(rootConfig, req);
+            rootConfigMapper.updateById(rootConfig);
+            log.info("保存管理员设置成功 userId={}", userId);
+            return;
+        }
+
         UserConfig config = userConfigMapper.selectOne(
                 new LambdaQueryWrapper<UserConfig>().eq(UserConfig::getUserId, userId));
         if (config == null) {
@@ -78,6 +106,18 @@ public class SettingsService {
      * @param req 设置请求
      */
     public void patchSettings(String userId, SettingsRequest req) {
+        if (isAdmin(userId)) {
+            com.navatation.business.entity.RootConfig rootConfig = rootConfigMapper.selectOne(
+                    new LambdaQueryWrapper<com.navatation.business.entity.RootConfig>().eq(com.navatation.business.entity.RootConfig::getUserId, userId));
+            if (rootConfig == null) {
+                rootConfig = createDefaultRoot(userId);
+            }
+            applyRequest(rootConfig, req);
+            rootConfigMapper.updateById(rootConfig);
+            log.info("局部更新管理员设置成功 userId={}", userId);
+            return;
+        }
+
         UserConfig config = userConfigMapper.selectOne(
                 new LambdaQueryWrapper<UserConfig>().eq(UserConfig::getUserId, userId));
         if (config == null) {
@@ -175,6 +215,29 @@ public class SettingsService {
         return config;
     }
 
+    /** 创建默认管理员配置 */
+    private com.navatation.business.entity.RootConfig createDefaultRoot(String userId) {
+        com.navatation.business.entity.RootConfig config = new com.navatation.business.entity.RootConfig();
+        config.setConfigId(IdUtils.genConfigId());
+        config.setUserId(userId);
+        config.setSearchEngine(SettingsConstants.DEFAULT_SEARCH_ENGINE);
+        config.setSearchBoxWidth(SettingsConstants.DEFAULT_SEARCH_BOX_WIDTH);
+        config.setSearchBoxHeight(SettingsConstants.DEFAULT_SEARCH_BOX_HEIGHT);
+        config.setSearchBoxMarginTop(SettingsConstants.DEFAULT_SEARCH_BOX_MARGIN_TOP);
+        config.setIconSize(SettingsConstants.DEFAULT_ICON_SIZE);
+        config.setIconRadius(SettingsConstants.DEFAULT_ICON_RADIUS);
+        config.setIconSpacingX(SettingsConstants.DEFAULT_ICON_SPACING_X);
+        config.setIconSpacingY(SettingsConstants.DEFAULT_ICON_SPACING_Y);
+        config.setIconTextGap(SettingsConstants.DEFAULT_ICON_TEXT_GAP);
+        config.setTextSize(SettingsConstants.DEFAULT_TEXT_SIZE);
+        config.setIconsMarginTop(SettingsConstants.DEFAULT_ICONS_MARGIN_TOP);
+        config.setIconsMarginX(SettingsConstants.DEFAULT_ICONS_MARGIN_X);
+        config.setTheme(SettingsConstants.DEFAULT_THEME);
+        config.setBackgroundType(SettingsConstants.DEFAULT_BACKGROUND_TYPE);
+        rootConfigMapper.insert(config);
+        return config;
+    }
+
     /** 将请求参数应用到配置实体 */
     private void applyRequest(UserConfig config, SettingsRequest req) {
         if (req.getSearchEngine() != null) {
@@ -226,6 +289,44 @@ public class SettingsService {
 
     /** 实体转VO */
     private SettingsVO toVO(UserConfig config) {
+        SettingsVO vo = new SettingsVO();
+        vo.setSearchEngine(config.getSearchEngine());
+        vo.setBackgroundImage(config.getBackgroundImage());
+        vo.setBackgroundType(config.getBackgroundType());
+        vo.setSearchBoxWidth(config.getSearchBoxWidth());
+        vo.setSearchBoxHeight(config.getSearchBoxHeight());
+        vo.setSearchBoxMarginTop(config.getSearchBoxMarginTop());
+        vo.setIconSize(config.getIconSize());
+        vo.setIconRadius(config.getIconRadius());
+        vo.setIconSpacingX(config.getIconSpacingX());
+        vo.setIconSpacingY(config.getIconSpacingY());
+        vo.setIconTextGap(config.getIconTextGap());
+        vo.setTextSize(config.getTextSize());
+        vo.setIconsMarginTop(config.getIconsMarginTop());
+        vo.setIconsMarginX(config.getIconsMarginX());
+        vo.setTheme(config.getTheme());
+        return vo;
+    }
+
+    private void applyRequest(com.navatation.business.entity.RootConfig config, SettingsRequest req) {
+        if (req.getSearchEngine() != null) config.setSearchEngine(req.getSearchEngine());
+        if (req.getBackgroundImage() != null) config.setBackgroundImage(req.getBackgroundImage());
+        if (req.getBackgroundType() != null) config.setBackgroundType(req.getBackgroundType());
+        if (req.getSearchBoxWidth() != null) config.setSearchBoxWidth(req.getSearchBoxWidth());
+        if (req.getSearchBoxHeight() != null) config.setSearchBoxHeight(req.getSearchBoxHeight());
+        if (req.getSearchBoxMarginTop() != null) config.setSearchBoxMarginTop(req.getSearchBoxMarginTop());
+        if (req.getIconSize() != null) config.setIconSize(req.getIconSize());
+        if (req.getIconRadius() != null) config.setIconRadius(req.getIconRadius());
+        if (req.getIconSpacingX() != null) config.setIconSpacingX(req.getIconSpacingX());
+        if (req.getIconSpacingY() != null) config.setIconSpacingY(req.getIconSpacingY());
+        if (req.getIconTextGap() != null) config.setIconTextGap(req.getIconTextGap());
+        if (req.getTextSize() != null) config.setTextSize(req.getTextSize());
+        if (req.getIconsMarginTop() != null) config.setIconsMarginTop(req.getIconsMarginTop());
+        if (req.getIconsMarginX() != null) config.setIconsMarginX(req.getIconsMarginX());
+        if (req.getTheme() != null) config.setTheme(req.getTheme());
+    }
+
+    private SettingsVO toVO(com.navatation.business.entity.RootConfig config) {
         SettingsVO vo = new SettingsVO();
         vo.setSearchEngine(config.getSearchEngine());
         vo.setBackgroundImage(config.getBackgroundImage());

@@ -1,4 +1,4 @@
-﻿package com.navatation.business.service;
+package com.navatation.business.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.navatation.business.dto.BatchCreateItemVO;
@@ -103,21 +103,6 @@ public class NavService {
      * @return 分类列表
      */
     public List<CategoryVO> getCategories(String userId) {
-        if (isAdmin(userId)) {
-            List<RecommendCategory> recCats = recommendCategoryMapper.selectList(new LambdaQueryWrapper<RecommendCategory>().orderByAsc(RecommendCategory::getSortOrder));
-            List<String> catIds = recCats.stream().map(RecommendCategory::getCategoryId).collect(Collectors.toList());
-            Map<String, Long> countMap = catIds.isEmpty() ? Map.of() :
-                    recommendSiteMapper.selectList(new LambdaQueryWrapper<RecommendSite>().in(RecommendSite::getCategoryId, catIds))
-                            .stream().collect(Collectors.groupingBy(RecommendSite::getCategoryId, Collectors.counting()));
-            return recCats.stream().map(c -> {
-                CategoryVO vo = new CategoryVO();
-                vo.setCategoryId(c.getCategoryId());
-                vo.setName(c.getName());
-                vo.setSortOrder(c.getSortOrder());
-                vo.setShortcutCount(countMap.getOrDefault(c.getCategoryId(), 0L).intValue());
-                return vo;
-            }).collect(Collectors.toList());
-        }
 
         List<NavCategory> categories = categoryMapper.selectList(
                 new LambdaQueryWrapper<NavCategory>()
@@ -147,21 +132,6 @@ public class NavService {
      * @return 创建的分�?
      */
     public CategoryVO createCategory(String userId, CategoryRequest req) {
-        if (isAdmin(userId)) {
-            RecommendCategory cat = new RecommendCategory();
-            cat.setCategoryId(IdUtils.genRecommendCategoryId());
-            cat.setName(req.getName());
-            cat.setIcon("Folder"); // 默认图标
-            cat.setSortOrder(req.getSortOrder() != null ? req.getSortOrder() : 0.0);
-            recommendCategoryMapper.insert(cat);
-
-            CategoryVO vo = new CategoryVO();
-            vo.setCategoryId(cat.getCategoryId());
-            vo.setName(cat.getName());
-            vo.setSortOrder(cat.getSortOrder());
-            vo.setShortcutCount(0);
-            return vo;
-        }
 
         NavCategory category = new NavCategory();
         category.setCategoryId(IdUtils.genCategoryId());
@@ -186,14 +156,6 @@ public class NavService {
      * @param req 分类请求
      */
     public void updateCategory(String userId, String categoryId, CategoryRequest req) {
-        if (isAdmin(userId)) {
-            RecommendCategory cat = recommendCategoryMapper.selectById(categoryId);
-            if (cat == null) throw new BizException(ResultCode.NOT_FOUND);
-            if (req.getName() != null) cat.setName(req.getName());
-            if (req.getSortOrder() != null) cat.setSortOrder(req.getSortOrder());
-            recommendCategoryMapper.updateById(cat);
-            return;
-        }
 
         NavCategory category = categoryMapper.selectById(categoryId);
         if (category == null || !category.getUserId().equals(userId)) {
@@ -216,13 +178,6 @@ public class NavService {
      */
     @Transactional
     public void deleteCategory(String userId, String categoryId) {
-        if (isAdmin(userId)) {
-            RecommendCategory cat = recommendCategoryMapper.selectById(categoryId);
-            if (cat == null) throw new BizException(ResultCode.NOT_FOUND);
-            recommendSiteMapper.delete(new LambdaQueryWrapper<RecommendSite>().eq(RecommendSite::getCategoryId, categoryId));
-            recommendCategoryMapper.deleteById(categoryId);
-            return;
-        }
 
         NavCategory category = categoryMapper.selectById(categoryId);
         if (category == null || !category.getUserId().equals(userId)) {
@@ -242,25 +197,6 @@ public class NavService {
      * @return 快捷方式列表
      */
     public List<ShortcutVO> getShortcuts(String userId, String categoryId) {
-        if (isAdmin(userId)) {
-            LambdaQueryWrapper<RecommendSite> wrapper = new LambdaQueryWrapper<RecommendSite>().orderByAsc(RecommendSite::getSortOrder);
-            if (categoryId != null && !categoryId.isEmpty()) {
-                wrapper.eq(RecommendSite::getCategoryId, categoryId);
-            }
-            return recommendSiteMapper.selectList(wrapper).stream().map(s -> {
-                ShortcutVO vo = new ShortcutVO();
-                vo.setShortcutId(s.getSiteId());
-                vo.setCategoryId(s.getCategoryId());
-                vo.setName(s.getName());
-                vo.setUrl(s.getUrl());
-                vo.setIconType(s.getIconType());
-                vo.setIconValue(s.getIconValue());
-                vo.setIconColor(s.getIconColor());
-                vo.setSortOrder(s.getSortOrder());
-                vo.setCreatedAt(s.getCreatedAt() != null ? s.getCreatedAt().toString() : null);
-                return vo;
-            }).collect(Collectors.toList());
-        }
 
         LambdaQueryWrapper<NavShortcut> wrapper = new LambdaQueryWrapper<NavShortcut>()
                 .eq(NavShortcut::getUserId, userId)
@@ -281,44 +217,6 @@ public class NavService {
      */
     @Transactional
     public List<BatchCreateItemVO> batchCreate(String userId, BatchCreateRequest req) {
-        if (isAdmin(userId)) {
-            String categoryId = req.getCategoryId();
-            if (categoryId == null || categoryId.isEmpty()) {
-                RecommendCategory defaultCat = recommendCategoryMapper.selectOne(new LambdaQueryWrapper<RecommendCategory>().eq(RecommendCategory::getName, DEFAULT_CATEGORY_NAME));
-                if (defaultCat == null) {
-                    defaultCat = new RecommendCategory();
-                    defaultCat.setCategoryId(IdUtils.genRecommendCategoryId());
-                    defaultCat.setName(DEFAULT_CATEGORY_NAME);
-                    defaultCat.setIcon("Folder");
-                    defaultCat.setSortOrder(0.0);
-                    recommendCategoryMapper.insert(defaultCat);
-                }
-                categoryId = defaultCat.getCategoryId();
-            }
-
-            double maxSort = recommendSiteMapper.selectList(new LambdaQueryWrapper<RecommendSite>().eq(RecommendSite::getCategoryId, categoryId))
-                    .stream().mapToDouble(item -> item.getSortOrder() != null ? item.getSortOrder() : 0.0).max().orElse(0.0);
-
-            List<BatchCreateItemVO> results = new ArrayList<>();
-            for (CreateShortcutItem item : req.getShortcuts()) {
-                RecommendSite site = new RecommendSite();
-                site.setSiteId(IdUtils.genRecommendSiteId());
-                site.setCategoryId(categoryId);
-                site.setName(item.getName());
-                site.setUrl(item.getUrl());
-                site.setIconType(item.getIconType() != null ? item.getIconType() : ICON_TYPE_BUILTIN);
-                site.setIconValue(item.getIconValue());
-                site.setIconColor(item.getIconColor());
-                site.setSortOrder(++maxSort);
-                recommendSiteMapper.insert(site);
-
-                BatchCreateItemVO vo = new BatchCreateItemVO();
-                vo.setShortcutId(site.getSiteId());
-                vo.setName(site.getName());
-                results.add(vo);
-            }
-            return results;
-        }
 
         // 确保默认分类存在
         String categoryId = req.getCategoryId();
@@ -381,28 +279,6 @@ public class NavService {
      * @return 更新后的快捷方式
      */
     public ShortcutVO updateShortcut(String userId, String shortcutId, UpdateShortcutRequest req) {
-        if (isAdmin(userId)) {
-            RecommendSite site = recommendSiteMapper.selectById(shortcutId);
-            if (site == null) throw new BizException(ResultCode.NOT_FOUND);
-            if (req.getName() != null) site.setName(req.getName());
-            if (req.getUrl() != null) site.setUrl(req.getUrl());
-            if (req.getIconType() != null) site.setIconType(req.getIconType());
-            if (req.getIconValue() != null) site.setIconValue(req.getIconValue());
-            if (req.getIconColor() != null) site.setIconColor(req.getIconColor());
-            recommendSiteMapper.updateById(site);
-
-            ShortcutVO vo = new ShortcutVO();
-            vo.setShortcutId(site.getSiteId());
-            vo.setCategoryId(site.getCategoryId());
-            vo.setName(site.getName());
-            vo.setUrl(site.getUrl());
-            vo.setIconType(site.getIconType());
-            vo.setIconValue(site.getIconValue());
-            vo.setIconColor(site.getIconColor());
-        vo.setSortOrder(site.getSortOrder());
-            vo.setSortOrder(site.getSortOrder());
-            return vo;
-        }
 
         NavShortcut shortcut = shortcutMapper.selectById(shortcutId);
         if (shortcut == null || !shortcut.getUserId().equals(userId)) {
@@ -430,12 +306,6 @@ public class NavService {
      * @param shortcutId 快捷方式ID
      */
     public void deleteShortcut(String userId, String shortcutId) {
-        if (isAdmin(userId)) {
-            RecommendSite site = recommendSiteMapper.selectById(shortcutId);
-            if (site == null) throw new BizException(ResultCode.NOT_FOUND);
-            recommendSiteMapper.deleteById(shortcutId);
-            return;
-        }
 
         NavShortcut shortcut = shortcutMapper.selectById(shortcutId);
         if (shortcut == null || !shortcut.getUserId().equals(userId)) {
@@ -452,20 +322,6 @@ public class NavService {
      */
     @Transactional
     public void sortShortcuts(String userId, SortRequest req) {
-        if (isAdmin(userId)) {
-            List<String> ids = req.getItems().stream().map(SortItem::getShortcutId).collect(Collectors.toList());
-            Map<String, RecommendSite> siteMap = recommendSiteMapper.selectBatchIds(ids).stream()
-                    .collect(Collectors.toMap(RecommendSite::getSiteId, Function.identity()));
-
-            for (SortItem item : req.getItems()) {
-                RecommendSite site = siteMap.get(item.getShortcutId());
-                if (site != null) {
-                    site.setSortOrder(item.getSortOrder());
-                    recommendSiteMapper.updateById(site);
-                }
-            }
-            return;
-        }
 
         // 批量查询所有待排序的快捷方�?
         List<String> ids = req.getItems().stream().map(SortItem::getShortcutId).collect(Collectors.toList());
@@ -666,8 +522,7 @@ public class NavService {
                 siteVO.setUrl(site.getUrl());
                 siteVO.setIconType(site.getIconType());
                 siteVO.setIconValue(site.getIconValue());
-                sitevo.setIconColor(site.getIconColor());
-        vo.setSortOrder(site.getSortOrder());
+                siteVO.setIconColor(site.getIconColor());
                 siteVO.setSortOrder(site.getSortOrder());
                 return siteVO;
             }).collect(Collectors.toList());

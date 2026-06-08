@@ -28,6 +28,7 @@ public class PublicService {
     private final WidgetService widgetService;
     private final NavService navService;
     private final RecommendConfigMapper recommendConfigMapper;
+    private final RecommendWidgetService recommendWidgetService;
 
     public GuestConfigVO getGuestConfig() {
         // Find ADMIN user
@@ -60,7 +61,22 @@ public class PublicService {
             settingsVO.setTheme(rc.getTheme());
         }
         vo.setSettings(settingsVO);
-        vo.setWidgets(widgetService.getWidgets(adminId));
+        
+        // 游客统一使用推荐小组件表中的数据
+        List<com.navatation.business.dto.RecommendWidgetVO> recommendWidgets = recommendWidgetService.getRecommendWidgets();
+        List<WidgetVO> widgetVOs = new java.util.ArrayList<>();
+        for (com.navatation.business.dto.RecommendWidgetVO rw : recommendWidgets) {
+            WidgetVO wvo = new WidgetVO();
+            wvo.setWidgetId(rw.getWidgetId());
+            wvo.setType(rw.getWidgetType());
+            wvo.setStyle(rw.getWidgetStyle());
+            wvo.setX(rw.getLayoutX());
+            wvo.setY(rw.getLayoutY());
+            wvo.setMeta(rw.getWidgetData());
+            widgetVOs.add(wvo);
+        }
+        vo.setWidgets(widgetVOs);
+        
         vo.setCategories(navService.getCategories(adminId));
         vo.setShortcuts(navService.getShortcuts(adminId, null));
         

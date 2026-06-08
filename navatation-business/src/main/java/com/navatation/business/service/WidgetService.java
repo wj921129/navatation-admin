@@ -35,6 +35,13 @@ public class WidgetService {
 
     private final UserWidgetMapper widgetMapper;
     private final ObjectMapper objectMapper;
+    private final com.navatation.business.mapper.UserMapper userMapper;
+    private final RecommendWidgetService recommendWidgetService;
+
+    private boolean isAdmin(String userId) {
+        com.navatation.business.entity.User user = userMapper.selectById(userId);
+        return user != null && "ADMIN".equals(user.getRole());
+    }
 
     /**
      * 获取用户配置的所有组件列表

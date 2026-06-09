@@ -24,6 +24,7 @@ import com.navatation.business.mapper.RecommendSiteMapper;
 import com.navatation.business.mapper.RootCategoryMapper;
 import com.navatation.business.mapper.RootShortcutMapper;
 import com.navatation.business.mapper.UserMapper;
+import com.navatation.business.mapper.RootUserMapper;
 import com.navatation.business.entity.recommend.RecommendCategory;
 import com.navatation.business.entity.recommend.RecommendSite;
 import com.navatation.business.entity.user.User;
@@ -125,9 +126,10 @@ public class NavService {
             new ThreadPoolExecutor.CallerRunsPolicy() // 拒绝策略：如果队列满了，由调用者线程直接执行抓取，提供自然反压，限制请求流入速度
     );
 
+    private final RootUserMapper rootUserMapper;
+
     private boolean isAdmin(String userId) {
-        User user = userMapper.selectById(userId);
-        return user != null && "ADMIN".equals(user.getRole());
+        return rootUserMapper.selectById(userId) != null;
     }
 
     @Value("${app.upload.icon-path}")

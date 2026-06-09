@@ -4,6 +4,7 @@ server:
 spring:
   application:
     name: navatation-server
+
   datasource:
     url: jdbc:mysql://localhost:3306/navatation?useSSL=false&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
     username: root

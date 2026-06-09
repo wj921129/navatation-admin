@@ -11,6 +11,8 @@ import com.navatation.business.dto.WidgetVO;
 import com.navatation.business.entity.nav.UserWidget;
 import com.navatation.business.mapper.RootWidgetMapper;
 import com.navatation.business.mapper.UserWidgetMapper;
+import com.navatation.business.mapper.UserMapper;
+import com.navatation.business.mapper.RootUserMapper;
 import com.navatation.common.IdUtils;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -40,9 +42,10 @@ public class WidgetService {
     private final com.navatation.business.mapper.UserMapper userMapper;
     private final RecommendWidgetService recommendWidgetService;
 
+    private final RootUserMapper rootUserMapper;
+
     private boolean isAdmin(String userId) {
-        com.navatation.business.entity.user.User user = userMapper.selectById(userId);
-        return user != null && "ADMIN".equals(user.getRole());
+        return rootUserMapper.selectById(userId) != null;
     }
 
     /**

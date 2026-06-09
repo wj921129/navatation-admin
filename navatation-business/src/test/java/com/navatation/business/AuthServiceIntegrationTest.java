@@ -43,6 +43,9 @@ public class AuthServiceIntegrationTest {
     private UserMapper userMapper;
 
     @Autowired
+    private com.navatation.business.mapper.RootUserMapper rootUserMapper;
+
+    @Autowired
     private UserConfigMapper userConfigMapper;
 
     @Autowired
@@ -72,8 +75,8 @@ public class AuthServiceIntegrationTest {
     @Test
     public void testRegisterAndSync() {
         // 1. 验证超级管理员账号 admin 是否存在于数据库中
-        User admin = userMapper.selectOne(
-                new LambdaQueryWrapper<User>().eq(User::getRole, "ADMIN").last("LIMIT 1"));
+        com.navatation.business.entity.root.RootUser admin = rootUserMapper.selectOne(
+                new LambdaQueryWrapper<com.navatation.business.entity.root.RootUser>().last("LIMIT 1"));
         Assertions.assertNotNull(admin, "管理员账户应该存在于数据库中");
         String adminId = admin.getUserId();
 

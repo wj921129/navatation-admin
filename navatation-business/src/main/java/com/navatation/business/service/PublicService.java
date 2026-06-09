@@ -24,6 +24,7 @@ public class PublicService {
     private static final Logger log = LoggerFactory.getLogger(PublicService.class);
 
     private final UserMapper userMapper;
+    private final com.navatation.business.mapper.RootUserMapper rootUserMapper;
     private final SettingsService settingsService;
     private final WidgetService widgetService;
     private final NavService navService;
@@ -32,7 +33,7 @@ public class PublicService {
 
     public GuestConfigVO getGuestConfig() {
         // Find ADMIN user
-        User admin = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getRole, "ADMIN").last("LIMIT 1"));
+        com.navatation.business.entity.root.RootUser admin = rootUserMapper.selectOne(new LambdaQueryWrapper<com.navatation.business.entity.root.RootUser>().last("LIMIT 1"));
         if (admin == null) {
             log.warn("超级管理员账户不存在，返回空游客配置");
             return new GuestConfigVO();

@@ -11,6 +11,7 @@ import com.navatation.business.entity.root.RootConfig;
 import com.navatation.business.entity.root.RootCategory;
 import com.navatation.business.entity.root.RootShortcut;
 import com.navatation.business.entity.root.RootWidget;
+import com.navatation.business.entity.root.RootUser;
 import com.navatation.business.entity.nav.NavCategory;
 import com.navatation.business.entity.nav.NavShortcut;
 import com.navatation.business.entity.nav.UserWidget;
@@ -20,6 +21,7 @@ import com.navatation.business.mapper.NavCategoryMapper;
 import com.navatation.business.mapper.NavShortcutMapper;
 import com.navatation.business.mapper.UserConfigMapper;
 import com.navatation.business.mapper.UserMapper;
+import com.navatation.business.mapper.RootUserMapper;
 import com.navatation.business.mapper.RootConfigMapper;
 import com.navatation.business.mapper.RootCategoryMapper;
 import com.navatation.business.mapper.RootShortcutMapper;
@@ -57,6 +59,7 @@ public class AuthService {
     private static final int USER_STATUS_ENABLED = 1;
 
     private final UserMapper userMapper;
+    private final RootUserMapper rootUserMapper;
     private final UserConfigMapper userConfigMapper;
     private final NavCategoryMapper navCategoryMapper;
     private final NavShortcutMapper navShortcutMapper;
@@ -69,15 +72,50 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final RedisTemplate<String, Object> redisTemplate;
 
-    /**
-     * 用户登录，校验用户名密码并生成Token对
-     * @param req 登录请求
-     * @return 登录响应（含Token和用户信息）
-     */
     @Transactional
     public LoginVO login(LoginRequest req) {
+        // 先检查超级管理员
+        RootUser rootUser = rootUserMapper.selectOne(
+                new LambdaQueryWrapper<RootUser>().eq(RootUser::getUsername, req.getUsername()));
+        
+        if (rootUser != null) {
+            if (rootUser.getStatus() == USER_STATUS_DISABLED) {
+                throw new BizException(ResultCode.PASSWORD_ERROR);
+            }
+            if (!passwordEncoder.matches(req.getPassword(), rootUser.getPassword())) {
+                throw new BizException(ResultCode.PASSWORD_ERROR);
+            }
+
+            String accessToken = jwtTokenProvider.generateAccessToken(rootUser.getUserId(), rootUser.getUsername());
+            String refreshToken = jwtTokenProvider.generateRefreshToken(rootUser.getUserId());
+
+            redisTemplate.opsForValue().set(
+                    RedisConstants.KEY_AUTH_REFRESH_TOKEN + rootUser.getUserId(),
+                    refreshToken, 7, TimeUnit.DAYS);
+
+            rootUser.setLastLoginAt(LocalDateTime.now());
+            rootUserMapper.updateById(rootUser);
+
+            UserVO userVO = new UserVO();
+            userVO.setUserId(rootUser.getUserId());
+            userVO.setUsername(rootUser.getUsername());
+            userVO.setAvatar(rootUser.getAvatar());
+            userVO.setRole("ADMIN");
+            userVO.setCreatedAt(rootUser.getCreatedAt() != null ? rootUser.getCreatedAt().toString() : null);
+
+            LoginVO vo = new LoginVO();
+            vo.setAccessToken(accessToken);
+            vo.setRefreshToken(refreshToken);
+            vo.setExpiresIn(jwtTokenProvider.getAccessTokenExpire());
+            vo.setUserInfo(userVO);
+            log.info("管理员登录成功 userId={} username={}", rootUser.getUserId(), rootUser.getUsername());
+            return vo;
+        }
+
+        // 若不是超级管理员，检查普通用户
         User user = userMapper.selectOne(
                 new LambdaQueryWrapper<User>().eq(User::getUsername, req.getUsername()));
+        
         if (user == null || user.getStatus() == USER_STATUS_DISABLED) {
             throw new BizException(ResultCode.PASSWORD_ERROR);
         }
@@ -88,13 +126,10 @@ public class AuthService {
         String accessToken = jwtTokenProvider.generateAccessToken(user.getUserId(), user.getUsername());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUserId());
 
-        // 存储刷新Token到Redis
         redisTemplate.opsForValue().set(
                 RedisConstants.KEY_AUTH_REFRESH_TOKEN + user.getUserId(),
-                refreshToken,
-                7, TimeUnit.DAYS);
+                refreshToken, 7, TimeUnit.DAYS);
 
-        // 更新最后登录时间
         user.setLastLoginAt(LocalDateTime.now());
         userMapper.updateById(user);
 
@@ -102,7 +137,7 @@ public class AuthService {
         userVO.setUserId(user.getUserId());
         userVO.setUsername(user.getUsername());
         userVO.setAvatar(user.getAvatar());
-        userVO.setRole(user.getRole());
+        userVO.setRole("USER");
         userVO.setCreatedAt(user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
 
         LoginVO vo = new LoginVO();
@@ -114,18 +149,15 @@ public class AuthService {
         return vo;
     }
 
-    /**
-     * 用户注册，创建用户、并从超级管理员（ADMIN）同步默认首页网址、右侧设置和组件配置
-     * @param req 注册请求
-     */
     @Transactional
     public void register(RegisterRequest req) {
         if (!req.getPassword().equals(req.getConfirmPassword())) {
             throw new BizException(ResultCode.BAD_REQUEST);
         }
-        User exist = userMapper.selectOne(
-                new LambdaQueryWrapper<User>().eq(User::getUsername, req.getUsername()));
-        if (exist != null) {
+        
+        // 检查根用户或普通用户是否重名
+        if (rootUserMapper.selectOne(new LambdaQueryWrapper<RootUser>().eq(RootUser::getUsername, req.getUsername())) != null ||
+            userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getUsername, req.getUsername())) != null) {
             throw new BizException(ResultCode.USERNAME_EXISTS);
         }
 
@@ -135,12 +167,10 @@ public class AuthService {
         user.setUsername(req.getUsername());
         user.setPassword(passwordEncoder.encode(req.getPassword()));
         user.setStatus(USER_STATUS_ENABLED);
-        user.setRole("USER");
         userMapper.insert(user);
 
         // 2. 查找超级管理员 (ADMIN) 的 userId，以作为拷贝的数据源
-        User admin = userMapper.selectOne(
-                new LambdaQueryWrapper<User>().eq(User::getRole, "ADMIN").last("LIMIT 1"));
+        RootUser admin = rootUserMapper.selectOne(new LambdaQueryWrapper<RootUser>().last("LIMIT 1"));
         String adminId = admin != null ? admin.getUserId() : null;
 
         // 3. 同步超级管理员的视觉设置配置，若无则使用系统默认兜底配置
@@ -155,7 +185,6 @@ public class AuthService {
         }
 
         if (adminConfig != null) {
-            // 复制管理员的视觉排版个性化设置字段
             config.setSearchEngine(adminConfig.getSearchEngine());
             config.setBackgroundImage(adminConfig.getBackgroundImage());
             config.setBackgroundType(adminConfig.getBackgroundType());
@@ -172,7 +201,6 @@ public class AuthService {
             config.setIconsMarginX(adminConfig.getIconsMarginX());
             config.setTheme(adminConfig.getTheme());
         } else {
-            // 降级使用默认设置属性
             config.setSearchEngine(com.navatation.business.constant.SettingsConstants.DEFAULT_SEARCH_ENGINE);
             config.setSearchBoxWidth(com.navatation.business.constant.SettingsConstants.DEFAULT_SEARCH_BOX_WIDTH);
             config.setSearchBoxHeight(com.navatation.business.constant.SettingsConstants.DEFAULT_SEARCH_BOX_HEIGHT);
@@ -201,7 +229,6 @@ public class AuthService {
 
         if (adminCategories != null && !adminCategories.isEmpty()) {
             for (RootCategory adminCat : adminCategories) {
-                // 4.1 拷贝分类
                 NavCategory userCat = new NavCategory();
                 userCat.setCategoryId(IdUtils.genCategoryId());
                 userCat.setUserId(user.getUserId());
@@ -209,7 +236,6 @@ public class AuthService {
                 userCat.setSortOrder(adminCat.getSortOrder());
                 navCategoryMapper.insert(userCat);
 
-                // 4.2 拷贝分类下的所有快捷网址方式
                 List<RootShortcut> adminShortcuts = rootShortcutMapper.selectList(
                         new LambdaQueryWrapper<RootShortcut>()
                                 .eq(RootShortcut::getCategoryId, adminCat.getCategoryId())
@@ -232,7 +258,6 @@ public class AuthService {
                 }
             }
         } else {
-            // 降级兜底分类创建
             NavCategory defaultCategory = new NavCategory();
             defaultCategory.setCategoryId(IdUtils.genCategoryId());
             defaultCategory.setUserId(user.getUserId());
@@ -265,16 +290,23 @@ public class AuthService {
         log.info("用户注册成功 userId={} username={}", user.getUserId(), user.getUsername());
     }
 
-    /**
-     * 修改密码
-     * @param userId 当前用户ID
-     * @param req 修改密码请求
-     */
     @Transactional
     public void changePassword(String userId, ChangePasswordRequest req) {
         if (!req.getNewPassword().equals(req.getConfirmPassword())) {
             throw new BizException(ResultCode.BAD_REQUEST.getCode(), "两次输入新密码不一致");
         }
+
+        RootUser rootUser = rootUserMapper.selectById(userId);
+        if (rootUser != null) {
+            if (!passwordEncoder.matches(req.getOldPassword(), rootUser.getPassword())) {
+                throw new BizException(ResultCode.BAD_REQUEST.getCode(), "原密码错误");
+            }
+            rootUser.setPassword(passwordEncoder.encode(req.getNewPassword()));
+            rootUserMapper.updateById(rootUser);
+            log.info("超级管理员密码修改成功 userId={} username={}", rootUser.getUserId(), rootUser.getUsername());
+            return;
+        }
+
         User user = userMapper.selectById(userId);
         if (user == null) {
             throw new BizException(ResultCode.USER_NOT_FOUND);
@@ -287,11 +319,6 @@ public class AuthService {
         log.info("用户密码修改成功 userId={} username={}", user.getUserId(), user.getUsername());
     }
 
-    /**
-     * 刷新Token，验证RefreshToken后颁发新Token对
-     * @param req 刷新Token请求
-     * @return 新的登录响应
-     */
     public LoginVO refresh(RefreshTokenRequest req) {
         if (!jwtTokenProvider.validateToken(req.getRefreshToken())) {
             throw new BizException(ResultCode.TOKEN_INVALID);
@@ -303,6 +330,27 @@ public class AuthService {
             throw new BizException(ResultCode.TOKEN_INVALID);
         }
 
+        RootUser rootUser = rootUserMapper.selectById(userId);
+        if (rootUser != null) {
+            String newAccessToken = jwtTokenProvider.generateAccessToken(userId, rootUser.getUsername());
+            String newRefreshToken = jwtTokenProvider.generateRefreshToken(userId);
+            redisTemplate.opsForValue().set(RedisConstants.KEY_AUTH_REFRESH_TOKEN + userId, newRefreshToken, 7, TimeUnit.DAYS);
+            
+            UserVO userVO = new UserVO();
+            userVO.setUserId(rootUser.getUserId());
+            userVO.setUsername(rootUser.getUsername());
+            userVO.setAvatar(rootUser.getAvatar());
+            userVO.setRole("ADMIN");
+            userVO.setCreatedAt(rootUser.getCreatedAt() != null ? rootUser.getCreatedAt().toString() : null);
+
+            LoginVO vo = new LoginVO();
+            vo.setAccessToken(newAccessToken);
+            vo.setRefreshToken(newRefreshToken);
+            vo.setUserInfo(userVO);
+            vo.setExpiresIn(jwtTokenProvider.getAccessTokenExpire());
+            return vo;
+        }
+
         User user = userMapper.selectById(userId);
         if (user == null) {
             throw new BizException(ResultCode.USER_NOT_FOUND);
@@ -310,15 +358,13 @@ public class AuthService {
 
         String newAccessToken = jwtTokenProvider.generateAccessToken(userId, user.getUsername());
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(userId);
-
-        redisTemplate.opsForValue().set(
-                RedisConstants.KEY_AUTH_REFRESH_TOKEN + userId, newRefreshToken, 7, TimeUnit.DAYS);
+        redisTemplate.opsForValue().set(RedisConstants.KEY_AUTH_REFRESH_TOKEN + userId, newRefreshToken, 7, TimeUnit.DAYS);
 
         UserVO userVO = new UserVO();
         userVO.setUserId(user.getUserId());
         userVO.setUsername(user.getUsername());
         userVO.setAvatar(user.getAvatar());
-        userVO.setRole(user.getRole());
+        userVO.setRole("USER");
         userVO.setCreatedAt(user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
 
         LoginVO vo = new LoginVO();
@@ -326,15 +372,9 @@ public class AuthService {
         vo.setRefreshToken(newRefreshToken);
         vo.setUserInfo(userVO);
         vo.setExpiresIn(jwtTokenProvider.getAccessTokenExpire());
-        log.info("Token刷新成功 userId={}", userId);
         return vo;
     }
 
-    /**
-     * 用户登出，将AccessToken加入黑名单并移除RefreshToken
-     * @param userId 用户ID
-     * @param token 待作废的AccessToken
-     */
     public void logout(String userId, String token) {
         String tokenId;
         try {
@@ -343,20 +383,24 @@ public class AuthService {
             log.error("解析登出Token失败", e);
             return;
         }
-        // 将访问Token加入黑名单
         long remaining = jwtTokenProvider.getAccessTokenExpire();
         redisTemplate.opsForValue().set(RedisConstants.KEY_AUTH_BLACKLIST + tokenId, "1", remaining, TimeUnit.SECONDS);
-        // 移除刷新Token
         redisTemplate.delete(RedisConstants.KEY_AUTH_REFRESH_TOKEN + userId);
         log.info("用户登出成功 userId={}", userId);
     }
 
-    /**
-     * 获取当前登录用户信息
-     * @param userId 用户ID
-     * @return 用户信息
-     */
     public UserVO getCurrentUser(String userId) {
+        RootUser rootUser = rootUserMapper.selectById(userId);
+        if (rootUser != null) {
+            UserVO vo = new UserVO();
+            vo.setUserId(rootUser.getUserId());
+            vo.setUsername(rootUser.getUsername());
+            vo.setAvatar(rootUser.getAvatar());
+            vo.setRole("ADMIN");
+            vo.setCreatedAt(rootUser.getCreatedAt() != null ? rootUser.getCreatedAt().toString() : null);
+            return vo;
+        }
+
         User user = userMapper.selectById(userId);
         if (user == null) {
             throw new BizException(ResultCode.USER_NOT_FOUND);
@@ -365,7 +409,7 @@ public class AuthService {
         vo.setUserId(user.getUserId());
         vo.setUsername(user.getUsername());
         vo.setAvatar(user.getAvatar());
-        vo.setRole(user.getRole());
+        vo.setRole("USER");
         vo.setCreatedAt(user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
         return vo;
     }

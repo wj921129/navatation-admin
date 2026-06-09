@@ -1,4 +1,4 @@
-﻿-- ============================================================
+-- ============================================================
 -- 鏋佺畝缃戦〉娴忚鍣ㄦ柊鏍囩椤?(Navatation) 鈥?鏁版嵁搴撳垵濮嬪寲 DDL
 -- ============================================================
 DROP DATABASE IF EXISTS `navatation`;
@@ -13,7 +13,25 @@ CREATE TABLE IF NOT EXISTS `navatation_user` (
     `email`          VARCHAR(128)          DEFAULT NULL            COMMENT '閭锛岀敤浜庡瘑鐮佹壘鍥?,
     `avatar`         VARCHAR(512)          DEFAULT NULL            COMMENT '澶村儚URL锛孫SS鍦板潃',
     `status`         TINYINT               NOT NULL DEFAULT 1      COMMENT '璐﹀彿鐘舵€侊細0-绂佺敤, 1-姝ｅ父',
-    `role`           VARCHAR(16)           NOT NULL DEFAULT 'USER' COMMENT '瑙掕壊锛歎SER-鏅€氱敤鎴? ADMIN-瓒呯骇绠＄悊鍛?,
+    `last_login_at`  DATETIME              DEFAULT NULL            COMMENT '鏈€鍚庣櫥褰曟椂闂?,
+    `last_login_ip`  VARCHAR(45)           DEFAULT NULL            COMMENT '鏈€鍚庣櫥褰旾P',
+    `created_at`     DATETIME              NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
+    `updated_at`     DATETIME              NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '鏇存柊鏃堕棿',
+    PRIMARY KEY (`row_id`),
+    UNIQUE KEY `uk_user_id` (`user_id`),
+    UNIQUE KEY `uk_username` (`username`),
+    KEY `idx_email` (`email`),
+    KEY `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `navatation_root_user` (
+    `row_id`         BIGINT       UNSIGNED NOT NULL AUTO_INCREMENT  COMMENT '鑷鐗╃悊涓婚敭',
+    `user_id`        VARCHAR(64)           NOT NULL                COMMENT '鐢ㄦ埛ID锛屼笟鍔￠€昏緫涓婚敭锛屽甫鍓嶇紑U鐨勯殢鏈篣UID',
+    `username`       VARCHAR(20)           NOT NULL                COMMENT '鐢ㄦ埛鍚嶏紝3-20瀛楃锛屽敮涓€',
+    `password`       VARCHAR(128)          NOT NULL                COMMENT '瀵嗙爜锛孊Crypt 鍔犲瘑瀛樺偍',
+    `email`          VARCHAR(128)          DEFAULT NULL            COMMENT '閭锛岀敤浜庡瘑鐮佹壘鍥?,
+    `avatar`         VARCHAR(512)          DEFAULT NULL            COMMENT '澶村儚URL锛孫SS鍦板潃',
+    `status`         TINYINT               NOT NULL DEFAULT 1      COMMENT '璐﹀彿鐘舵€侊細0-绂佺敤, 1-姝ｅ父',
     `last_login_at`  DATETIME              DEFAULT NULL            COMMENT '鏈€鍚庣櫥褰曟椂闂?,
     `last_login_ip`  VARCHAR(45)           DEFAULT NULL            COMMENT '鏈€鍚庣櫥褰旾P',
     `created_at`     DATETIME              NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',

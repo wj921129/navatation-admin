@@ -12,6 +12,7 @@ import com.navatation.business.entity.nav.TodoItem;
 import com.navatation.business.mapper.RootTodoItemMapper;
 import com.navatation.business.mapper.TodoItemMapper;
 import com.navatation.business.mapper.UserMapper;
+import com.navatation.business.mapper.RootUserMapper;
 import com.navatation.common.BizException;
 import com.navatation.common.ResultCode;
 import com.navatation.common.IdUtils;
@@ -42,9 +43,10 @@ public class TodoService {
     private final RootTodoItemMapper rootTodoItemMapper;
     private final UserMapper userMapper;
 
+    private final RootUserMapper rootUserMapper;
+
     private boolean isAdmin(String userId) {
-        com.navatation.business.entity.user.User user = userMapper.selectById(userId);
-        return user != null && "ADMIN".equals(user.getRole());
+        return rootUserMapper.selectById(userId) != null;
     }
 
     /**

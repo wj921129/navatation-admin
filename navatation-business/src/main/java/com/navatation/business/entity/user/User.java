@@ -26,7 +26,6 @@ public class User {
     private String email;
     private String avatar;
     private Integer status;
-    private String role;
     private LocalDateTime lastLoginAt;
     private String lastLoginIp;
     

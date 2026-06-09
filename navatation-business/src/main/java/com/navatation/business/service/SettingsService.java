@@ -12,6 +12,7 @@ import com.navatation.business.mapper.RecommendConfigMapper;
 import com.navatation.business.mapper.RootConfigMapper;
 import com.navatation.business.mapper.UserConfigMapper;
 import com.navatation.business.mapper.UserMapper;
+import com.navatation.business.mapper.RootUserMapper;
 import com.navatation.common.IdUtils;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -38,9 +39,10 @@ public class SettingsService {
     private final RecommendConfigMapper recommendConfigMapper;
     private final UserMapper userMapper;
 
+    private final RootUserMapper rootUserMapper;
+
     private boolean isAdmin(String userId) {
-        User user = userMapper.selectById(userId);
-        return user != null && "ADMIN".equals(user.getRole());
+        return rootUserMapper.selectById(userId) != null;
     }
 
     @Value("${app.upload.wallpaper-path}")

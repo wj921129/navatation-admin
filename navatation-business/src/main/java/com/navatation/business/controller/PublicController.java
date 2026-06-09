@@ -17,6 +17,7 @@ public class PublicController {
 
     @GetMapping("/guest-config")
     public Result<GuestConfigVO> getGuestConfig() {
+        System.out.println("HIT PUBLIC CONTROLLER GUEST CONFIG!");
         return Result.success(publicService.getGuestConfig());
     }
 }

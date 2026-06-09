@@ -7,11 +7,24 @@ import com.navatation.business.dto.RefreshTokenRequest;
 import com.navatation.business.dto.ChangePasswordRequest;
 import com.navatation.business.dto.RegisterRequest;
 import com.navatation.business.dto.UserVO;
+import com.navatation.business.entity.root.RootConfig;
+import com.navatation.business.entity.root.RootCategory;
+import com.navatation.business.entity.root.RootShortcut;
+import com.navatation.business.entity.root.RootWidget;
+import com.navatation.business.entity.nav.NavCategory;
+import com.navatation.business.entity.nav.NavShortcut;
+import com.navatation.business.entity.nav.UserWidget;
 import com.navatation.business.entity.user.User;
 import com.navatation.business.entity.user.UserConfig;
 import com.navatation.business.mapper.NavCategoryMapper;
+import com.navatation.business.mapper.NavShortcutMapper;
 import com.navatation.business.mapper.UserConfigMapper;
 import com.navatation.business.mapper.UserMapper;
+import com.navatation.business.mapper.RootConfigMapper;
+import com.navatation.business.mapper.RootCategoryMapper;
+import com.navatation.business.mapper.RootShortcutMapper;
+import com.navatation.business.mapper.RootWidgetMapper;
+import com.navatation.business.mapper.UserWidgetMapper;
 import com.navatation.common.BizException;
 import com.navatation.common.RedisConstants;
 import com.navatation.common.ResultCode;
@@ -26,6 +39,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -45,6 +59,12 @@ public class AuthService {
     private final UserMapper userMapper;
     private final UserConfigMapper userConfigMapper;
     private final NavCategoryMapper navCategoryMapper;
+    private final NavShortcutMapper navShortcutMapper;
+    private final RootConfigMapper rootConfigMapper;
+    private final RootCategoryMapper rootCategoryMapper;
+    private final RootShortcutMapper rootShortcutMapper;
+    private final RootWidgetMapper rootWidgetMapper;
+    private final UserWidgetMapper userWidgetMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final RedisTemplate<String, Object> redisTemplate;
@@ -95,7 +115,7 @@ public class AuthService {
     }
 
     /**
-     * 用户注册，创建用户、默认配置和默认分类
+     * 用户注册，创建用户、并从超级管理员（ADMIN）同步默认首页网址、右侧设置和组件配置
      * @param req 注册请求
      */
     @Transactional
@@ -109,6 +129,7 @@ public class AuthService {
             throw new BizException(ResultCode.USERNAME_EXISTS);
         }
 
+        // 1. 创建普通用户
         User user = new User();
         user.setUserId(IdUtils.genUserId());
         user.setUsername(req.getUsername());
@@ -117,20 +138,130 @@ public class AuthService {
         user.setRole("USER");
         userMapper.insert(user);
 
-        // 创建用户默认配置
+        // 2. 查找超级管理员 (ADMIN) 的 userId，以作为拷贝的数据源
+        User admin = userMapper.selectOne(
+                new LambdaQueryWrapper<User>().eq(User::getRole, "ADMIN").last("LIMIT 1"));
+        String adminId = admin != null ? admin.getUserId() : null;
+
+        // 3. 同步超级管理员的视觉设置配置，若无则使用系统默认兜底配置
         UserConfig config = new UserConfig();
         config.setConfigId(IdUtils.genConfigId());
         config.setUserId(user.getUserId());
+        
+        RootConfig adminConfig = null;
+        if (adminId != null) {
+            adminConfig = rootConfigMapper.selectOne(
+                    new LambdaQueryWrapper<RootConfig>().eq(RootConfig::getUserId, adminId));
+        }
+
+        if (adminConfig != null) {
+            // 复制管理员的视觉排版个性化设置字段
+            config.setSearchEngine(adminConfig.getSearchEngine());
+            config.setBackgroundImage(adminConfig.getBackgroundImage());
+            config.setBackgroundType(adminConfig.getBackgroundType());
+            config.setSearchBoxWidth(adminConfig.getSearchBoxWidth());
+            config.setSearchBoxHeight(adminConfig.getSearchBoxHeight());
+            config.setSearchBoxMarginTop(adminConfig.getSearchBoxMarginTop());
+            config.setIconSize(adminConfig.getIconSize());
+            config.setIconRadius(adminConfig.getIconRadius());
+            config.setIconSpacingX(adminConfig.getIconSpacingX());
+            config.setIconSpacingY(adminConfig.getIconSpacingY());
+            config.setIconTextGap(adminConfig.getIconTextGap());
+            config.setTextSize(adminConfig.getTextSize());
+            config.setIconsMarginTop(adminConfig.getIconsMarginTop());
+            config.setIconsMarginX(adminConfig.getIconsMarginX());
+            config.setTheme(adminConfig.getTheme());
+        } else {
+            // 降级使用默认设置属性
+            config.setSearchEngine(com.navatation.business.constant.SettingsConstants.DEFAULT_SEARCH_ENGINE);
+            config.setSearchBoxWidth(com.navatation.business.constant.SettingsConstants.DEFAULT_SEARCH_BOX_WIDTH);
+            config.setSearchBoxHeight(com.navatation.business.constant.SettingsConstants.DEFAULT_SEARCH_BOX_HEIGHT);
+            config.setSearchBoxMarginTop(com.navatation.business.constant.SettingsConstants.DEFAULT_SEARCH_BOX_MARGIN_TOP);
+            config.setIconSize(com.navatation.business.constant.SettingsConstants.DEFAULT_ICON_SIZE);
+            config.setIconRadius(com.navatation.business.constant.SettingsConstants.DEFAULT_ICON_RADIUS);
+            config.setIconSpacingX(com.navatation.business.constant.SettingsConstants.DEFAULT_ICON_SPACING_X);
+            config.setIconSpacingY(com.navatation.business.constant.SettingsConstants.DEFAULT_ICON_SPACING_Y);
+            config.setIconTextGap(com.navatation.business.constant.SettingsConstants.DEFAULT_ICON_TEXT_GAP);
+            config.setTextSize(com.navatation.business.constant.SettingsConstants.DEFAULT_TEXT_SIZE);
+            config.setIconsMarginTop(com.navatation.business.constant.SettingsConstants.DEFAULT_ICONS_MARGIN_TOP);
+            config.setIconsMarginX(com.navatation.business.constant.SettingsConstants.DEFAULT_ICONS_MARGIN_X);
+            config.setTheme(com.navatation.business.constant.SettingsConstants.DEFAULT_THEME);
+            config.setBackgroundType(com.navatation.business.constant.SettingsConstants.DEFAULT_BACKGROUND_TYPE);
+        }
         userConfigMapper.insert(config);
 
-        // 创建用户默认分类
-        com.navatation.business.entity.nav.NavCategory defaultCategory =
-                new com.navatation.business.entity.nav.NavCategory();
-        defaultCategory.setCategoryId(IdUtils.genCategoryId());
-        defaultCategory.setUserId(user.getUserId());
-        defaultCategory.setName("常用");
-        defaultCategory.setSortOrder(0.0);
-        navCategoryMapper.insert(defaultCategory);
+        // 4. 同步首页导航网址与分类，若无管理员数据则降级创建默认常用分类
+        List<RootCategory> adminCategories = null;
+        if (adminId != null) {
+            adminCategories = rootCategoryMapper.selectList(
+                    new LambdaQueryWrapper<RootCategory>()
+                            .eq(RootCategory::getUserId, adminId)
+                            .orderByAsc(RootCategory::getSortOrder));
+        }
+
+        if (adminCategories != null && !adminCategories.isEmpty()) {
+            for (RootCategory adminCat : adminCategories) {
+                // 4.1 拷贝分类
+                NavCategory userCat = new NavCategory();
+                userCat.setCategoryId(IdUtils.genCategoryId());
+                userCat.setUserId(user.getUserId());
+                userCat.setName(adminCat.getName());
+                userCat.setSortOrder(adminCat.getSortOrder());
+                navCategoryMapper.insert(userCat);
+
+                // 4.2 拷贝分类下的所有快捷网址方式
+                List<RootShortcut> adminShortcuts = rootShortcutMapper.selectList(
+                        new LambdaQueryWrapper<RootShortcut>()
+                                .eq(RootShortcut::getCategoryId, adminCat.getCategoryId())
+                                .orderByAsc(RootShortcut::getSortOrder));
+                if (adminShortcuts != null && !adminShortcuts.isEmpty()) {
+                    for (RootShortcut adminShortcut : adminShortcuts) {
+                        NavShortcut userShortcut = new NavShortcut();
+                        userShortcut.setShortcutId(IdUtils.genShortcutId());
+                        userShortcut.setCategoryId(userCat.getCategoryId());
+                        userShortcut.setUserId(user.getUserId());
+                        userShortcut.setName(adminShortcut.getName());
+                        userShortcut.setUrl(adminShortcut.getUrl());
+                        userShortcut.setIconType(adminShortcut.getIconType());
+                        userShortcut.setIconValue(adminShortcut.getIconValue());
+                        userShortcut.setIconColor(adminShortcut.getIconColor());
+                        userShortcut.setSortOrder(adminShortcut.getSortOrder());
+                        userShortcut.setClickCount(0L);
+                        navShortcutMapper.insert(userShortcut);
+                    }
+                }
+            }
+        } else {
+            // 降级兜底分类创建
+            NavCategory defaultCategory = new NavCategory();
+            defaultCategory.setCategoryId(IdUtils.genCategoryId());
+            defaultCategory.setUserId(user.getUserId());
+            defaultCategory.setName("常用");
+            defaultCategory.setSortOrder(0.0);
+            navCategoryMapper.insert(defaultCategory);
+        }
+
+        // 5. 同步小组件表，拷贝所有时钟、专注等小组件卡片
+        List<RootWidget> adminWidgets = null;
+        if (adminId != null) {
+            adminWidgets = rootWidgetMapper.selectList(
+                    new LambdaQueryWrapper<RootWidget>().eq(RootWidget::getUserId, adminId));
+        }
+
+        if (adminWidgets != null && !adminWidgets.isEmpty()) {
+            for (RootWidget adminWidget : adminWidgets) {
+                UserWidget userWidget = new UserWidget();
+                userWidget.setWidgetId(IdUtils.genWidgetId());
+                userWidget.setUserId(user.getUserId());
+                userWidget.setType(adminWidget.getType());
+                userWidget.setStyle(adminWidget.getStyle());
+                userWidget.setX(adminWidget.getX());
+                userWidget.setY(adminWidget.getY());
+                userWidget.setMeta(adminWidget.getMeta());
+                userWidgetMapper.insert(userWidget);
+            }
+        }
+
         log.info("用户注册成功 userId={} username={}", user.getUserId(), user.getUsername());
     }
 

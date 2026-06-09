@@ -1,4 +1,4 @@
-package com.navatation.business.dto;
+package com.navatation.business.dto.req;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -13,7 +13,7 @@ import lombok.Data;
  * @date 2026-06-08
  */
 @Data
-public class RecommendSiteItem {
+public class RecommendSiteItemDTO {
     /** 推荐网站ID，可空。若为空则表示新增，否则为修改 */
     private String siteId;
     

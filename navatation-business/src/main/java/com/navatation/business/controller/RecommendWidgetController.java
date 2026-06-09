@@ -1,6 +1,6 @@
 package com.navatation.business.controller;
 
-import com.navatation.business.dto.RecommendWidgetRequest;
+import com.navatation.business.dto.req.RecommendWidgetReqDTO;
 import com.navatation.business.dto.resp.RecommendWidgetRespDTO;
 import com.navatation.business.service.RecommendWidgetService;
 import com.navatation.common.Result;
@@ -34,7 +34,7 @@ public class RecommendWidgetController {
      * 批量保存推荐小组件
      */
     @PostMapping("/save")
-    public Result<Void> save(@RequestBody List<RecommendWidgetRequest> requests) {
+    public Result<Void> save(@RequestBody List<RecommendWidgetReqDTO> requests) {
         recommendWidgetService.saveRecommendWidgets(requests);
         return Result.success(null);
     }

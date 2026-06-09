@@ -1,6 +1,6 @@
 package com.navatation.business.controller;
 
-import com.navatation.business.dto.BatchCreateItemVO;
+import com.navatation.business.dto.resp.BatchCreateItemRespDTO;
 import com.navatation.business.dto.req.BatchCreateReqDTO;
 import com.navatation.business.dto.req.CategoryReqDTO;
 import com.navatation.business.dto.resp.CategoryRespDTO;
@@ -14,7 +14,7 @@ import com.navatation.business.dto.req.UpdateShortcutReqDTO;
 import com.navatation.business.dto.req.RecommendCategoryReqDTO;
 import com.navatation.business.dto.req.RecommendSiteReqDTO;
 import com.navatation.business.dto.resp.RecommendSiteRespDTO;
-import com.navatation.business.dto.BatchRecommendSiteSaveRequest;
+import com.navatation.business.dto.req.BatchRecommendSiteSaveReqDTO;
 import com.navatation.business.dto.req.BatchFaviconReqDTO;
 import com.navatation.business.service.NavService;
 import com.navatation.common.Result;
@@ -106,11 +106,11 @@ public class NavController {
     }
 
     @PostMapping("/shortcuts/batch")
-    public Result<List<BatchCreateItemVO>> batchCreate(@RequestHeader("Authorization") String auth,
+    public Result<List<BatchCreateItemRespDTO>> batchCreate(@RequestHeader("Authorization") String auth,
                                                  @RequestBody BatchCreateReqDTO req) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("批量创建快捷方式 入参:userId={},count={}", userId, req.getShortcuts().size());
-        List<BatchCreateItemVO> result = navService.batchCreate(userId, req);
+        List<BatchCreateItemRespDTO> result = navService.batchCreate(userId, req);
         log.info("批量创建快捷方式 出参:count={}", result.size());
         return Result.success("成功添加 " + result.size() + " 个快捷方式", result);
     }
@@ -252,7 +252,7 @@ public class NavController {
     @PostMapping("/recommended/categories/{categoryId}/sites/batch")
     public Result<?> batchSaveRecommendSites(@RequestHeader("Authorization") String auth,
                                              @PathVariable String categoryId,
-                                             @RequestBody @Valid BatchRecommendSiteSaveRequest req) {
+                                             @RequestBody @Valid BatchRecommendSiteSaveReqDTO req) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("批量保存推荐网址 入参:userId={},categoryId={},count={}", userId, categoryId, req.getSites() != null ? req.getSites().size() : 0);
         navService.batchSaveRecommendSites(userId, categoryId, req);

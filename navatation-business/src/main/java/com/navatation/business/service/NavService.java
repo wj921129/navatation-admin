@@ -1,6 +1,8 @@
 package com.navatation.business.service;
 
-import com.navatation.business.dto.*;
+import com.navatation.business.dto.req.*;
+import com.navatation.business.dto.resp.*;
+import com.navatation.common.dto.resp.*;
 import com.navatation.business.helper.FaviconFetcherHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -48,7 +50,7 @@ public class NavService {
         return navShortcutService.getShortcuts(userId, categoryId);
     }
 
-    public List<BatchCreateItemVO> batchCreate(String userId, BatchCreateReqDTO req) {
+    public List<BatchCreateItemRespDTO> batchCreate(String userId, BatchCreateReqDTO req) {
         return navShortcutService.batchCreate(userId, req);
     }
 
@@ -108,7 +110,7 @@ public class NavService {
         navShortcutService.deleteRecommendSite(userId, siteId);
     }
 
-    public void batchSaveRecommendSites(String userId, String categoryId, BatchRecommendSiteSaveRequest req) {
+    public void batchSaveRecommendSites(String userId, String categoryId, BatchRecommendSiteSaveReqDTO req) {
         navShortcutService.batchSaveRecommendSites(userId, categoryId, req);
     }
 }

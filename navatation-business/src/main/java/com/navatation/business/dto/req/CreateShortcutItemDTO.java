@@ -1,10 +1,10 @@
-package com.navatation.business.dto;
+package com.navatation.business.dto.req;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
-public class CreateShortcutItem {
+public class CreateShortcutItemDTO {
     @NotBlank
     private String name;
     @NotBlank

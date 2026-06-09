@@ -1,4 +1,4 @@
-package com.navatation.business.dto;
+package com.navatation.business.dto.req;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -14,9 +14,9 @@ import java.util.List;
  * @date 2026-06-08
  */
 @Data
-public class BatchRecommendSiteSaveRequest {
+public class BatchRecommendSiteSaveReqDTO {
     /** 待保存的推荐网址列表 */
     @NotNull(message = "推荐网址列表不能为空")
     @Valid
-    private List<RecommendSiteItem> sites;
+    private List<RecommendSiteItemDTO> sites;
 }

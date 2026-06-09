@@ -6,5 +6,5 @@ import java.util.List;
 @Data
 public class BatchCreateReqDTO {
     private String categoryId;
-    private List<CreateShortcutItem> shortcuts;
+    private List<CreateShortcutItemDTO> shortcuts;
 }

@@ -1,11 +1,11 @@
-package com.navatation.business.dto;
+package com.navatation.business.dto.req;
 
 import lombok.Data;
 import java.math.BigDecimal;
 import java.util.Map;
 
 @Data
-public class RecommendWidgetRequest {
+public class RecommendWidgetReqDTO {
     private String widgetType;
     private String widgetStyle;
     private Map<String, Object> widgetData;

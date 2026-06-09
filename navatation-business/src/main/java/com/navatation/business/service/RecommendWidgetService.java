@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.navatation.business.dto.RecommendWidgetRequest;
+import com.navatation.business.dto.req.RecommendWidgetReqDTO;
 import com.navatation.business.dto.resp.RecommendWidgetRespDTO;
 import com.navatation.business.entity.recommend.RecommendWidget;
 import com.navatation.business.mapper.RecommendWidgetMapper;
@@ -51,7 +51,7 @@ public class RecommendWidgetService {
      * 批量覆盖保存推荐小组件
      */
     @Transactional(rollbackFor = Exception.class)
-    public void saveRecommendWidgets(List<RecommendWidgetRequest> requests) {
+    public void saveRecommendWidgets(List<RecommendWidgetReqDTO> requests) {
         recommendWidgetMapper.delete(new LambdaQueryWrapper<>());
         
         if (CollectionUtils.isEmpty(requests)) {
@@ -59,7 +59,7 @@ public class RecommendWidgetService {
             return;
         }
 
-        for (RecommendWidgetRequest req : requests) {
+        for (RecommendWidgetReqDTO req : requests) {
             RecommendWidget entity = new RecommendWidget();
             entity.setWidgetId(IdUtils.genWidgetId());
             entity.setWidgetType(req.getWidgetType());

@@ -1,9 +1,9 @@
-package com.navatation.business.dto;
+package com.navatation.business.dto.resp;
 
 import lombok.Data;
 
 @Data
-public class BatchCreateItemVO {
+public class BatchCreateItemRespDTO {
     private String shortcutId;
     private String name;
 }

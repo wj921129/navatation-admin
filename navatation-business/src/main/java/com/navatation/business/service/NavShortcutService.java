@@ -2,11 +2,11 @@ package com.navatation.business.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.toolkit.Db;
-import com.navatation.business.dto.BatchCreateItemVO;
+import com.navatation.business.dto.resp.BatchCreateItemRespDTO;
 import com.navatation.business.dto.req.BatchCreateReqDTO;
-import com.navatation.business.dto.BatchRecommendSiteSaveRequest;
-import com.navatation.business.dto.CreateShortcutItem;
-import com.navatation.business.dto.RecommendSiteItem;
+import com.navatation.business.dto.req.BatchRecommendSiteSaveReqDTO;
+import com.navatation.business.dto.req.CreateShortcutItemDTO;
+import com.navatation.business.dto.req.RecommendSiteItemDTO;
 import com.navatation.business.dto.req.RecommendSiteReqDTO;
 import com.navatation.business.dto.resp.RecommendSiteRespDTO;
 import com.navatation.business.dto.resp.ShortcutRespDTO;
@@ -84,7 +84,7 @@ public class NavShortcutService {
     }
 
     @Transactional
-    public List<BatchCreateItemVO> batchCreate(String userId, BatchCreateReqDTO req) {
+    public List<BatchCreateItemRespDTO> batchCreate(String userId, BatchCreateReqDTO req) {
         String categoryId = req.getCategoryId();
 
         if (isAdmin(userId)) {
@@ -114,8 +114,8 @@ public class NavShortcutService {
                             .eq(com.navatation.business.entity.root.RootShortcut::getCategoryId, categoryId))
                     .stream().mapToDouble(item -> item.getSortOrder() != null ? item.getSortOrder() : 0.0).max().orElse(0.0);
 
-            List<BatchCreateItemVO> results = new ArrayList<>();
-            for (CreateShortcutItem item : req.getShortcuts()) {
+            List<BatchCreateItemRespDTO> results = new ArrayList<>();
+            for (CreateShortcutItemDTO item : req.getShortcuts()) {
                 com.navatation.business.entity.root.RootShortcut shortcut = new com.navatation.business.entity.root.RootShortcut();
                 shortcut.setShortcutId(IdUtils.genShortcutId());
                 shortcut.setCategoryId(categoryId);
@@ -129,7 +129,7 @@ public class NavShortcutService {
                 shortcut.setClickCount(0L);
                 rootShortcutMapper.insert(shortcut);
 
-                BatchCreateItemVO vo = new BatchCreateItemVO();
+                BatchCreateItemRespDTO vo = new BatchCreateItemRespDTO();
                 vo.setShortcutId(shortcut.getShortcutId());
                 vo.setName(shortcut.getName());
                 results.add(vo);
@@ -164,8 +164,8 @@ public class NavShortcutService {
                         .eq(NavShortcut::getCategoryId, categoryId))
                 .stream().mapToDouble(item -> item.getSortOrder() != null ? item.getSortOrder() : 0.0).max().orElse(0.0);
 
-        List<BatchCreateItemVO> results = new ArrayList<>();
-        for (CreateShortcutItem item : req.getShortcuts()) {
+        List<BatchCreateItemRespDTO> results = new ArrayList<>();
+        for (CreateShortcutItemDTO item : req.getShortcuts()) {
             NavShortcut shortcut = new NavShortcut();
             shortcut.setShortcutId(IdUtils.genShortcutId());
             shortcut.setCategoryId(categoryId);
@@ -179,7 +179,7 @@ public class NavShortcutService {
             shortcut.setClickCount(0L);
             shortcutMapper.insert(shortcut);
 
-            BatchCreateItemVO vo = new BatchCreateItemVO();
+            BatchCreateItemRespDTO vo = new BatchCreateItemRespDTO();
             vo.setShortcutId(shortcut.getShortcutId());
             vo.setName(shortcut.getName());
             results.add(vo);
@@ -341,7 +341,7 @@ public class NavShortcutService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void batchSaveRecommendSites(String userId, String categoryId, BatchRecommendSiteSaveRequest req) {
+    public void batchSaveRecommendSites(String userId, String categoryId, BatchRecommendSiteSaveReqDTO req) {
         if (!isAdmin(userId)) {
             throw new BizException(ResultCode.FORBIDDEN);
         }
@@ -355,9 +355,9 @@ public class NavShortcutService {
                 new LambdaQueryWrapper<RecommendSite>()
                         .eq(RecommendSite::getCategoryId, categoryId));
 
-        List<RecommendSiteItem> incomingSites = req.getSites() != null ? req.getSites() : new ArrayList<>();
+        List<RecommendSiteItemDTO> incomingSites = req.getSites() != null ? req.getSites() : new ArrayList<>();
         Set<String> incomingSiteIds = incomingSites.stream()
-                .map(RecommendSiteItem::getSiteId)
+                .map(RecommendSiteItemDTO::getSiteId)
                 .filter(id -> id != null && !id.isEmpty())
                 .collect(Collectors.toSet());
 
@@ -378,7 +378,7 @@ public class NavShortcutService {
         List<RecommendSite> updateList = new ArrayList<>();
 
         for (int i = 0; i < incomingSites.size(); i++) {
-            RecommendSiteItem item = incomingSites.get(i);
+            RecommendSiteItemDTO item = incomingSites.get(i);
             double currentSortOrder = (double) i + 1;
 
             if (item.getSiteId() != null && !item.getSiteId().isEmpty() && existingMap.containsKey(item.getSiteId())) {

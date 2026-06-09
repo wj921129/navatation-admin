@@ -1,0 +1,445 @@
+package com.navatation.business.service;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.toolkit.Db;
+import com.navatation.business.dto.BatchCreateItemVO;
+import com.navatation.business.dto.BatchCreateRequest;
+import com.navatation.business.dto.BatchRecommendSiteSaveRequest;
+import com.navatation.business.dto.CreateShortcutItem;
+import com.navatation.business.dto.RecommendSiteItem;
+import com.navatation.business.dto.RecommendSiteRequest;
+import com.navatation.business.dto.RecommendSiteVO;
+import com.navatation.business.dto.ShortcutVO;
+import com.navatation.business.dto.SortItem;
+import com.navatation.business.dto.SortRequest;
+import com.navatation.business.dto.UpdateShortcutRequest;
+import com.navatation.business.entity.nav.NavCategory;
+import com.navatation.business.entity.nav.NavShortcut;
+import com.navatation.business.entity.recommend.RecommendCategory;
+import com.navatation.business.entity.recommend.RecommendSite;
+import com.navatation.business.mapper.NavCategoryMapper;
+import com.navatation.business.mapper.NavShortcutMapper;
+import com.navatation.business.mapper.RecommendCategoryMapper;
+import com.navatation.business.mapper.RecommendSiteMapper;
+import com.navatation.business.mapper.RootCategoryMapper;
+import com.navatation.business.mapper.RootShortcutMapper;
+import com.navatation.business.mapper.RootUserMapper;
+import com.navatation.common.BizException;
+import com.navatation.common.IdUtils;
+import com.navatation.common.NavConstants;
+import com.navatation.common.ResultCode;
+import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class NavShortcutService {
+
+    private static final Logger log = LoggerFactory.getLogger(NavShortcutService.class);
+
+    private final NavCategoryMapper categoryMapper;
+    private final NavShortcutMapper shortcutMapper;
+    private final RootCategoryMapper rootCategoryMapper;
+    private final RootShortcutMapper rootShortcutMapper;
+    private final RecommendCategoryMapper recommendCategoryMapper;
+    private final RecommendSiteMapper recommendSiteMapper;
+    private final RootUserMapper rootUserMapper;
+
+    private boolean isAdmin(String userId) {
+        return rootUserMapper.selectById(userId) != null;
+    }
+
+    public List<ShortcutVO> getShortcuts(String userId, String categoryId) {
+        if (isAdmin(userId)) {
+            LambdaQueryWrapper<com.navatation.business.entity.root.RootShortcut> wrapper = new LambdaQueryWrapper<com.navatation.business.entity.root.RootShortcut>()
+                    .eq(com.navatation.business.entity.root.RootShortcut::getUserId, userId)
+                    .orderByAsc(com.navatation.business.entity.root.RootShortcut::getSortOrder);
+            if (categoryId != null && !categoryId.isEmpty()) {
+                wrapper.eq(com.navatation.business.entity.root.RootShortcut::getCategoryId, categoryId);
+            }
+            return rootShortcutMapper.selectList(wrapper).stream()
+                    .map(this::toShortcutVO)
+                    .collect(Collectors.toList());
+        }
+
+        LambdaQueryWrapper<NavShortcut> wrapper = new LambdaQueryWrapper<NavShortcut>()
+                .eq(NavShortcut::getUserId, userId)
+                .orderByAsc(NavShortcut::getSortOrder);
+        if (categoryId != null && !categoryId.isEmpty()) {
+            wrapper.eq(NavShortcut::getCategoryId, categoryId);
+        }
+        return shortcutMapper.selectList(wrapper).stream()
+                    .map(this::toShortcutVO)
+                    .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public List<BatchCreateItemVO> batchCreate(String userId, BatchCreateRequest req) {
+        String categoryId = req.getCategoryId();
+
+        if (isAdmin(userId)) {
+            if (categoryId == null || categoryId.isEmpty()) {
+                com.navatation.business.entity.root.RootCategory defaultCat = rootCategoryMapper.selectOne(
+                        new LambdaQueryWrapper<com.navatation.business.entity.root.RootCategory>()
+                                .eq(com.navatation.business.entity.root.RootCategory::getUserId, userId)
+                                .eq(com.navatation.business.entity.root.RootCategory::getName, NavConstants.DEFAULT_CATEGORY_NAME));
+                if (defaultCat == null) {
+                    defaultCat = new com.navatation.business.entity.root.RootCategory();
+                    defaultCat.setCategoryId(IdUtils.genCategoryId());
+                    defaultCat.setUserId(userId);
+                    defaultCat.setName(NavConstants.DEFAULT_CATEGORY_NAME);
+                    defaultCat.setSortOrder(0.0);
+                    rootCategoryMapper.insert(defaultCat);
+                }
+                categoryId = defaultCat.getCategoryId();
+            } else {
+                com.navatation.business.entity.root.RootCategory cat = rootCategoryMapper.selectById(categoryId);
+                if (cat == null || !cat.getUserId().equals(userId)) {
+                    throw new BizException(ResultCode.NOT_FOUND);
+                }
+            }
+
+            double maxSort = rootShortcutMapper.selectList(
+                    new LambdaQueryWrapper<com.navatation.business.entity.root.RootShortcut>()
+                            .eq(com.navatation.business.entity.root.RootShortcut::getCategoryId, categoryId))
+                    .stream().mapToDouble(item -> item.getSortOrder() != null ? item.getSortOrder() : 0.0).max().orElse(0.0);
+
+            List<BatchCreateItemVO> results = new ArrayList<>();
+            for (CreateShortcutItem item : req.getShortcuts()) {
+                com.navatation.business.entity.root.RootShortcut shortcut = new com.navatation.business.entity.root.RootShortcut();
+                shortcut.setShortcutId(IdUtils.genShortcutId());
+                shortcut.setCategoryId(categoryId);
+                shortcut.setUserId(userId);
+                shortcut.setName(item.getName());
+                shortcut.setUrl(item.getUrl());
+                shortcut.setIconType(item.getIconType() != null ? item.getIconType() : NavConstants.ICON_TYPE_BUILTIN);
+                shortcut.setIconValue(item.getIconValue());
+                shortcut.setIconColor(item.getIconColor());
+                shortcut.setSortOrder(++maxSort);
+                shortcut.setClickCount(0L);
+                rootShortcutMapper.insert(shortcut);
+
+                BatchCreateItemVO vo = new BatchCreateItemVO();
+                vo.setShortcutId(shortcut.getShortcutId());
+                vo.setName(shortcut.getName());
+                results.add(vo);
+            }
+            log.info("批量创建管理员快捷方式成功 userId={} count={}", userId, results.size());
+            return results;
+        }
+
+        if (categoryId == null || categoryId.isEmpty()) {
+            NavCategory defaultCat = categoryMapper.selectOne(
+                    new LambdaQueryWrapper<NavCategory>()
+                            .eq(NavCategory::getUserId, userId)
+                            .eq(NavCategory::getName, NavConstants.DEFAULT_CATEGORY_NAME));
+            if (defaultCat == null) {
+                defaultCat = new NavCategory();
+                defaultCat.setCategoryId(IdUtils.genCategoryId());
+                defaultCat.setUserId(userId);
+                defaultCat.setName(NavConstants.DEFAULT_CATEGORY_NAME);
+                defaultCat.setSortOrder(0.0);
+                categoryMapper.insert(defaultCat);
+            }
+            categoryId = defaultCat.getCategoryId();
+        } else {
+            NavCategory cat = categoryMapper.selectById(categoryId);
+            if (cat == null || !cat.getUserId().equals(userId)) {
+                throw new BizException(ResultCode.NOT_FOUND);
+            }
+        }
+
+        double maxSort = shortcutMapper.selectList(
+                new LambdaQueryWrapper<NavShortcut>()
+                        .eq(NavShortcut::getCategoryId, categoryId))
+                .stream().mapToDouble(item -> item.getSortOrder() != null ? item.getSortOrder() : 0.0).max().orElse(0.0);
+
+        List<BatchCreateItemVO> results = new ArrayList<>();
+        for (CreateShortcutItem item : req.getShortcuts()) {
+            NavShortcut shortcut = new NavShortcut();
+            shortcut.setShortcutId(IdUtils.genShortcutId());
+            shortcut.setCategoryId(categoryId);
+            shortcut.setUserId(userId);
+            shortcut.setName(item.getName());
+            shortcut.setUrl(item.getUrl());
+            shortcut.setIconType(item.getIconType() != null ? item.getIconType() : NavConstants.ICON_TYPE_BUILTIN);
+            shortcut.setIconValue(item.getIconValue());
+            shortcut.setIconColor(item.getIconColor());
+            shortcut.setSortOrder(++maxSort);
+            shortcut.setClickCount(0L);
+            shortcutMapper.insert(shortcut);
+
+            BatchCreateItemVO vo = new BatchCreateItemVO();
+            vo.setShortcutId(shortcut.getShortcutId());
+            vo.setName(shortcut.getName());
+            results.add(vo);
+        }
+        log.info("批量创建快捷方式成功 userId={} count={}", userId, results.size());
+        return results;
+    }
+
+    public ShortcutVO updateShortcut(String userId, String shortcutId, UpdateShortcutRequest req) {
+        if (isAdmin(userId)) {
+            com.navatation.business.entity.root.RootShortcut shortcut = rootShortcutMapper.selectById(shortcutId);
+            if (shortcut == null || !shortcut.getUserId().equals(userId)) {
+                throw new BizException(ResultCode.NOT_FOUND);
+            }
+            shortcut.setName(req.getName());
+            shortcut.setUrl(req.getUrl());
+            if (req.getIconType() != null) {
+                shortcut.setIconType(req.getIconType());
+            }
+            if (req.getIconValue() != null) {
+                shortcut.setIconValue(req.getIconValue());
+            }
+            if (req.getIconColor() != null) {
+                shortcut.setIconColor(req.getIconColor());
+            }
+            rootShortcutMapper.updateById(shortcut);
+            log.info("更新管理员快捷方式成功 userId={} shortcutId={}", userId, shortcutId);
+            return toShortcutVO(shortcut);
+        }
+
+        NavShortcut shortcut = shortcutMapper.selectById(shortcutId);
+        if (shortcut == null || !shortcut.getUserId().equals(userId)) {
+            throw new BizException(ResultCode.NOT_FOUND);
+        }
+        shortcut.setName(req.getName());
+        shortcut.setUrl(req.getUrl());
+        if (req.getIconType() != null) {
+            shortcut.setIconType(req.getIconType());
+        }
+        if (req.getIconValue() != null) {
+            shortcut.setIconValue(req.getIconValue());
+        }
+        if (req.getIconColor() != null) {
+            shortcut.setIconColor(req.getIconColor());
+        }
+        shortcutMapper.updateById(shortcut);
+        log.info("更新快捷方式成功 userId={} shortcutId={}", userId, shortcutId);
+        return toShortcutVO(shortcut);
+    }
+
+    public void deleteShortcut(String userId, String shortcutId) {
+        if (isAdmin(userId)) {
+            com.navatation.business.entity.root.RootShortcut shortcut = rootShortcutMapper.selectById(shortcutId);
+            if (shortcut == null || !shortcut.getUserId().equals(userId)) {
+                throw new BizException(ResultCode.NOT_FOUND);
+            }
+            rootShortcutMapper.deleteById(shortcutId);
+            log.info("删除管理员快捷方式成功 userId={} shortcutId={}", userId, shortcutId);
+            return;
+        }
+
+        NavShortcut shortcut = shortcutMapper.selectById(shortcutId);
+        if (shortcut == null || !shortcut.getUserId().equals(userId)) {
+            throw new BizException(ResultCode.NOT_FOUND);
+        }
+        shortcutMapper.deleteById(shortcutId);
+        log.info("删除快捷方式成功 userId={} shortcutId={}", userId, shortcutId);
+    }
+
+    @Transactional
+    public void sortShortcuts(String userId, SortRequest req) {
+        List<String> ids = req.getItems().stream().map(SortItem::getShortcutId).collect(Collectors.toList());
+
+        if (isAdmin(userId)) {
+            Map<String, com.navatation.business.entity.root.RootShortcut> shortcutMap = rootShortcutMapper.selectBatchIds(ids).stream()
+                    .filter(s -> s.getUserId().equals(userId))
+                    .collect(Collectors.toMap(com.navatation.business.entity.root.RootShortcut::getShortcutId, Function.identity()));
+
+            for (SortItem item : req.getItems()) {
+                com.navatation.business.entity.root.RootShortcut shortcut = shortcutMap.get(item.getShortcutId());
+                if (shortcut != null) {
+                    shortcut.setSortOrder(item.getSortOrder());
+                    rootShortcutMapper.updateById(shortcut);
+                }
+            }
+            return;
+        }
+
+        Map<String, NavShortcut> shortcutMap = shortcutMapper.selectBatchIds(ids).stream()
+                .filter(s -> s.getUserId().equals(userId))
+                .collect(Collectors.toMap(NavShortcut::getShortcutId, Function.identity()));
+
+        for (SortItem item : req.getItems()) {
+            NavShortcut shortcut = shortcutMap.get(item.getShortcutId());
+            if (shortcut != null) {
+                shortcut.setSortOrder(item.getSortOrder());
+                shortcutMapper.updateById(shortcut);
+            }
+        }
+    }
+
+    @Transactional
+    public RecommendSiteVO addRecommendSite(String userId, RecommendSiteRequest req) {
+        if (!isAdmin(userId)) {
+            throw new BizException(ResultCode.FORBIDDEN);
+        }
+        RecommendSite site = new RecommendSite();
+        site.setSiteId(IdUtils.genRecommendSiteId());
+        site.setCategoryId(req.getCategoryId());
+        site.setName(req.getName());
+        site.setUrl(req.getUrl());
+        site.setIconType(req.getIconType());
+        site.setIconValue(req.getIconValue());
+        site.setIconColor(req.getIconColor());
+        site.setSortOrder(0.0);
+        recommendSiteMapper.insert(site);
+
+        RecommendSiteVO vo = new RecommendSiteVO();
+        vo.setSiteId(site.getSiteId());
+        vo.setCategoryId(site.getCategoryId());
+        vo.setName(site.getName());
+        vo.setUrl(site.getUrl());
+        vo.setIconType(site.getIconType());
+        vo.setIconValue(site.getIconValue());
+        vo.setIconColor(site.getIconColor());
+
+        return vo;
+    }
+
+    @Transactional
+    public void updateRecommendSite(String userId, String siteId, RecommendSiteRequest req) {
+        if (!isAdmin(userId)) {
+            throw new BizException(ResultCode.FORBIDDEN);
+        }
+        RecommendSite site = recommendSiteMapper.selectById(siteId);
+        if (site == null) {
+            throw new BizException(ResultCode.NOT_FOUND);
+        }
+        if (req.getCategoryId() != null) site.setCategoryId(req.getCategoryId());
+        if (req.getName() != null) site.setName(req.getName());
+        if (req.getUrl() != null) site.setUrl(req.getUrl());
+        if (req.getIconType() != null) site.setIconType(req.getIconType());
+        if (req.getIconValue() != null) site.setIconValue(req.getIconValue());
+        if (req.getIconColor() != null) site.setIconColor(req.getIconColor());
+
+        recommendSiteMapper.updateById(site);
+    }
+
+    @Transactional
+    public void deleteRecommendSite(String userId, String siteId) {
+        if (!isAdmin(userId)) {
+            throw new BizException(ResultCode.FORBIDDEN);
+        }
+        RecommendSite site = recommendSiteMapper.selectById(siteId);
+        if (site == null) {
+            throw new BizException(ResultCode.NOT_FOUND);
+        }
+        recommendSiteMapper.deleteById(siteId);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void batchSaveRecommendSites(String userId, String categoryId, BatchRecommendSiteSaveRequest req) {
+        if (!isAdmin(userId)) {
+            throw new BizException(ResultCode.FORBIDDEN);
+        }
+
+        RecommendCategory category = recommendCategoryMapper.selectById(categoryId);
+        if (category == null) {
+            throw new BizException(ResultCode.NOT_FOUND.getCode(), "推荐分类不存在");
+        }
+
+        List<RecommendSite> existingSites = recommendSiteMapper.selectList(
+                new LambdaQueryWrapper<RecommendSite>()
+                        .eq(RecommendSite::getCategoryId, categoryId));
+
+        List<RecommendSiteItem> incomingSites = req.getSites() != null ? req.getSites() : new ArrayList<>();
+        Set<String> incomingSiteIds = incomingSites.stream()
+                .map(RecommendSiteItem::getSiteId)
+                .filter(id -> id != null && !id.isEmpty())
+                .collect(Collectors.toSet());
+
+        List<String> deleteIds = existingSites.stream()
+                .map(RecommendSite::getSiteId)
+                .filter(id -> !incomingSiteIds.contains(id))
+                .collect(Collectors.toList());
+
+        if (!deleteIds.isEmpty()) {
+            recommendSiteMapper.deleteBatchIds(deleteIds);
+            log.info("管理员批量删除推荐网址成功 categoryId={}, deleteCount={}", categoryId, deleteIds.size());
+        }
+
+        Map<String, RecommendSite> existingMap = existingSites.stream()
+                .collect(Collectors.toMap(RecommendSite::getSiteId, Function.identity()));
+
+        List<RecommendSite> insertList = new ArrayList<>();
+        List<RecommendSite> updateList = new ArrayList<>();
+
+        for (int i = 0; i < incomingSites.size(); i++) {
+            RecommendSiteItem item = incomingSites.get(i);
+            double currentSortOrder = (double) i + 1;
+
+            if (item.getSiteId() != null && !item.getSiteId().isEmpty() && existingMap.containsKey(item.getSiteId())) {
+                RecommendSite dbSite = existingMap.get(item.getSiteId());
+                dbSite.setName(item.getName());
+                dbSite.setUrl(item.getUrl());
+                dbSite.setIconType(item.getIconType());
+                dbSite.setIconValue(item.getIconValue());
+                dbSite.setIconColor(item.getIconColor());
+                dbSite.setSortOrder(currentSortOrder);
+                updateList.add(dbSite);
+            } else {
+                RecommendSite newSite = new RecommendSite();
+                newSite.setSiteId(IdUtils.genRecommendSiteId());
+                newSite.setCategoryId(categoryId);
+                newSite.setName(item.getName());
+                newSite.setUrl(item.getUrl());
+                newSite.setIconType(item.getIconType() != null ? item.getIconType() : NavConstants.ICON_TYPE_FAVICON);
+                newSite.setIconValue(item.getIconValue());
+                newSite.setIconColor(item.getIconColor());
+                newSite.setSortOrder(currentSortOrder);
+                insertList.add(newSite);
+            }
+        }
+
+        if (!insertList.isEmpty()) {
+            Db.saveBatch(insertList);
+            log.info("管理员批量新增推荐网址成功 categoryId={}, insertCount={}", categoryId, insertList.size());
+        }
+        if (!updateList.isEmpty()) {
+            Db.updateBatchById(updateList);
+            log.info("管理员批量更新推荐网址成功 categoryId={}, updateCount={}", categoryId, updateList.size());
+        }
+        log.info("管理员批量保存推荐网址成功 categoryId={}, totalCount={}", categoryId, incomingSites.size());
+    }
+
+    private ShortcutVO toShortcutVO(NavShortcut s) {
+        ShortcutVO vo = new ShortcutVO();
+        vo.setShortcutId(s.getShortcutId());
+        vo.setCategoryId(s.getCategoryId());
+        vo.setName(s.getName());
+        vo.setUrl(s.getUrl());
+        vo.setIconType(s.getIconType());
+        vo.setIconValue(s.getIconValue());
+        vo.setIconColor(s.getIconColor());
+        vo.setSortOrder(s.getSortOrder());
+        vo.setCreatedAt(s.getCreatedAt() != null ? s.getCreatedAt().toString() : null);
+        return vo;
+    }
+
+    private ShortcutVO toShortcutVO(com.navatation.business.entity.root.RootShortcut s) {
+        ShortcutVO vo = new ShortcutVO();
+        vo.setShortcutId(s.getShortcutId());
+        vo.setCategoryId(s.getCategoryId());
+        vo.setName(s.getName());
+        vo.setUrl(s.getUrl());
+        vo.setIconType(s.getIconType());
+        vo.setIconValue(s.getIconValue());
+        vo.setIconColor(s.getIconColor());
+        vo.setSortOrder(s.getSortOrder());
+        vo.setCreatedAt(s.getCreatedAt() != null ? s.getCreatedAt().toString() : null);
+        return vo;
+    }
+}

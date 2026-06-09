@@ -74,6 +74,9 @@ public class SettingsController {
         return Result.success("上传成功", result);
     }
 
+        /**
+     * getRandomWallpaper 方法
+     */
     @GetMapping("/wallpaper/random")
     public Result<WallpaperRespDTO> getRandomWallpaper() {
         log.info("获取随机壁纸 入参:无");

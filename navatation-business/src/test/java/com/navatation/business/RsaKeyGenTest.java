@@ -34,6 +34,9 @@ public class RsaKeyGenTest {
     private static final String PEM_PUBLIC_HEADER = "-----BEGIN PUBLIC KEY-----";
     private static final String PEM_PUBLIC_FOOTER = "-----END PUBLIC KEY-----";
 
+        /**
+     * generateKeyPair 方法
+     */
     @Test
     public void generateKeyPair() {
         System.out.println("==================================================");

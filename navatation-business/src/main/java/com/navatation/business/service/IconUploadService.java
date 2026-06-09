@@ -16,6 +16,11 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.concurrent.TimeUnit;
 import com.navatation.common.FileUploadUtil;
 
+/**
+ * IconUploadService 功能描述
+ *
+ * @date 2026-06-09
+ */
 @Service
 @RequiredArgsConstructor
 public class IconUploadService {
@@ -27,6 +32,9 @@ public class IconUploadService {
     @Value("${app.upload.icon-path}")
     private String iconPath;
 
+        /**
+     * uploadIcon 方法
+     */
     public IconUploadRespDTO uploadIcon(String userId, MultipartFile file) {
         String contentType = file.getContentType();
         if (contentType == null || !NavConstants.ALLOWED_MIME_TYPES.contains(contentType)) {

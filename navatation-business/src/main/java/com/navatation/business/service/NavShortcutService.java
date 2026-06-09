@@ -43,6 +43,11 @@ import java.util.stream.Collectors;
 import com.navatation.business.entity.root.RootCategory;
 import com.navatation.business.entity.root.RootShortcut;
 
+/**
+ * NavShortcutService 功能描述
+ *
+ * @date 2026-06-09
+ */
 @Service
 @RequiredArgsConstructor
 public class NavShortcutService {
@@ -61,6 +66,9 @@ public class NavShortcutService {
         return rootUserMapper.selectById(userId) != null;
     }
 
+        /**
+     * getShortcuts 方法
+     */
     public List<ShortcutRespDTO> getShortcuts(String userId, String categoryId) {
         if (isAdmin(userId)) {
             LambdaQueryWrapper<RootShortcut> wrapper = new LambdaQueryWrapper<RootShortcut>()
@@ -85,6 +93,9 @@ public class NavShortcutService {
                     .collect(Collectors.toList());
     }
 
+        /**
+     * batchCreate 方法
+     */
     @Transactional
     public List<BatchCreateItemRespDTO> batchCreate(String userId, BatchCreateReqDTO req) {
         String categoryId = req.getCategoryId();
@@ -190,6 +201,9 @@ public class NavShortcutService {
         return results;
     }
 
+        /**
+     * updateShortcut 方法
+     */
     public ShortcutRespDTO updateShortcut(String userId, String shortcutId, UpdateShortcutReqDTO req) {
         if (isAdmin(userId)) {
             RootShortcut shortcut = rootShortcutMapper.selectById(shortcutId);
@@ -232,6 +246,9 @@ public class NavShortcutService {
         return toShortcutVO(shortcut);
     }
 
+        /**
+     * deleteShortcut 方法
+     */
     public void deleteShortcut(String userId, String shortcutId) {
         if (isAdmin(userId)) {
             RootShortcut shortcut = rootShortcutMapper.selectById(shortcutId);
@@ -251,6 +268,9 @@ public class NavShortcutService {
         log.info("删除快捷方式成功 userId={} shortcutId={}", userId, shortcutId);
     }
 
+        /**
+     * sortShortcuts 方法
+     */
     @Transactional
     public void sortShortcuts(String userId, SortReqDTO req) {
         List<String> ids = req.getItems().stream().map(SortItemDTO::getShortcutId).collect(Collectors.toList());
@@ -283,6 +303,9 @@ public class NavShortcutService {
         }
     }
 
+        /**
+     * addRecommendSite 方法
+     */
     @Transactional
     public RecommendSiteRespDTO addRecommendSite(String userId, RecommendSiteReqDTO req) {
         if (!isAdmin(userId)) {
@@ -311,6 +334,9 @@ public class NavShortcutService {
         return vo;
     }
 
+        /**
+     * updateRecommendSite 方法
+     */
     @Transactional
     public void updateRecommendSite(String userId, String siteId, RecommendSiteReqDTO req) {
         if (!isAdmin(userId)) {
@@ -330,6 +356,9 @@ public class NavShortcutService {
         recommendSiteMapper.updateById(site);
     }
 
+        /**
+     * deleteRecommendSite 方法
+     */
     @Transactional
     public void deleteRecommendSite(String userId, String siteId) {
         if (!isAdmin(userId)) {
@@ -342,6 +371,9 @@ public class NavShortcutService {
         recommendSiteMapper.deleteById(siteId);
     }
 
+        /**
+     * batchSaveRecommendSites 方法
+     */
     @Transactional(rollbackFor = Exception.class)
     public void batchSaveRecommendSites(String userId, String categoryId, BatchRecommendSiteSaveReqDTO req) {
         if (!isAdmin(userId)) {

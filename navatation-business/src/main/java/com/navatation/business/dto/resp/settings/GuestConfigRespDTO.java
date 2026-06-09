@@ -8,6 +8,11 @@ import com.navatation.business.dto.resp.widget.WidgetRespDTO;
 import com.navatation.business.dto.resp.settings.GuestConfigRespDTO;
 import com.navatation.business.dto.resp.nav.ShortcutRespDTO;
 
+/**
+ * GuestConfigRespDTO 功能描述
+ *
+ * @date 2026-06-09
+ */
 @Data
 public class GuestConfigRespDTO {
     private SettingsRespDTO settings;

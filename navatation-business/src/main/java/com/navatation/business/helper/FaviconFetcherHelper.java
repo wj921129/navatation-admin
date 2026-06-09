@@ -22,6 +22,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import com.navatation.common.NavConstants;
 
+/**
+ * FaviconFetcherHelper 功能描述
+ *
+ * @date 2026-06-09
+ */
 @Component
 @RequiredArgsConstructor
 public class FaviconFetcherHelper {
@@ -47,6 +52,9 @@ public class FaviconFetcherHelper {
             new ThreadPoolExecutor.CallerRunsPolicy()
     );
 
+        /**
+     * fetchFavicon 方法
+     */
     public FaviconRespDTO fetchFavicon(String url) {
         try {
             java.net.URI uri = new java.net.URI(url);
@@ -163,6 +171,9 @@ public class FaviconFetcherHelper {
         return results;
     }
 
+        /**
+     * destroyExecutor 方法
+     */
     @PreDestroy
     public void destroyExecutor() {
         log.info("正在关闭 FaviconFetcherHelper 批量抓取 Favicon 线程池...");

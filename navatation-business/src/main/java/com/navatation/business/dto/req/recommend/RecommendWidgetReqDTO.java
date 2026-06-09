@@ -5,6 +5,11 @@ import java.math.BigDecimal;
 import java.util.Map;
 import com.navatation.business.dto.req.recommend.RecommendWidgetReqDTO;
 
+/**
+ * RecommendWidgetReqDTO 功能描述
+ *
+ * @date 2026-06-09
+ */
 @Data
 public class RecommendWidgetReqDTO {
     private String widgetType;

@@ -56,6 +56,9 @@ public class AuthController {
         return Result.success(Map.of("nonce", nonce, "publicKey", publicKey));
     }
 
+        /**
+     * register 方法
+     */
     @PostMapping("/register")
     public Result<UserRespDTO> register(@Valid @RequestBody EncryptedRegisterReqDTO req) {
         log.info("用户注册 入参:username={}", req.getUsername());
@@ -134,6 +137,9 @@ public class AuthController {
         return Result.success("密码修改成功", null);
     }
 
+        /**
+     * login 方法
+     */
     @PostMapping("/login")
     public Result<LoginRespDTO> login(@Valid @RequestBody EncryptedLoginReqDTO req) {
         log.info("用户登录 入参:username={}", req.getUsername());
@@ -166,6 +172,9 @@ public class AuthController {
         return Result.success("登录成功", loginVO);
     }
 
+        /**
+     * refresh 方法
+     */
     @PostMapping("/refresh")
     public Result<LoginRespDTO> refresh(@Valid @RequestBody RefreshTokenReqDTO req) {
         log.info("刷新Token 入参:refreshToken={}", req.getRefreshToken());

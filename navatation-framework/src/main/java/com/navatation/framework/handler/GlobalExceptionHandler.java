@@ -22,6 +22,9 @@ public class GlobalExceptionHandler {
         return Result.fail(e.getCode(), e.getMessage());
     }
 
+        /**
+     * handleValidation 方法
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Result<?> handleValidation(MethodArgumentNotValidException e) {
@@ -32,6 +35,9 @@ public class GlobalExceptionHandler {
         return Result.fail(400, msg);
     }
 
+        /**
+     * handleException 方法
+     */
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Result<?> handleException(Exception e) {

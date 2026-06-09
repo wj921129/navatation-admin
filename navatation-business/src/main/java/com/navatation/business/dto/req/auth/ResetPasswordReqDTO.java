@@ -6,6 +6,11 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import com.navatation.business.dto.req.auth.ResetPasswordReqDTO;
 
+/**
+ * ResetPasswordReqDTO 功能描述
+ *
+ * @date 2026-06-09
+ */
 @Data
 public class ResetPasswordReqDTO {
     @NotBlank(message = "用户名不能为空")

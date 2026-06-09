@@ -37,10 +37,16 @@ public class RequestLogAspect {
     }
 
     @Pointcut("execution(* com.navatation.business.controller..*.*(..))")
+        /**
+     * controllerPointcut 方法
+     */
     public void controllerPointcut() {
     }
 
     @Around("controllerPointcut()")
+        /**
+     * around 方法
+     */
     public Object around(ProceedingJoinPoint joinPoint) throws Throwable {
         // 1. 生成 32 位随机 UUID (去除横线) 并在其前追加 "UUID="，放入 MDC 日志上下文
         String traceId = "UUID=" + UUID.randomUUID().toString().replace("-", "");

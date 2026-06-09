@@ -19,6 +19,11 @@ import java.util.List;
 import com.navatation.business.entity.root.RootUser;
 import com.navatation.business.mapper.RootUserMapper;
 
+/**
+ * PublicService 功能描述
+ *
+ * @date 2026-06-09
+ */
 @Service
 @RequiredArgsConstructor
 public class PublicService {
@@ -33,6 +38,9 @@ public class PublicService {
     private final RecommendConfigMapper recommendConfigMapper;
     private final RecommendWidgetService recommendWidgetService;
 
+        /**
+     * getGuestConfig 方法
+     */
     public GuestConfigRespDTO getGuestConfig() {
         // Find ADMIN user
         RootUser admin = rootUserMapper.selectOne(new LambdaQueryWrapper<RootUser>().last("LIMIT 1"));

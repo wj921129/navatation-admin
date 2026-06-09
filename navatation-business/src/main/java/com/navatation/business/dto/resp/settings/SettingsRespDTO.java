@@ -3,6 +3,11 @@ package com.navatation.business.dto.resp.settings;
 import lombok.Data;
 import com.navatation.business.dto.resp.settings.SettingsRespDTO;
 
+/**
+ * SettingsRespDTO 功能描述
+ *
+ * @date 2026-06-09
+ */
 @Data
 public class SettingsRespDTO {
     private String searchEngine;

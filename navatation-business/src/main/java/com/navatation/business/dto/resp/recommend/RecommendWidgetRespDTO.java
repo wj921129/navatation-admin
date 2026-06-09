@@ -6,6 +6,11 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import com.navatation.business.dto.resp.recommend.RecommendWidgetRespDTO;
 
+/**
+ * RecommendWidgetRespDTO 功能描述
+ *
+ * @date 2026-06-09
+ */
 @Data
 public class RecommendWidgetRespDTO {
     private String widgetId;

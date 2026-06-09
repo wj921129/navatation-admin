@@ -4,6 +4,11 @@ import lombok.Data;
 import com.navatation.business.dto.resp.user.UserRespDTO;
 import com.navatation.business.dto.resp.auth.LoginRespDTO;
 
+/**
+ * LoginRespDTO 功能描述
+ *
+ * @date 2026-06-09
+ */
 @Data
 public class LoginRespDTO {
     private String accessToken;

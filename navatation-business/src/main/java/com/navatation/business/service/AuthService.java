@@ -73,6 +73,9 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final RedisTemplate<String, Object> redisTemplate;
 
+        /**
+     * login 方法
+     */
     @Transactional
     public LoginRespDTO login(LoginReqDTO req) {
         // 先检查超级管理员
@@ -150,6 +153,9 @@ public class AuthService {
         return vo;
     }
 
+        /**
+     * register 方法
+     */
     @Transactional
     public void register(RegisterReqDTO req) {
         if (!req.getPassword().equals(req.getConfirmPassword())) {
@@ -291,6 +297,9 @@ public class AuthService {
         log.info("用户注册成功 userId={} username={}", user.getUserId(), user.getUsername());
     }
 
+        /**
+     * changePassword 方法
+     */
     @Transactional
     public void changePassword(String userId, ChangePasswordReqDTO req) {
         if (!req.getNewPassword().equals(req.getConfirmPassword())) {
@@ -320,6 +329,9 @@ public class AuthService {
         log.info("用户密码修改成功 userId={} username={}", user.getUserId(), user.getUsername());
     }
 
+        /**
+     * refresh 方法
+     */
     public LoginRespDTO refresh(RefreshTokenReqDTO req) {
         if (!jwtTokenProvider.validateToken(req.getRefreshToken())) {
             throw new BizException(ResultCode.TOKEN_INVALID);
@@ -376,6 +388,9 @@ public class AuthService {
         return vo;
     }
 
+        /**
+     * logout 方法
+     */
     public void logout(String userId, String token) {
         String tokenId;
         try {
@@ -390,6 +405,9 @@ public class AuthService {
         log.info("用户登出成功 userId={}", userId);
     }
 
+        /**
+     * getCurrentUser 方法
+     */
     public UserRespDTO getCurrentUser(String userId) {
         RootUser rootUser = rootUserMapper.selectById(userId);
         if (rootUser != null) {

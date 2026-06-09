@@ -33,6 +33,11 @@ import java.util.stream.Collectors;
 import com.navatation.business.entity.root.RootCategory;
 import com.navatation.business.entity.root.RootShortcut;
 
+/**
+ * NavCategoryService 功能描述
+ *
+ * @date 2026-06-09
+ */
 @Service
 @RequiredArgsConstructor
 public class NavCategoryService {
@@ -51,6 +56,9 @@ public class NavCategoryService {
         return rootUserMapper.selectById(userId) != null;
     }
 
+        /**
+     * getCategories 方法
+     */
     public List<CategoryRespDTO> getCategories(String userId) {
         if (isAdmin(userId)) {
             List<RootCategory> categories = rootCategoryMapper.selectList(
@@ -93,6 +101,9 @@ public class NavCategoryService {
         }).collect(Collectors.toList());
     }
 
+        /**
+     * createCategory 方法
+     */
     public CategoryRespDTO createCategory(String userId, CategoryReqDTO req) {
         if (isAdmin(userId)) {
             RootCategory category = new RootCategory();
@@ -127,6 +138,9 @@ public class NavCategoryService {
         return vo;
     }
 
+        /**
+     * updateCategory 方法
+     */
     public void updateCategory(String userId, String categoryId, CategoryReqDTO req) {
         if (isAdmin(userId)) {
             RootCategory category = rootCategoryMapper.selectById(categoryId);
@@ -158,6 +172,9 @@ public class NavCategoryService {
         log.info("更新分类成功 userId={} categoryId={}", userId, categoryId);
     }
 
+        /**
+     * deleteCategory 方法
+     */
     @Transactional
     public void deleteCategory(String userId, String categoryId) {
         if (isAdmin(userId)) {
@@ -182,6 +199,9 @@ public class NavCategoryService {
         log.info("删除分类成功 userId={} categoryId={}", userId, categoryId);
     }
 
+        /**
+     * getRecommended 方法
+     */
     public List<RecommendCategoryRespDTO> getRecommended() {
         List<RecommendCategory> categories = recommendCategoryMapper.selectList(
                 new LambdaQueryWrapper<RecommendCategory>().orderByAsc(RecommendCategory::getSortOrder));
@@ -221,6 +241,9 @@ public class NavCategoryService {
         }).collect(Collectors.toList());
     }
 
+        /**
+     * addRecommendCategory 方法
+     */
     @Transactional
     public RecommendCategoryRespDTO addRecommendCategory(String userId, RecommendCategoryReqDTO req) {
         if (!isAdmin(userId)) {
@@ -242,6 +265,9 @@ public class NavCategoryService {
         return vo;
     }
 
+        /**
+     * updateRecommendCategory 方法
+     */
     @Transactional
     public void updateRecommendCategory(String userId, String categoryId, RecommendCategoryReqDTO req) {
         if (!isAdmin(userId)) {
@@ -257,6 +283,9 @@ public class NavCategoryService {
         recommendCategoryMapper.updateById(cat);
     }
 
+        /**
+     * deleteRecommendCategory 方法
+     */
     @Transactional
     public void deleteRecommendCategory(String userId, String categoryId) {
         if (!isAdmin(userId)) {

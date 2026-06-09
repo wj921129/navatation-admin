@@ -177,6 +177,9 @@ public class NavController {
     }
 
     // ---- Recommended ----
+        /**
+     * getRecommended 方法
+     */
     @GetMapping("/recommended")
     public Result<List<RecommendCategoryRespDTO>> getRecommended() {
         log.info("获取推荐站点");

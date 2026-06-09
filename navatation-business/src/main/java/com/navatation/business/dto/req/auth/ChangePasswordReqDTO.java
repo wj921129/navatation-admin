@@ -5,6 +5,11 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import com.navatation.business.dto.req.auth.ChangePasswordReqDTO;
 
+/**
+ * ChangePasswordReqDTO 功能描述
+ *
+ * @date 2026-06-09
+ */
 @Data
 public class ChangePasswordReqDTO {
     @NotBlank(message = "原密码不能为空")

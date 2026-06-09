@@ -10,6 +10,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication(scanBasePackages = "com.navatation")
 @MapperScan("com.navatation.business.mapper")
 public class NavatationApplication {
+        /**
+     * main 方法
+     */
     public static void main(String[] args) {
         SpringApplication.run(NavatationApplication.class, args);
     }

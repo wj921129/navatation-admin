@@ -4,7 +4,7 @@ import lombok.Data;
 import com.navatation.business.dto.req.settings.SettingsReqDTO;
 
 /**
- * SettingsReqDTO 功能描述
+ * 用户设置修改请求参数
  *
  * @date 2026-06-09
  */

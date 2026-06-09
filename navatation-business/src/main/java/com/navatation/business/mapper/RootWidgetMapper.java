@@ -5,7 +5,7 @@ import com.navatation.business.entity.root.RootWidget;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * RootWidgetMapper 功能描述
+ * 管理员端小组件 Mapper 接口
  *
  * @date 2026-06-09
  */

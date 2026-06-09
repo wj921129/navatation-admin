@@ -5,7 +5,7 @@ import lombok.Data;
 import com.navatation.business.dto.req.nav.CategoryReqDTO;
 
 /**
- * CategoryReqDTO 功能描述
+ * 导航分类操作请求参数
  *
  * @date 2026-06-09
  */

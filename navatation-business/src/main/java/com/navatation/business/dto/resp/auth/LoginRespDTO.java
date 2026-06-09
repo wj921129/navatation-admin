@@ -5,7 +5,7 @@ import com.navatation.business.dto.resp.user.UserRespDTO;
 import com.navatation.business.dto.resp.auth.LoginRespDTO;
 
 /**
- * LoginRespDTO 功能描述
+ * 用户登录响应结果
  *
  * @date 2026-06-09
  */

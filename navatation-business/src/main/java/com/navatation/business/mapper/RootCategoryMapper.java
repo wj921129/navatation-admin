@@ -5,7 +5,7 @@ import com.navatation.business.entity.root.RootCategory;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * RootCategoryMapper 功能描述
+ * 管理员端导航分类 Mapper 接口
  *
  * @date 2026-06-09
  */

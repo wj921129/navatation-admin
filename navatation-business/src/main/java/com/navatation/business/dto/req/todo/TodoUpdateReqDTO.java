@@ -6,7 +6,7 @@ import lombok.Data;
 import com.navatation.business.dto.req.todo.TodoUpdateReqDTO;
 
 /**
- * TodoUpdateReqDTO 功能描述
+ * 待办事项更新请求参数
  *
  * @date 2026-06-09
  */

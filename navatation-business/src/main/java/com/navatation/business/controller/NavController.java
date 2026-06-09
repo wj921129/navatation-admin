@@ -178,7 +178,7 @@ public class NavController {
 
     // ---- Recommended ----
         /**
-     * getRecommended 方法
+     * 获取推荐站点及分类列表
      */
     @GetMapping("/recommended")
     public Result<List<RecommendCategoryRespDTO>> getRecommended() {

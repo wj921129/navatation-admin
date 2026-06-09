@@ -4,7 +4,7 @@ import lombok.Data;
 import com.navatation.business.dto.req.nav.SortItemDTO;
 
 /**
- * SortItemDTO 功能描述
+ * 排序子项参数
  *
  * @date 2026-06-09
  */

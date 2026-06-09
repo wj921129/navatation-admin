@@ -33,6 +33,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +46,7 @@ import com.navatation.business.entity.root.RootCategory;
 import com.navatation.business.entity.root.RootShortcut;
 
 /**
- * NavShortcutService 功能描述
+ * 快捷方式服务，处理快捷方式分类和数据管理
  *
  * @date 2026-06-09
  */
@@ -66,15 +68,15 @@ public class NavShortcutService {
         return rootUserMapper.selectById(userId) != null;
     }
 
-        /**
-     * getShortcuts 方法
+    /**
+     * 根据分类查询快捷方式列表
      */
     public List<ShortcutRespDTO> getShortcuts(String userId, String categoryId) {
         if (isAdmin(userId)) {
             LambdaQueryWrapper<RootShortcut> wrapper = new LambdaQueryWrapper<RootShortcut>()
                     .eq(RootShortcut::getUserId, userId)
                     .orderByAsc(RootShortcut::getSortOrder);
-            if (categoryId != null && !categoryId.isEmpty()) {
+            if (StringUtils.hasText(categoryId)) {
                 wrapper.eq(RootShortcut::getCategoryId, categoryId);
             }
             return rootShortcutMapper.selectList(wrapper).stream()
@@ -85,7 +87,7 @@ public class NavShortcutService {
         LambdaQueryWrapper<NavShortcut> wrapper = new LambdaQueryWrapper<NavShortcut>()
                 .eq(NavShortcut::getUserId, userId)
                 .orderByAsc(NavShortcut::getSortOrder);
-        if (categoryId != null && !categoryId.isEmpty()) {
+        if (StringUtils.hasText(categoryId)) {
             wrapper.eq(NavShortcut::getCategoryId, categoryId);
         }
         return shortcutMapper.selectList(wrapper).stream()
@@ -93,15 +95,15 @@ public class NavShortcutService {
                     .collect(Collectors.toList());
     }
 
-        /**
-     * batchCreate 方法
+    /**
+     * 批量创建快捷方式
      */
     @Transactional
     public List<BatchCreateItemRespDTO> batchCreate(String userId, BatchCreateReqDTO req) {
         String categoryId = req.getCategoryId();
 
         if (isAdmin(userId)) {
-            if (categoryId == null || categoryId.isEmpty()) {
+            if (!StringUtils.hasText(categoryId)) {
                 RootCategory defaultCat = rootCategoryMapper.selectOne(
                         new LambdaQueryWrapper<RootCategory>()
                                 .eq(RootCategory::getUserId, userId)
@@ -128,6 +130,7 @@ public class NavShortcutService {
                     .stream().mapToDouble(item -> item.getSortOrder() != null ? item.getSortOrder() : 0.0).max().orElse(0.0);
 
             List<BatchCreateItemRespDTO> results = new ArrayList<>();
+            List<RootShortcut> saveList = new ArrayList<>();
             for (CreateShortcutItemDTO item : req.getShortcuts()) {
                 RootShortcut shortcut = new RootShortcut();
                 shortcut.setShortcutId(IdUtils.genShortcutId());
@@ -140,18 +143,21 @@ public class NavShortcutService {
                 shortcut.setIconColor(item.getIconColor());
                 shortcut.setSortOrder(++maxSort);
                 shortcut.setClickCount(0L);
-                rootShortcutMapper.insert(shortcut);
+                saveList.add(shortcut);
 
                 BatchCreateItemRespDTO vo = new BatchCreateItemRespDTO();
                 vo.setShortcutId(shortcut.getShortcutId());
                 vo.setName(shortcut.getName());
                 results.add(vo);
             }
+            if (!CollectionUtils.isEmpty(saveList)) {
+                Db.saveBatch(saveList);
+            }
             log.info("批量创建管理员快捷方式成功 userId={} count={}", userId, results.size());
             return results;
         }
 
-        if (categoryId == null || categoryId.isEmpty()) {
+        if (!StringUtils.hasText(categoryId)) {
             NavCategory defaultCat = categoryMapper.selectOne(
                     new LambdaQueryWrapper<NavCategory>()
                             .eq(NavCategory::getUserId, userId)
@@ -178,6 +184,7 @@ public class NavShortcutService {
                 .stream().mapToDouble(item -> item.getSortOrder() != null ? item.getSortOrder() : 0.0).max().orElse(0.0);
 
         List<BatchCreateItemRespDTO> results = new ArrayList<>();
+        List<NavShortcut> saveList = new ArrayList<>();
         for (CreateShortcutItemDTO item : req.getShortcuts()) {
             NavShortcut shortcut = new NavShortcut();
             shortcut.setShortcutId(IdUtils.genShortcutId());
@@ -190,19 +197,22 @@ public class NavShortcutService {
             shortcut.setIconColor(item.getIconColor());
             shortcut.setSortOrder(++maxSort);
             shortcut.setClickCount(0L);
-            shortcutMapper.insert(shortcut);
+            saveList.add(shortcut);
 
             BatchCreateItemRespDTO vo = new BatchCreateItemRespDTO();
             vo.setShortcutId(shortcut.getShortcutId());
             vo.setName(shortcut.getName());
             results.add(vo);
         }
+        if (!CollectionUtils.isEmpty(saveList)) {
+            Db.saveBatch(saveList);
+        }
         log.info("批量创建快捷方式成功 userId={} count={}", userId, results.size());
         return results;
     }
 
-        /**
-     * updateShortcut 方法
+    /**
+     * 更新快捷方式配置
      */
     public ShortcutRespDTO updateShortcut(String userId, String shortcutId, UpdateShortcutReqDTO req) {
         if (isAdmin(userId)) {
@@ -246,8 +256,8 @@ public class NavShortcutService {
         return toShortcutVO(shortcut);
     }
 
-        /**
-     * deleteShortcut 方法
+    /**
+     * 删除快捷方式
      */
     public void deleteShortcut(String userId, String shortcutId) {
         if (isAdmin(userId)) {
@@ -268,8 +278,8 @@ public class NavShortcutService {
         log.info("删除快捷方式成功 userId={} shortcutId={}", userId, shortcutId);
     }
 
-        /**
-     * sortShortcuts 方法
+    /**
+     * 更新快捷方式排序
      */
     @Transactional
     public void sortShortcuts(String userId, SortReqDTO req) {
@@ -280,12 +290,16 @@ public class NavShortcutService {
                     .filter(s -> s.getUserId().equals(userId))
                     .collect(Collectors.toMap(RootShortcut::getShortcutId, Function.identity()));
 
+            List<RootShortcut> updates = new ArrayList<>();
             for (SortItemDTO item : req.getItems()) {
                 RootShortcut shortcut = shortcutMap.get(item.getShortcutId());
                 if (shortcut != null) {
                     shortcut.setSortOrder(item.getSortOrder());
-                    rootShortcutMapper.updateById(shortcut);
+                    updates.add(shortcut);
                 }
+            }
+            if (!CollectionUtils.isEmpty(updates)) {
+                Db.updateBatchById(updates);
             }
             return;
         }
@@ -294,17 +308,21 @@ public class NavShortcutService {
                 .filter(s -> s.getUserId().equals(userId))
                 .collect(Collectors.toMap(NavShortcut::getShortcutId, Function.identity()));
 
+        List<NavShortcut> updates = new ArrayList<>();
         for (SortItemDTO item : req.getItems()) {
             NavShortcut shortcut = shortcutMap.get(item.getShortcutId());
             if (shortcut != null) {
                 shortcut.setSortOrder(item.getSortOrder());
-                shortcutMapper.updateById(shortcut);
+                updates.add(shortcut);
             }
+        }
+        if (!CollectionUtils.isEmpty(updates)) {
+            Db.updateBatchById(updates);
         }
     }
 
-        /**
-     * addRecommendSite 方法
+    /**
+     * 新增推荐站点
      */
     @Transactional
     public RecommendSiteRespDTO addRecommendSite(String userId, RecommendSiteReqDTO req) {
@@ -334,8 +352,8 @@ public class NavShortcutService {
         return vo;
     }
 
-        /**
-     * updateRecommendSite 方法
+    /**
+     * 更新推荐站点信息
      */
     @Transactional
     public void updateRecommendSite(String userId, String siteId, RecommendSiteReqDTO req) {
@@ -356,8 +374,8 @@ public class NavShortcutService {
         recommendSiteMapper.updateById(site);
     }
 
-        /**
-     * deleteRecommendSite 方法
+    /**
+     * 删除推荐站点
      */
     @Transactional
     public void deleteRecommendSite(String userId, String siteId) {
@@ -371,8 +389,8 @@ public class NavShortcutService {
         recommendSiteMapper.deleteById(siteId);
     }
 
-        /**
-     * batchSaveRecommendSites 方法
+    /**
+     * 批量保存指定分类下的推荐网址
      */
     @Transactional(rollbackFor = Exception.class)
     public void batchSaveRecommendSites(String userId, String categoryId, BatchRecommendSiteSaveReqDTO req) {

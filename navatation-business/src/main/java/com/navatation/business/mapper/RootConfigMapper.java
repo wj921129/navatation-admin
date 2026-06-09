@@ -5,7 +5,7 @@ import com.navatation.business.entity.root.RootConfig;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * RootConfigMapper 功能描述
+ * 管理员端全局配置 Mapper 接口
  *
  * @date 2026-06-09
  */

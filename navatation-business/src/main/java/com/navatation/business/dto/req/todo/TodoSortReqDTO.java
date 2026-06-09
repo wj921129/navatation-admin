@@ -6,7 +6,7 @@ import com.navatation.business.dto.req.todo.TodoSortReqDTO;
 import com.navatation.business.dto.req.todo.TodoSortItemDTO;
 
 /**
- * TodoSortReqDTO 功能描述
+ * 待办事项排序请求参数
  *
  * @date 2026-06-09
  */

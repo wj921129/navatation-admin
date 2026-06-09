@@ -5,7 +5,7 @@ import lombok.Data;
 import com.navatation.business.dto.req.nav.CreateShortcutItemDTO;
 
 /**
- * CreateShortcutItemDTO 功能描述
+ * 创建快捷方式子项参数
  *
  * @date 2026-06-09
  */

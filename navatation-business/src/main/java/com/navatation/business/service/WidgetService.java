@@ -21,10 +21,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import com.baomidou.mybatisplus.extension.toolkit.Db;
 
 /**
  * @Author admin
@@ -93,6 +95,7 @@ public class WidgetService {
                 return;
             }
 
+            List<RootWidget> saveList = new ArrayList<>();
             for (WidgetReqDTO req : requests) {
                 RootWidget entity = new RootWidget();
                 entity.setUserId(userId);
@@ -116,7 +119,10 @@ public class WidgetService {
                         entity.setMeta("{}");
                     }
                 }
-                rootWidgetMapper.insert(entity);
+                saveList.add(entity);
+            }
+            if (!saveList.isEmpty()) {
+                Db.saveBatch(saveList);
             }
             log.info("保存管理员组件成功 userId={}, count={}", userId, requests.size());
             return;
@@ -129,6 +135,7 @@ public class WidgetService {
             return;
         }
 
+        List<UserWidget> saveList = new ArrayList<>();
         for (WidgetReqDTO req : requests) {
             UserWidget entity = new UserWidget();
             entity.setUserId(userId);
@@ -152,7 +159,10 @@ public class WidgetService {
                     entity.setMeta("{}");
                 }
             }
-            widgetMapper.insert(entity);
+            saveList.add(entity);
+        }
+        if (!saveList.isEmpty()) {
+            Db.saveBatch(saveList);
         }
         log.info("保存用户组件成功 userId={}, count={}", userId, requests.size());
     }

@@ -4,7 +4,7 @@ import lombok.Data;
 import com.navatation.business.dto.resp.settings.WallpaperRespDTO;
 
 /**
- * WallpaperRespDTO 功能描述
+ * 壁纸信息响应结果
  *
  * @date 2026-06-09
  */

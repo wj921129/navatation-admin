@@ -200,7 +200,7 @@ public class NavCategoryService {
     }
 
         /**
-     * getRecommended 方法
+     * 获取推荐站点及分类列表
      */
     public List<RecommendCategoryRespDTO> getRecommended() {
         List<RecommendCategory> categories = recommendCategoryMapper.selectList(

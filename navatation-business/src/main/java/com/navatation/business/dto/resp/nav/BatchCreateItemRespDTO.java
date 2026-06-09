@@ -4,7 +4,7 @@ import lombok.Data;
 import com.navatation.business.dto.resp.nav.BatchCreateItemRespDTO;
 
 /**
- * BatchCreateItemRespDTO 功能描述
+ * 批量创建子项结果响应
  *
  * @date 2026-06-09
  */

@@ -5,7 +5,7 @@ import com.navatation.business.entity.root.RootTodoItem;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * RootTodoItemMapper 功能描述
+ * 管理员端待办事项 Mapper 接口
  *
  * @date 2026-06-09
  */

@@ -4,7 +4,7 @@ import lombok.Data;
 import com.navatation.business.dto.resp.common.DeleteCountRespDTO;
 
 /**
- * DeleteCountRespDTO 功能描述
+ * 批量删除统计结果响应
  *
  * @date 2026-06-09
  */

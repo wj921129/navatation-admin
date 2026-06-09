@@ -6,7 +6,7 @@ import lombok.Data;
 import com.navatation.business.dto.req.auth.ChangePasswordReqDTO;
 
 /**
- * ChangePasswordReqDTO 功能描述
+ * 修改密码请求参数
  *
  * @date 2026-06-09
  */

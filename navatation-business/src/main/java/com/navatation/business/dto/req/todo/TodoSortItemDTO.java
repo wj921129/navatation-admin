@@ -4,7 +4,7 @@ import lombok.Data;
 import com.navatation.business.dto.req.todo.TodoSortItemDTO;
 
 /**
- * TodoSortItemDTO 功能描述
+ * 待办事项排序子项参数
  *
  * @date 2026-06-09
  */

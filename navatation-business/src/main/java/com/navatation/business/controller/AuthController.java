@@ -57,7 +57,7 @@ public class AuthController {
     }
 
         /**
-     * register 方法
+     * 处理用户注册请求逻辑
      */
     @PostMapping("/register")
     public Result<UserRespDTO> register(@Valid @RequestBody EncryptedRegisterReqDTO req) {
@@ -138,7 +138,7 @@ public class AuthController {
     }
 
         /**
-     * login 方法
+     * 处理用户登录请求并返回Token
      */
     @PostMapping("/login")
     public Result<LoginRespDTO> login(@Valid @RequestBody EncryptedLoginReqDTO req) {
@@ -173,7 +173,7 @@ public class AuthController {
     }
 
         /**
-     * refresh 方法
+     * 处理Token刷新请求
      */
     @PostMapping("/refresh")
     public Result<LoginRespDTO> refresh(@Valid @RequestBody RefreshTokenReqDTO req) {

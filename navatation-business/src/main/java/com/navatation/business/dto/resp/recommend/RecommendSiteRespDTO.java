@@ -4,7 +4,7 @@ import lombok.Data;
 import com.navatation.business.dto.resp.recommend.RecommendSiteRespDTO;
 
 /**
- * RecommendSiteRespDTO 功能描述
+ * 推荐网址信息响应结果
  *
  * @date 2026-06-09
  */

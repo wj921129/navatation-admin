@@ -75,7 +75,7 @@ public class SettingsController {
     }
 
         /**
-     * getRandomWallpaper 方法
+     * 获取系统本地的随机壁纸
      */
     @GetMapping("/wallpaper/random")
     public Result<WallpaperRespDTO> getRandomWallpaper() {

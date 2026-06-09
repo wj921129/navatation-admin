@@ -7,7 +7,7 @@ import lombok.Data;
 import com.navatation.business.dto.req.auth.ResetPasswordReqDTO;
 
 /**
- * ResetPasswordReqDTO 功能描述
+ * 重置密码请求参数
  *
  * @date 2026-06-09
  */

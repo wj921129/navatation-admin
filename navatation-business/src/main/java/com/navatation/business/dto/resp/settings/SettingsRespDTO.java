@@ -4,7 +4,7 @@ import lombok.Data;
 import com.navatation.business.dto.resp.settings.SettingsRespDTO;
 
 /**
- * SettingsRespDTO 功能描述
+ * 用户设置信息响应结果
  *
  * @date 2026-06-09
  */

@@ -6,7 +6,7 @@ import com.navatation.business.dto.resp.recommend.RecommendSiteRespDTO;
 import com.navatation.business.dto.resp.recommend.RecommendCategoryRespDTO;
 
 /**
- * RecommendCategoryRespDTO 功能描述
+ * 推荐分类信息响应结果
  *
  * @date 2026-06-09
  */

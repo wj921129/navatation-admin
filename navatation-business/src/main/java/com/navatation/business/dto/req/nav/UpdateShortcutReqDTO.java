@@ -5,7 +5,7 @@ import lombok.Data;
 import com.navatation.business.dto.req.nav.UpdateShortcutReqDTO;
 
 /**
- * UpdateShortcutReqDTO 功能描述
+ * 更新快捷方式请求参数
  *
  * @date 2026-06-09
  */

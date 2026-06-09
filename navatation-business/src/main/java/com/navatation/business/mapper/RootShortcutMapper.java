@@ -5,7 +5,7 @@ import com.navatation.business.entity.root.RootShortcut;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * RootShortcutMapper 功能描述
+ * 管理员端导航快捷方式 Mapper 接口
  *
  * @date 2026-06-09
  */

@@ -44,6 +44,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import com.navatation.business.constant.SettingsConstants;
+import org.springframework.util.CollectionUtils;
+import com.baomidou.mybatisplus.extension.toolkit.Db;
 
 /**
  * @Author admin
@@ -73,8 +75,8 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final RedisTemplate<String, Object> redisTemplate;
 
-        /**
-     * login 方法
+    /**
+     * 处理用户登录请求并返回Token
      */
     @Transactional
     public LoginRespDTO login(LoginReqDTO req) {
@@ -153,8 +155,8 @@ public class AuthService {
         return vo;
     }
 
-        /**
-     * register 方法
+    /**
+     * 处理用户注册请求逻辑
      */
     @Transactional
     public void register(RegisterReqDTO req) {
@@ -297,8 +299,8 @@ public class AuthService {
         log.info("用户注册成功 userId={} username={}", user.getUserId(), user.getUsername());
     }
 
-        /**
-     * changePassword 方法
+    /**
+     * 处理修改密码逻辑
      */
     @Transactional
     public void changePassword(String userId, ChangePasswordReqDTO req) {
@@ -329,8 +331,8 @@ public class AuthService {
         log.info("用户密码修改成功 userId={} username={}", user.getUserId(), user.getUsername());
     }
 
-        /**
-     * refresh 方法
+    /**
+     * 处理Token刷新请求
      */
     public LoginRespDTO refresh(RefreshTokenReqDTO req) {
         if (!jwtTokenProvider.validateToken(req.getRefreshToken())) {
@@ -388,8 +390,8 @@ public class AuthService {
         return vo;
     }
 
-        /**
-     * logout 方法
+    /**
+     * 处理用户登出逻辑，清除 Token
      */
     public void logout(String userId, String token) {
         String tokenId;
@@ -405,8 +407,8 @@ public class AuthService {
         log.info("用户登出成功 userId={}", userId);
     }
 
-        /**
-     * getCurrentUser 方法
+    /**
+     * 获取当前登录用户信息
      */
     public UserRespDTO getCurrentUser(String userId) {
         RootUser rootUser = rootUserMapper.selectById(userId);

@@ -7,7 +7,7 @@ import java.util.Map;
 import com.navatation.business.dto.resp.recommend.RecommendWidgetRespDTO;
 
 /**
- * RecommendWidgetRespDTO 功能描述
+ * 推荐组件信息响应结果
  *
  * @date 2026-06-09
  */

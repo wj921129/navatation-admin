@@ -5,7 +5,7 @@ import lombok.Data;
 import com.navatation.business.dto.req.auth.LoginReqDTO;
 
 /**
- * LoginReqDTO 功能描述
+ * 用户登录请求参数
  *
  * @date 2026-06-09
  */

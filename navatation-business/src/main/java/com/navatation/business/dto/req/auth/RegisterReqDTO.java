@@ -6,7 +6,7 @@ import lombok.Data;
 import com.navatation.business.dto.req.auth.RegisterReqDTO;
 
 /**
- * RegisterReqDTO 功能描述
+ * 用户注册请求参数
  *
  * @date 2026-06-09
  */

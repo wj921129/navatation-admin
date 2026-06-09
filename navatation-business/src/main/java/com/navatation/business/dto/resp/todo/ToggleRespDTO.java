@@ -4,7 +4,7 @@ import lombok.Data;
 import com.navatation.business.dto.resp.todo.ToggleRespDTO;
 
 /**
- * ToggleRespDTO 功能描述
+ * 状态切换操作响应结果
  *
  * @date 2026-06-09
  */

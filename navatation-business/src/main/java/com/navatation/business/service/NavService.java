@@ -127,7 +127,7 @@ public class NavService {
     // --- Recommend Sites Management ---
 
         /**
-     * getRecommended 方法
+     * 获取推荐站点及分类列表
      */
     public List<RecommendCategoryRespDTO> getRecommended() {
         return navCategoryService.getRecommended();

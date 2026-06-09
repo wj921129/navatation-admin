@@ -5,7 +5,7 @@ import lombok.Data;
 import com.navatation.business.dto.req.auth.RefreshTokenReqDTO;
 
 /**
- * RefreshTokenReqDTO 功能描述
+ * 刷新Token请求参数
  *
  * @date 2026-06-09
  */

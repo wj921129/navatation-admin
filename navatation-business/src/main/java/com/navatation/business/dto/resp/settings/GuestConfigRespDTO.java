@@ -9,7 +9,7 @@ import com.navatation.business.dto.resp.settings.GuestConfigRespDTO;
 import com.navatation.business.dto.resp.nav.ShortcutRespDTO;
 
 /**
- * GuestConfigRespDTO 功能描述
+ * 访客/默认配置信息响应结果
  *
  * @date 2026-06-09
  */

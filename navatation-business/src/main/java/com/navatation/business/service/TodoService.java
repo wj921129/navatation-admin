@@ -22,6 +22,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
+import com.baomidou.mybatisplus.extension.toolkit.Db;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -39,6 +41,8 @@ import java.util.stream.Collectors;
 public class TodoService {
 
     private static final Logger log = LoggerFactory.getLogger(TodoService.class);
+    private static final String STATUS_ACTIVE = "active";
+    private static final String STATUS_COMPLETED = "completed";
 
     private final TodoItemMapper todoItemMapper;
     private final RootTodoItemMapper rootTodoItemMapper;
@@ -62,9 +66,9 @@ public class TodoService {
                     .eq(RootTodoItem::getUserId, userId)
                     .orderByAsc(RootTodoItem::getSortOrder);
 
-            if ("active".equals(status)) {
+            if (STATUS_ACTIVE.equals(status)) {
                 wrapper.eq(RootTodoItem::getCompleted, false);
-            } else if ("completed".equals(status)) {
+            } else if (STATUS_COMPLETED.equals(status)) {
                 wrapper.eq(RootTodoItem::getCompleted, true);
             }
 
@@ -77,9 +81,9 @@ public class TodoService {
                 .eq(TodoItem::getUserId, userId)
                 .orderByAsc(TodoItem::getSortOrder);
 
-        if ("active".equals(status)) {
+        if (STATUS_ACTIVE.equals(status)) {
             wrapper.eq(TodoItem::getCompleted, false);
-        } else if ("completed".equals(status)) {
+        } else if (STATUS_COMPLETED.equals(status)) {
             wrapper.eq(TodoItem::getCompleted, true);
         }
 
@@ -229,12 +233,16 @@ public class TodoService {
                     .filter(i -> i.getUserId().equals(userId))
                     .collect(Collectors.toMap(RootTodoItem::getTodoId, Function.identity()));
 
+            List<RootTodoItem> updates = new java.util.ArrayList<>();
             for (TodoSortItemDTO si : req.getItems()) {
                 RootTodoItem item = itemMap.get(si.getTodoId());
                 if (item != null) {
                     item.setSortOrder(si.getSortOrder());
-                    rootTodoItemMapper.updateById(item);
+                    updates.add(item);
                 }
+            }
+            if (!CollectionUtils.isEmpty(updates)) {
+                Db.updateBatchById(updates);
             }
             return;
         }
@@ -244,12 +252,16 @@ public class TodoService {
                 .filter(i -> i.getUserId().equals(userId))
                 .collect(Collectors.toMap(TodoItem::getTodoId, Function.identity()));
 
+        List<TodoItem> updates = new java.util.ArrayList<>();
         for (TodoSortItemDTO si : req.getItems()) {
             TodoItem item = itemMap.get(si.getTodoId());
             if (item != null) {
                 item.setSortOrder(si.getSortOrder());
-                todoItemMapper.updateById(item);
+                updates.add(item);
             }
+        }
+        if (!CollectionUtils.isEmpty(updates)) {
+            Db.updateBatchById(updates);
         }
     }
 
@@ -265,7 +277,7 @@ public class TodoService {
                             .eq(RootTodoItem::getUserId, userId)
                             .eq(RootTodoItem::getCompleted, true));
             List<String> ids = completed.stream().map(RootTodoItem::getTodoId).collect(Collectors.toList());
-            if (!ids.isEmpty()) {
+            if (!CollectionUtils.isEmpty(ids)) {
                 rootTodoItemMapper.deleteBatchIds(ids);
                 log.info("清除管理员已完成待办成功 userId={} count={}", userId, ids.size());
             }
@@ -280,7 +292,7 @@ public class TodoService {
                         .eq(TodoItem::getCompleted, true));
         // 批量删除已完成待办项
         List<String> ids = completed.stream().map(TodoItem::getTodoId).collect(Collectors.toList());
-        if (!ids.isEmpty()) {
+        if (!CollectionUtils.isEmpty(ids)) {
             todoItemMapper.deleteBatchIds(ids);
             log.info("清除已完成待办成功 userId={} count={}", userId, ids.size());
         }

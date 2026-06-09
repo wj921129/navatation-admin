@@ -6,7 +6,7 @@ import java.util.Map;
 import com.navatation.business.dto.req.recommend.RecommendWidgetReqDTO;
 
 /**
- * RecommendWidgetReqDTO 功能描述
+ * 推荐组件操作请求参数
  *
  * @date 2026-06-09
  */

@@ -6,7 +6,7 @@ import com.navatation.business.dto.req.nav.SortItemDTO;
 import com.navatation.business.dto.req.nav.SortReqDTO;
 
 /**
- * SortReqDTO 功能描述
+ * 排序请求参数
  *
  * @date 2026-06-09
  */

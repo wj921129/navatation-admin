@@ -118,6 +118,7 @@ public class RequestLogAspect {
                 String userId = jwtTokenProvider.getUserIdFromAuthHeader(authHeader);
                 return userId != null ? userId : "Anonymous";
             } catch (Exception e) {
+                log.warn("解析 Token 提取 UserID 失败, 降级为匿名访问", e);
                 // Token 无效或过期时直接降级为匿名访问，不破坏正常业务响应
                 return "Anonymous";
             }

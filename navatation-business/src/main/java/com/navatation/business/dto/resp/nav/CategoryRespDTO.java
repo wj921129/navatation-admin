@@ -4,7 +4,7 @@ import lombok.Data;
 import com.navatation.business.dto.resp.nav.CategoryRespDTO;
 
 /**
- * CategoryRespDTO 功能描述
+ * 导航分类信息响应结果
  *
  * @date 2026-06-09
  */

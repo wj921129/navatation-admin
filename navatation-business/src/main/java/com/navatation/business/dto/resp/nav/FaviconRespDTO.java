@@ -4,7 +4,7 @@ import lombok.Data;
 import com.navatation.business.dto.resp.nav.FaviconRespDTO;
 
 /**
- * FaviconRespDTO 功能描述
+ * 获取网站图标(Favicon)响应结果
  *
  * @date 2026-06-09
  */

@@ -1,6 +1,6 @@
 package com.navatation.business.controller;
 
-import com.navatation.business.dto.resp.GuestConfigRespDTO;
+import com.navatation.business.dto.resp.settings.GuestConfigRespDTO;
 import com.navatation.business.service.PublicService;
 import com.navatation.common.Result;
 import lombok.RequiredArgsConstructor;

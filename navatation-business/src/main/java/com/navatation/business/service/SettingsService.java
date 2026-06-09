@@ -2,9 +2,9 @@ package com.navatation.business.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.navatation.business.constant.SettingsConstants;
-import com.navatation.business.dto.req.SettingsReqDTO;
-import com.navatation.business.dto.resp.SettingsRespDTO;
-import com.navatation.business.dto.resp.WallpaperRespDTO;
+import com.navatation.business.dto.req.settings.SettingsReqDTO;
+import com.navatation.business.dto.resp.settings.SettingsRespDTO;
+import com.navatation.business.dto.resp.settings.WallpaperRespDTO;
 import com.navatation.business.entity.recommend.RecommendConfig;
 import com.navatation.business.entity.user.User;
 import com.navatation.business.entity.user.UserConfig;

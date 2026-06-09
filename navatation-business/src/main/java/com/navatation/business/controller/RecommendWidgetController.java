@@ -1,7 +1,7 @@
 package com.navatation.business.controller;
 
-import com.navatation.business.dto.req.RecommendWidgetReqDTO;
-import com.navatation.business.dto.resp.RecommendWidgetRespDTO;
+import com.navatation.business.dto.req.recommend.RecommendWidgetReqDTO;
+import com.navatation.business.dto.resp.recommend.RecommendWidgetRespDTO;
 import com.navatation.business.service.RecommendWidgetService;
 import com.navatation.common.Result;
 import lombok.RequiredArgsConstructor;

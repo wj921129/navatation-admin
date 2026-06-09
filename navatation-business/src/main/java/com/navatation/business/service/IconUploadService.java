@@ -1,6 +1,6 @@
 package com.navatation.business.service;
 
-import com.navatation.business.dto.resp.IconUploadRespDTO;
+import com.navatation.business.dto.resp.nav.IconUploadRespDTO;
 import com.navatation.common.BizException;
 import com.navatation.common.NavConstants;
 import com.navatation.common.RedisConstants;

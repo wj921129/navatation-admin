@@ -1,7 +1,7 @@
 package com.navatation.business;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.navatation.business.dto.req.RegisterReqDTO;
+import com.navatation.business.dto.req.auth.RegisterReqDTO;
 import com.navatation.business.entity.nav.NavCategory;
 import com.navatation.business.entity.nav.NavShortcut;
 import com.navatation.business.entity.nav.UserWidget;

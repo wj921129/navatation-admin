@@ -1,13 +1,13 @@
 package com.navatation.business.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.navatation.common.dto.resp.DeleteCountRespDTO;
-import com.navatation.business.dto.req.TodoCreateReqDTO;
-import com.navatation.business.dto.req.TodoSortItemDTO;
-import com.navatation.business.dto.req.TodoSortReqDTO;
-import com.navatation.business.dto.req.TodoUpdateReqDTO;
-import com.navatation.business.dto.resp.TodoRespDTO;
-import com.navatation.business.dto.resp.ToggleRespDTO;
+import com.navatation.business.dto.resp.common.DeleteCountRespDTO;
+import com.navatation.business.dto.req.todo.TodoCreateReqDTO;
+import com.navatation.business.dto.req.todo.TodoSortItemDTO;
+import com.navatation.business.dto.req.todo.TodoSortReqDTO;
+import com.navatation.business.dto.req.todo.TodoUpdateReqDTO;
+import com.navatation.business.dto.resp.todo.TodoRespDTO;
+import com.navatation.business.dto.resp.todo.ToggleRespDTO;
 import com.navatation.business.entity.nav.TodoItem;
 import com.navatation.business.entity.root.RootTodoItem;
 import com.navatation.business.mapper.RootTodoItemMapper;

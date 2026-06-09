@@ -1,7 +1,7 @@
 package com.navatation.business.controller;
 
-import com.navatation.business.dto.req.WidgetReqDTO;
-import com.navatation.business.dto.resp.WidgetRespDTO;
+import com.navatation.business.dto.req.widget.WidgetReqDTO;
+import com.navatation.business.dto.resp.widget.WidgetRespDTO;
 import com.navatation.business.service.WidgetService;
 import com.navatation.common.Result;
 import com.navatation.framework.security.JwtTokenProvider;

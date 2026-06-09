@@ -1,15 +1,15 @@
 package com.navatation.business.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.navatation.business.dto.resp.CategoryRespDTO;
-import com.navatation.business.dto.resp.GuestConfigRespDTO;
-import com.navatation.business.dto.resp.ShortcutRespDTO;
-import com.navatation.business.dto.resp.WidgetRespDTO;
+import com.navatation.business.dto.resp.nav.CategoryRespDTO;
+import com.navatation.business.dto.resp.settings.GuestConfigRespDTO;
+import com.navatation.business.dto.resp.nav.ShortcutRespDTO;
+import com.navatation.business.dto.resp.widget.WidgetRespDTO;
 import com.navatation.business.entity.recommend.RecommendConfig;
 import com.navatation.business.mapper.RecommendConfigMapper;
 import com.navatation.business.entity.user.User;
 import com.navatation.business.mapper.UserMapper;
-import com.navatation.business.dto.resp.SettingsRespDTO;
+import com.navatation.business.dto.resp.settings.SettingsRespDTO;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

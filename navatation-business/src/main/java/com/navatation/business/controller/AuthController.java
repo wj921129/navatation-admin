@@ -1,14 +1,14 @@
 package com.navatation.business.controller;
 
-import com.navatation.business.dto.req.ChangePasswordReqDTO;
-import com.navatation.business.dto.req.EncryptedChangePasswordReqDTO;
-import com.navatation.business.dto.req.EncryptedLoginReqDTO;
-import com.navatation.business.dto.req.EncryptedRegisterReqDTO;
-import com.navatation.business.dto.req.LoginReqDTO;
-import com.navatation.business.dto.resp.LoginRespDTO;
-import com.navatation.business.dto.req.RefreshTokenReqDTO;
-import com.navatation.business.dto.req.RegisterReqDTO;
-import com.navatation.business.dto.resp.UserRespDTO;
+import com.navatation.business.dto.req.auth.ChangePasswordReqDTO;
+import com.navatation.business.dto.req.auth.EncryptedChangePasswordReqDTO;
+import com.navatation.business.dto.req.auth.EncryptedLoginReqDTO;
+import com.navatation.business.dto.req.auth.EncryptedRegisterReqDTO;
+import com.navatation.business.dto.req.auth.LoginReqDTO;
+import com.navatation.business.dto.resp.auth.LoginRespDTO;
+import com.navatation.business.dto.req.auth.RefreshTokenReqDTO;
+import com.navatation.business.dto.req.auth.RegisterReqDTO;
+import com.navatation.business.dto.resp.user.UserRespDTO;
 import com.navatation.business.service.AuthService;
 import com.navatation.common.BizException;
 import com.navatation.common.Result;

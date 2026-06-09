@@ -1,11 +1,11 @@
 package com.navatation.business.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.navatation.business.dto.req.CategoryReqDTO;
-import com.navatation.business.dto.resp.CategoryRespDTO;
-import com.navatation.business.dto.req.RecommendCategoryReqDTO;
-import com.navatation.business.dto.resp.RecommendCategoryRespDTO;
-import com.navatation.business.dto.resp.RecommendSiteRespDTO;
+import com.navatation.business.dto.req.nav.CategoryReqDTO;
+import com.navatation.business.dto.resp.nav.CategoryRespDTO;
+import com.navatation.business.dto.req.recommend.RecommendCategoryReqDTO;
+import com.navatation.business.dto.resp.recommend.RecommendCategoryRespDTO;
+import com.navatation.business.dto.resp.recommend.RecommendSiteRespDTO;
 import com.navatation.business.entity.nav.NavCategory;
 import com.navatation.business.entity.nav.NavShortcut;
 import com.navatation.business.entity.recommend.RecommendCategory;

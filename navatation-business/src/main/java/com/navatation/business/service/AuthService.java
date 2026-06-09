@@ -1,12 +1,12 @@
 package com.navatation.business.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.navatation.business.dto.req.LoginReqDTO;
-import com.navatation.business.dto.resp.LoginRespDTO;
-import com.navatation.business.dto.req.RefreshTokenReqDTO;
-import com.navatation.business.dto.req.ChangePasswordReqDTO;
-import com.navatation.business.dto.req.RegisterReqDTO;
-import com.navatation.business.dto.resp.UserRespDTO;
+import com.navatation.business.dto.req.auth.LoginReqDTO;
+import com.navatation.business.dto.resp.auth.LoginRespDTO;
+import com.navatation.business.dto.req.auth.RefreshTokenReqDTO;
+import com.navatation.business.dto.req.auth.ChangePasswordReqDTO;
+import com.navatation.business.dto.req.auth.RegisterReqDTO;
+import com.navatation.business.dto.resp.user.UserRespDTO;
 import com.navatation.business.entity.root.RootConfig;
 import com.navatation.business.entity.root.RootCategory;
 import com.navatation.business.entity.root.RootShortcut;

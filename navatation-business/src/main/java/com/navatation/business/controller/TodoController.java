@@ -1,11 +1,11 @@
 package com.navatation.business.controller;
 
-import com.navatation.common.dto.resp.DeleteCountRespDTO;
-import com.navatation.business.dto.req.TodoCreateReqDTO;
-import com.navatation.business.dto.req.TodoSortReqDTO;
-import com.navatation.business.dto.req.TodoUpdateReqDTO;
-import com.navatation.business.dto.resp.TodoRespDTO;
-import com.navatation.business.dto.resp.ToggleRespDTO;
+import com.navatation.business.dto.resp.common.DeleteCountRespDTO;
+import com.navatation.business.dto.req.todo.TodoCreateReqDTO;
+import com.navatation.business.dto.req.todo.TodoSortReqDTO;
+import com.navatation.business.dto.req.todo.TodoUpdateReqDTO;
+import com.navatation.business.dto.resp.todo.TodoRespDTO;
+import com.navatation.business.dto.resp.todo.ToggleRespDTO;
 import com.navatation.business.service.TodoService;
 import com.navatation.common.Result;
 import com.navatation.framework.security.JwtTokenProvider;

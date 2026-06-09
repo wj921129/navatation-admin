@@ -1,8 +1,5 @@
 package com.navatation.business.service;
 
-import com.navatation.business.dto.req.*;
-import com.navatation.business.dto.resp.*;
-import com.navatation.common.dto.resp.*;
 import com.navatation.business.helper.FaviconFetcherHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -10,6 +7,20 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
+import com.navatation.business.dto.resp.nav.CategoryRespDTO;
+import com.navatation.business.dto.resp.recommend.RecommendSiteRespDTO;
+import com.navatation.business.dto.resp.nav.FaviconRespDTO;
+import com.navatation.business.dto.resp.nav.BatchCreateItemRespDTO;
+import com.navatation.business.dto.req.recommend.BatchRecommendSiteSaveReqDTO;
+import com.navatation.business.dto.req.recommend.RecommendSiteReqDTO;
+import com.navatation.business.dto.req.nav.SortReqDTO;
+import com.navatation.business.dto.req.nav.UpdateShortcutReqDTO;
+import com.navatation.business.dto.req.nav.BatchCreateReqDTO;
+import com.navatation.business.dto.resp.nav.IconUploadRespDTO;
+import com.navatation.business.dto.req.recommend.RecommendCategoryReqDTO;
+import com.navatation.business.dto.resp.nav.ShortcutRespDTO;
+import com.navatation.business.dto.resp.recommend.RecommendCategoryRespDTO;
+import com.navatation.business.dto.req.nav.CategoryReqDTO;
 
 /**
  * @Author admin

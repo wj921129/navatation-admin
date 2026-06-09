@@ -1,6 +1,6 @@
 package com.navatation.business.helper;
 
-import com.navatation.business.dto.resp.FaviconRespDTO;
+import com.navatation.business.dto.resp.nav.FaviconRespDTO;
 import com.navatation.common.BizException;
 import com.navatation.common.RedisConstants;
 import com.navatation.common.ResultCode;

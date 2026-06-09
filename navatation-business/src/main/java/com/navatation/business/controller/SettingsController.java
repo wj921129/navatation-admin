@@ -1,8 +1,8 @@
 package com.navatation.business.controller;
 
-import com.navatation.business.dto.req.SettingsReqDTO;
-import com.navatation.business.dto.resp.SettingsRespDTO;
-import com.navatation.business.dto.resp.WallpaperRespDTO;
+import com.navatation.business.dto.req.settings.SettingsReqDTO;
+import com.navatation.business.dto.resp.settings.SettingsRespDTO;
+import com.navatation.business.dto.resp.settings.WallpaperRespDTO;
 import com.navatation.business.service.SettingsService;
 import com.navatation.common.Result;
 import com.navatation.framework.security.JwtTokenProvider;

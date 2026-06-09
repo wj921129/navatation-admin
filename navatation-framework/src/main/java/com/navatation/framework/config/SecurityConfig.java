@@ -37,7 +37,7 @@ public class SecurityConfig {
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((request, response, authException) ->
-                    response.sendError(418, "I AM A TEAPOT")
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "未认证或 Token 已过期")
                 )
                 .accessDeniedHandler((request, response, accessDeniedException) ->
                     response.sendError(HttpServletResponse.SC_FORBIDDEN, "无权访问")
@@ -47,10 +47,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/nonce").permitAll()
                 .requestMatchers("/api/v1/public/guest-config").permitAll()
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/v1/public/**")).permitAll()
+                .requestMatchers("/api/v1/public/**").permitAll()
                 .requestMatchers("/api/v1/nav/recommended").permitAll()
                 .requestMatchers("/api/v1/settings/wallpaper/random").permitAll()
-                .requestMatchers("/api/v1/**").permitAll()
+                .requestMatchers("/api/v1/**").authenticated()
                 .anyRequest().permitAll()
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

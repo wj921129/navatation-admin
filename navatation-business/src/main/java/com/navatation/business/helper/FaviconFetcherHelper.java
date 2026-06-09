@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import com.navatation.common.NavConstants;
 
 @Component
 @RequiredArgsConstructor
@@ -95,7 +96,7 @@ public class FaviconFetcherHelper {
         if (urls == null || urls.isEmpty()) {
             return new ConcurrentHashMap<>();
         }
-        if (urls.size() > com.navatation.common.NavConstants.MAX_BATCH_FAVICON_SIZE) {
+        if (urls.size() > NavConstants.MAX_BATCH_FAVICON_SIZE) {
             throw new BizException(ResultCode.BAD_REQUEST.getCode(), "单次批量刷新最多支持100个网址");
         }
 

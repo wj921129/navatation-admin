@@ -16,6 +16,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import com.navatation.business.entity.root.RootUser;
+import com.navatation.business.mapper.RootUserMapper;
 
 @Service
 @RequiredArgsConstructor
@@ -24,7 +26,7 @@ public class PublicService {
     private static final Logger log = LoggerFactory.getLogger(PublicService.class);
 
     private final UserMapper userMapper;
-    private final com.navatation.business.mapper.RootUserMapper rootUserMapper;
+    private final RootUserMapper rootUserMapper;
     private final SettingsService settingsService;
     private final WidgetService widgetService;
     private final NavService navService;
@@ -33,7 +35,7 @@ public class PublicService {
 
     public GuestConfigRespDTO getGuestConfig() {
         // Find ADMIN user
-        com.navatation.business.entity.root.RootUser admin = rootUserMapper.selectOne(new LambdaQueryWrapper<com.navatation.business.entity.root.RootUser>().last("LIMIT 1"));
+        RootUser admin = rootUserMapper.selectOne(new LambdaQueryWrapper<RootUser>().last("LIMIT 1"));
         if (admin == null) {
             log.warn("超级管理员账户不存在，返回空游客配置");
             return new GuestConfigRespDTO();

@@ -40,6 +40,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import com.navatation.business.entity.root.RootCategory;
+import com.navatation.business.entity.root.RootShortcut;
 
 @Service
 @RequiredArgsConstructor
@@ -61,11 +63,11 @@ public class NavShortcutService {
 
     public List<ShortcutRespDTO> getShortcuts(String userId, String categoryId) {
         if (isAdmin(userId)) {
-            LambdaQueryWrapper<com.navatation.business.entity.root.RootShortcut> wrapper = new LambdaQueryWrapper<com.navatation.business.entity.root.RootShortcut>()
-                    .eq(com.navatation.business.entity.root.RootShortcut::getUserId, userId)
-                    .orderByAsc(com.navatation.business.entity.root.RootShortcut::getSortOrder);
+            LambdaQueryWrapper<RootShortcut> wrapper = new LambdaQueryWrapper<RootShortcut>()
+                    .eq(RootShortcut::getUserId, userId)
+                    .orderByAsc(RootShortcut::getSortOrder);
             if (categoryId != null && !categoryId.isEmpty()) {
-                wrapper.eq(com.navatation.business.entity.root.RootShortcut::getCategoryId, categoryId);
+                wrapper.eq(RootShortcut::getCategoryId, categoryId);
             }
             return rootShortcutMapper.selectList(wrapper).stream()
                     .map(this::toShortcutVO)
@@ -89,12 +91,12 @@ public class NavShortcutService {
 
         if (isAdmin(userId)) {
             if (categoryId == null || categoryId.isEmpty()) {
-                com.navatation.business.entity.root.RootCategory defaultCat = rootCategoryMapper.selectOne(
-                        new LambdaQueryWrapper<com.navatation.business.entity.root.RootCategory>()
-                                .eq(com.navatation.business.entity.root.RootCategory::getUserId, userId)
-                                .eq(com.navatation.business.entity.root.RootCategory::getName, NavConstants.DEFAULT_CATEGORY_NAME));
+                RootCategory defaultCat = rootCategoryMapper.selectOne(
+                        new LambdaQueryWrapper<RootCategory>()
+                                .eq(RootCategory::getUserId, userId)
+                                .eq(RootCategory::getName, NavConstants.DEFAULT_CATEGORY_NAME));
                 if (defaultCat == null) {
-                    defaultCat = new com.navatation.business.entity.root.RootCategory();
+                    defaultCat = new RootCategory();
                     defaultCat.setCategoryId(IdUtils.genCategoryId());
                     defaultCat.setUserId(userId);
                     defaultCat.setName(NavConstants.DEFAULT_CATEGORY_NAME);
@@ -103,20 +105,20 @@ public class NavShortcutService {
                 }
                 categoryId = defaultCat.getCategoryId();
             } else {
-                com.navatation.business.entity.root.RootCategory cat = rootCategoryMapper.selectById(categoryId);
+                RootCategory cat = rootCategoryMapper.selectById(categoryId);
                 if (cat == null || !cat.getUserId().equals(userId)) {
                     throw new BizException(ResultCode.NOT_FOUND);
                 }
             }
 
             double maxSort = rootShortcutMapper.selectList(
-                    new LambdaQueryWrapper<com.navatation.business.entity.root.RootShortcut>()
-                            .eq(com.navatation.business.entity.root.RootShortcut::getCategoryId, categoryId))
+                    new LambdaQueryWrapper<RootShortcut>()
+                            .eq(RootShortcut::getCategoryId, categoryId))
                     .stream().mapToDouble(item -> item.getSortOrder() != null ? item.getSortOrder() : 0.0).max().orElse(0.0);
 
             List<BatchCreateItemRespDTO> results = new ArrayList<>();
             for (CreateShortcutItemDTO item : req.getShortcuts()) {
-                com.navatation.business.entity.root.RootShortcut shortcut = new com.navatation.business.entity.root.RootShortcut();
+                RootShortcut shortcut = new RootShortcut();
                 shortcut.setShortcutId(IdUtils.genShortcutId());
                 shortcut.setCategoryId(categoryId);
                 shortcut.setUserId(userId);
@@ -190,7 +192,7 @@ public class NavShortcutService {
 
     public ShortcutRespDTO updateShortcut(String userId, String shortcutId, UpdateShortcutReqDTO req) {
         if (isAdmin(userId)) {
-            com.navatation.business.entity.root.RootShortcut shortcut = rootShortcutMapper.selectById(shortcutId);
+            RootShortcut shortcut = rootShortcutMapper.selectById(shortcutId);
             if (shortcut == null || !shortcut.getUserId().equals(userId)) {
                 throw new BizException(ResultCode.NOT_FOUND);
             }
@@ -232,7 +234,7 @@ public class NavShortcutService {
 
     public void deleteShortcut(String userId, String shortcutId) {
         if (isAdmin(userId)) {
-            com.navatation.business.entity.root.RootShortcut shortcut = rootShortcutMapper.selectById(shortcutId);
+            RootShortcut shortcut = rootShortcutMapper.selectById(shortcutId);
             if (shortcut == null || !shortcut.getUserId().equals(userId)) {
                 throw new BizException(ResultCode.NOT_FOUND);
             }
@@ -254,12 +256,12 @@ public class NavShortcutService {
         List<String> ids = req.getItems().stream().map(SortItemDTO::getShortcutId).collect(Collectors.toList());
 
         if (isAdmin(userId)) {
-            Map<String, com.navatation.business.entity.root.RootShortcut> shortcutMap = rootShortcutMapper.selectBatchIds(ids).stream()
+            Map<String, RootShortcut> shortcutMap = rootShortcutMapper.selectBatchIds(ids).stream()
                     .filter(s -> s.getUserId().equals(userId))
-                    .collect(Collectors.toMap(com.navatation.business.entity.root.RootShortcut::getShortcutId, Function.identity()));
+                    .collect(Collectors.toMap(RootShortcut::getShortcutId, Function.identity()));
 
             for (SortItemDTO item : req.getItems()) {
-                com.navatation.business.entity.root.RootShortcut shortcut = shortcutMap.get(item.getShortcutId());
+                RootShortcut shortcut = shortcutMap.get(item.getShortcutId());
                 if (shortcut != null) {
                     shortcut.setSortOrder(item.getSortOrder());
                     rootShortcutMapper.updateById(shortcut);
@@ -429,7 +431,7 @@ public class NavShortcutService {
         return vo;
     }
 
-    private ShortcutRespDTO toShortcutVO(com.navatation.business.entity.root.RootShortcut s) {
+    private ShortcutRespDTO toShortcutVO(RootShortcut s) {
         ShortcutRespDTO vo = new ShortcutRespDTO();
         vo.setShortcutId(s.getShortcutId());
         vo.setCategoryId(s.getCategoryId());

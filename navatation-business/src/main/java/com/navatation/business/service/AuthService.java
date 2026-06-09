@@ -43,6 +43,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import com.navatation.business.constant.SettingsConstants;
 
 /**
  * @Author admin
@@ -201,20 +202,20 @@ public class AuthService {
             config.setIconsMarginX(adminConfig.getIconsMarginX());
             config.setTheme(adminConfig.getTheme());
         } else {
-            config.setSearchEngine(com.navatation.business.constant.SettingsConstants.DEFAULT_SEARCH_ENGINE);
-            config.setSearchBoxWidth(com.navatation.business.constant.SettingsConstants.DEFAULT_SEARCH_BOX_WIDTH);
-            config.setSearchBoxHeight(com.navatation.business.constant.SettingsConstants.DEFAULT_SEARCH_BOX_HEIGHT);
-            config.setSearchBoxMarginTop(com.navatation.business.constant.SettingsConstants.DEFAULT_SEARCH_BOX_MARGIN_TOP);
-            config.setIconSize(com.navatation.business.constant.SettingsConstants.DEFAULT_ICON_SIZE);
-            config.setIconRadius(com.navatation.business.constant.SettingsConstants.DEFAULT_ICON_RADIUS);
-            config.setIconSpacingX(com.navatation.business.constant.SettingsConstants.DEFAULT_ICON_SPACING_X);
-            config.setIconSpacingY(com.navatation.business.constant.SettingsConstants.DEFAULT_ICON_SPACING_Y);
-            config.setIconTextGap(com.navatation.business.constant.SettingsConstants.DEFAULT_ICON_TEXT_GAP);
-            config.setTextSize(com.navatation.business.constant.SettingsConstants.DEFAULT_TEXT_SIZE);
-            config.setIconsMarginTop(com.navatation.business.constant.SettingsConstants.DEFAULT_ICONS_MARGIN_TOP);
-            config.setIconsMarginX(com.navatation.business.constant.SettingsConstants.DEFAULT_ICONS_MARGIN_X);
-            config.setTheme(com.navatation.business.constant.SettingsConstants.DEFAULT_THEME);
-            config.setBackgroundType(com.navatation.business.constant.SettingsConstants.DEFAULT_BACKGROUND_TYPE);
+            config.setSearchEngine(SettingsConstants.DEFAULT_SEARCH_ENGINE);
+            config.setSearchBoxWidth(SettingsConstants.DEFAULT_SEARCH_BOX_WIDTH);
+            config.setSearchBoxHeight(SettingsConstants.DEFAULT_SEARCH_BOX_HEIGHT);
+            config.setSearchBoxMarginTop(SettingsConstants.DEFAULT_SEARCH_BOX_MARGIN_TOP);
+            config.setIconSize(SettingsConstants.DEFAULT_ICON_SIZE);
+            config.setIconRadius(SettingsConstants.DEFAULT_ICON_RADIUS);
+            config.setIconSpacingX(SettingsConstants.DEFAULT_ICON_SPACING_X);
+            config.setIconSpacingY(SettingsConstants.DEFAULT_ICON_SPACING_Y);
+            config.setIconTextGap(SettingsConstants.DEFAULT_ICON_TEXT_GAP);
+            config.setTextSize(SettingsConstants.DEFAULT_TEXT_SIZE);
+            config.setIconsMarginTop(SettingsConstants.DEFAULT_ICONS_MARGIN_TOP);
+            config.setIconsMarginX(SettingsConstants.DEFAULT_ICONS_MARGIN_X);
+            config.setTheme(SettingsConstants.DEFAULT_THEME);
+            config.setBackgroundType(SettingsConstants.DEFAULT_BACKGROUND_TYPE);
         }
         userConfigMapper.insert(config);
 

@@ -27,6 +27,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.List;
+import com.navatation.business.entity.root.RootUser;
+import com.navatation.business.mapper.RootUserMapper;
 
 /**
  * @Author admin
@@ -43,7 +45,7 @@ public class AuthServiceIntegrationTest {
     private UserMapper userMapper;
 
     @Autowired
-    private com.navatation.business.mapper.RootUserMapper rootUserMapper;
+    private RootUserMapper rootUserMapper;
 
     @Autowired
     private UserConfigMapper userConfigMapper;
@@ -75,8 +77,8 @@ public class AuthServiceIntegrationTest {
     @Test
     public void testRegisterAndSync() {
         // 1. 验证超级管理员账号 admin 是否存在于数据库中
-        com.navatation.business.entity.root.RootUser admin = rootUserMapper.selectOne(
-                new LambdaQueryWrapper<com.navatation.business.entity.root.RootUser>().last("LIMIT 1"));
+        RootUser admin = rootUserMapper.selectOne(
+                new LambdaQueryWrapper<RootUser>().last("LIMIT 1"));
         Assertions.assertNotNull(admin, "管理员账户应该存在于数据库中");
         String adminId = admin.getUserId();
 

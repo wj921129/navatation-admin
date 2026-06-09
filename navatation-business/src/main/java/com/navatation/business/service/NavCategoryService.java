@@ -30,6 +30,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import com.navatation.business.entity.root.RootCategory;
+import com.navatation.business.entity.root.RootShortcut;
 
 @Service
 @RequiredArgsConstructor
@@ -51,15 +53,15 @@ public class NavCategoryService {
 
     public List<CategoryRespDTO> getCategories(String userId) {
         if (isAdmin(userId)) {
-            List<com.navatation.business.entity.root.RootCategory> categories = rootCategoryMapper.selectList(
-                    new LambdaQueryWrapper<com.navatation.business.entity.root.RootCategory>()
-                            .eq(com.navatation.business.entity.root.RootCategory::getUserId, userId)
-                            .orderByAsc(com.navatation.business.entity.root.RootCategory::getSortOrder));
+            List<RootCategory> categories = rootCategoryMapper.selectList(
+                    new LambdaQueryWrapper<RootCategory>()
+                            .eq(RootCategory::getUserId, userId)
+                            .orderByAsc(RootCategory::getSortOrder));
 
-            List<String> categoryIds = categories.stream().map(com.navatation.business.entity.root.RootCategory::getCategoryId).collect(Collectors.toList());
+            List<String> categoryIds = categories.stream().map(RootCategory::getCategoryId).collect(Collectors.toList());
             Map<String, Long> countMap = categoryIds.isEmpty() ? Map.of() :
-                    rootShortcutMapper.selectList(new LambdaQueryWrapper<com.navatation.business.entity.root.RootShortcut>().in(com.navatation.business.entity.root.RootShortcut::getCategoryId, categoryIds))
-                            .stream().collect(Collectors.groupingBy(com.navatation.business.entity.root.RootShortcut::getCategoryId, Collectors.counting()));
+                    rootShortcutMapper.selectList(new LambdaQueryWrapper<RootShortcut>().in(RootShortcut::getCategoryId, categoryIds))
+                            .stream().collect(Collectors.groupingBy(RootShortcut::getCategoryId, Collectors.counting()));
 
             return categories.stream().map(c -> {
                 CategoryRespDTO vo = new CategoryRespDTO();
@@ -93,7 +95,7 @@ public class NavCategoryService {
 
     public CategoryRespDTO createCategory(String userId, CategoryReqDTO req) {
         if (isAdmin(userId)) {
-            com.navatation.business.entity.root.RootCategory category = new com.navatation.business.entity.root.RootCategory();
+            RootCategory category = new RootCategory();
             category.setCategoryId(IdUtils.genCategoryId());
             category.setUserId(userId);
             category.setName(req.getName());
@@ -127,7 +129,7 @@ public class NavCategoryService {
 
     public void updateCategory(String userId, String categoryId, CategoryReqDTO req) {
         if (isAdmin(userId)) {
-            com.navatation.business.entity.root.RootCategory category = rootCategoryMapper.selectById(categoryId);
+            RootCategory category = rootCategoryMapper.selectById(categoryId);
             if (category == null || !category.getUserId().equals(userId)) {
                 throw new BizException(ResultCode.NOT_FOUND);
             }
@@ -159,12 +161,12 @@ public class NavCategoryService {
     @Transactional
     public void deleteCategory(String userId, String categoryId) {
         if (isAdmin(userId)) {
-            com.navatation.business.entity.root.RootCategory category = rootCategoryMapper.selectById(categoryId);
+            RootCategory category = rootCategoryMapper.selectById(categoryId);
             if (category == null || !category.getUserId().equals(userId)) {
                 throw new BizException(ResultCode.NOT_FOUND);
             }
-            rootShortcutMapper.delete(new LambdaQueryWrapper<com.navatation.business.entity.root.RootShortcut>()
-                    .eq(com.navatation.business.entity.root.RootShortcut::getCategoryId, categoryId));
+            rootShortcutMapper.delete(new LambdaQueryWrapper<RootShortcut>()
+                    .eq(RootShortcut::getCategoryId, categoryId));
             rootCategoryMapper.deleteById(categoryId);
             log.info("删除管理员分类成功 userId={} categoryId={}", userId, categoryId);
             return;

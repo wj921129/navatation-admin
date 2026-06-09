@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.concurrent.TimeUnit;
+import com.navatation.common.FileUploadUtil;
 
 @Service
 @RequiredArgsConstructor
@@ -50,7 +51,7 @@ public class IconUploadService {
 
         try {
             String targetDir = iconPath + java.io.File.separator + userId;
-            String uniqueFileName = com.navatation.common.FileUploadUtil.saveFile(file, targetDir);
+            String uniqueFileName = FileUploadUtil.saveFile(file, targetDir);
             log.info("图标上传成功 userId={}, filename={}", userId, uniqueFileName);
 
             return new IconUploadRespDTO("/uploads/icon/custom/" + userId + "/" + uniqueFileName);

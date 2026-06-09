@@ -1,7 +1,7 @@
 package com.navatation.business.controller;
 
-import com.navatation.business.dto.WidgetRequest;
-import com.navatation.business.dto.WidgetVO;
+import com.navatation.business.dto.req.WidgetReqDTO;
+import com.navatation.business.dto.resp.WidgetRespDTO;
 import com.navatation.business.service.WidgetService;
 import com.navatation.common.Result;
 import com.navatation.framework.security.JwtTokenProvider;
@@ -39,10 +39,10 @@ public class WidgetController {
      * @return 统一响应体封装的组件展示VO列表
      */
     @GetMapping
-    public Result<List<WidgetVO>> getWidgets(@RequestHeader("Authorization") String auth) {
+    public Result<List<WidgetRespDTO>> getWidgets(@RequestHeader("Authorization") String auth) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("获取用户组件列表 userId={}", userId);
-        List<WidgetVO> result = widgetService.getWidgets(userId);
+        List<WidgetRespDTO> result = widgetService.getWidgets(userId);
         return Result.success(result);
     }
 
@@ -55,7 +55,7 @@ public class WidgetController {
      */
     @PutMapping
     public Result<?> saveWidgets(@RequestHeader("Authorization") String auth,
-                                  @RequestBody List<WidgetRequest> requests) {
+                                  @RequestBody List<WidgetReqDTO> requests) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("批量覆盖保存用户组件 userId={}, count={}", userId, requests.size());
         widgetService.saveWidgets(userId, requests);

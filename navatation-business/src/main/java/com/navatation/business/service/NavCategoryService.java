@@ -1,11 +1,11 @@
 package com.navatation.business.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.navatation.business.dto.CategoryRequest;
-import com.navatation.business.dto.CategoryVO;
-import com.navatation.business.dto.RecommendCategoryRequest;
-import com.navatation.business.dto.RecommendCategoryVO;
-import com.navatation.business.dto.RecommendSiteVO;
+import com.navatation.business.dto.req.CategoryReqDTO;
+import com.navatation.business.dto.resp.CategoryRespDTO;
+import com.navatation.business.dto.req.RecommendCategoryReqDTO;
+import com.navatation.business.dto.resp.RecommendCategoryRespDTO;
+import com.navatation.business.dto.resp.RecommendSiteRespDTO;
 import com.navatation.business.entity.nav.NavCategory;
 import com.navatation.business.entity.nav.NavShortcut;
 import com.navatation.business.entity.recommend.RecommendCategory;
@@ -49,7 +49,7 @@ public class NavCategoryService {
         return rootUserMapper.selectById(userId) != null;
     }
 
-    public List<CategoryVO> getCategories(String userId) {
+    public List<CategoryRespDTO> getCategories(String userId) {
         if (isAdmin(userId)) {
             List<com.navatation.business.entity.root.RootCategory> categories = rootCategoryMapper.selectList(
                     new LambdaQueryWrapper<com.navatation.business.entity.root.RootCategory>()
@@ -62,7 +62,7 @@ public class NavCategoryService {
                             .stream().collect(Collectors.groupingBy(com.navatation.business.entity.root.RootShortcut::getCategoryId, Collectors.counting()));
 
             return categories.stream().map(c -> {
-                CategoryVO vo = new CategoryVO();
+                CategoryRespDTO vo = new CategoryRespDTO();
                 vo.setCategoryId(c.getCategoryId());
                 vo.setName(c.getName());
                 vo.setSortOrder(c.getSortOrder());
@@ -82,7 +82,7 @@ public class NavCategoryService {
                         .stream().collect(Collectors.groupingBy(NavShortcut::getCategoryId, Collectors.counting()));
 
         return categories.stream().map(c -> {
-            CategoryVO vo = new CategoryVO();
+            CategoryRespDTO vo = new CategoryRespDTO();
             vo.setCategoryId(c.getCategoryId());
             vo.setName(c.getName());
             vo.setSortOrder(c.getSortOrder());
@@ -91,7 +91,7 @@ public class NavCategoryService {
         }).collect(Collectors.toList());
     }
 
-    public CategoryVO createCategory(String userId, CategoryRequest req) {
+    public CategoryRespDTO createCategory(String userId, CategoryReqDTO req) {
         if (isAdmin(userId)) {
             com.navatation.business.entity.root.RootCategory category = new com.navatation.business.entity.root.RootCategory();
             category.setCategoryId(IdUtils.genCategoryId());
@@ -101,7 +101,7 @@ public class NavCategoryService {
             rootCategoryMapper.insert(category);
             log.info("创建管理员分类成功 userId={} categoryId={} name={}", userId, category.getCategoryId(), category.getName());
 
-            CategoryVO vo = new CategoryVO();
+            CategoryRespDTO vo = new CategoryRespDTO();
             vo.setCategoryId(category.getCategoryId());
             vo.setName(category.getName());
             vo.setSortOrder(category.getSortOrder());
@@ -117,7 +117,7 @@ public class NavCategoryService {
         categoryMapper.insert(category);
         log.info("创建分类成功 userId={} categoryId={} name={}", userId, category.getCategoryId(), category.getName());
 
-        CategoryVO vo = new CategoryVO();
+        CategoryRespDTO vo = new CategoryRespDTO();
         vo.setCategoryId(category.getCategoryId());
         vo.setName(category.getName());
         vo.setSortOrder(category.getSortOrder());
@@ -125,7 +125,7 @@ public class NavCategoryService {
         return vo;
     }
 
-    public void updateCategory(String userId, String categoryId, CategoryRequest req) {
+    public void updateCategory(String userId, String categoryId, CategoryReqDTO req) {
         if (isAdmin(userId)) {
             com.navatation.business.entity.root.RootCategory category = rootCategoryMapper.selectById(categoryId);
             if (category == null || !category.getUserId().equals(userId)) {
@@ -180,7 +180,7 @@ public class NavCategoryService {
         log.info("删除分类成功 userId={} categoryId={}", userId, categoryId);
     }
 
-    public List<RecommendCategoryVO> getRecommended() {
+    public List<RecommendCategoryRespDTO> getRecommended() {
         List<RecommendCategory> categories = recommendCategoryMapper.selectList(
                 new LambdaQueryWrapper<RecommendCategory>().orderByAsc(RecommendCategory::getSortOrder));
         if (categories.isEmpty()) {
@@ -197,13 +197,13 @@ public class NavCategoryService {
                 .collect(Collectors.groupingBy(RecommendSite::getCategoryId));
 
         return categories.stream().map(cat -> {
-            RecommendCategoryVO vo = new RecommendCategoryVO();
+            RecommendCategoryRespDTO vo = new RecommendCategoryRespDTO();
             vo.setCategoryId(cat.getCategoryId());
             vo.setCategoryName(cat.getName());
             vo.setCategoryIcon(cat.getIcon());
             vo.setSortOrder(cat.getSortOrder());
-            List<RecommendSiteVO> siteVOs = siteMap.getOrDefault(cat.getCategoryId(), new ArrayList<>()).stream().map(site -> {
-                RecommendSiteVO siteVO = new RecommendSiteVO();
+            List<RecommendSiteRespDTO> siteVOs = siteMap.getOrDefault(cat.getCategoryId(), new ArrayList<>()).stream().map(site -> {
+                RecommendSiteRespDTO siteVO = new RecommendSiteRespDTO();
                 siteVO.setSiteId(site.getSiteId());
                 siteVO.setCategoryId(site.getCategoryId());
                 siteVO.setName(site.getName());
@@ -220,7 +220,7 @@ public class NavCategoryService {
     }
 
     @Transactional
-    public RecommendCategoryVO addRecommendCategory(String userId, RecommendCategoryRequest req) {
+    public RecommendCategoryRespDTO addRecommendCategory(String userId, RecommendCategoryReqDTO req) {
         if (!isAdmin(userId)) {
             throw new BizException(ResultCode.FORBIDDEN);
         }
@@ -231,7 +231,7 @@ public class NavCategoryService {
         cat.setSortOrder(req.getSortOrder() != null ? req.getSortOrder() : 0.0);
         recommendCategoryMapper.insert(cat);
 
-        RecommendCategoryVO vo = new RecommendCategoryVO();
+        RecommendCategoryRespDTO vo = new RecommendCategoryRespDTO();
         vo.setCategoryId(cat.getCategoryId());
         vo.setCategoryName(cat.getName());
         vo.setCategoryIcon(cat.getIcon());
@@ -241,7 +241,7 @@ public class NavCategoryService {
     }
 
     @Transactional
-    public void updateRecommendCategory(String userId, String categoryId, RecommendCategoryRequest req) {
+    public void updateRecommendCategory(String userId, String categoryId, RecommendCategoryReqDTO req) {
         if (!isAdmin(userId)) {
             throw new BizException(ResultCode.FORBIDDEN);
         }

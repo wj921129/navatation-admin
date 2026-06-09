@@ -1,14 +1,15 @@
 package com.navatation.business.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.navatation.business.dto.DeleteCountVO;
-import com.navatation.business.dto.TodoCreateRequest;
-import com.navatation.business.dto.TodoSortItem;
-import com.navatation.business.dto.TodoSortRequest;
-import com.navatation.business.dto.TodoUpdateRequest;
-import com.navatation.business.dto.TodoVO;
-import com.navatation.business.dto.ToggleVO;
+import com.navatation.common.dto.resp.DeleteCountRespDTO;
+import com.navatation.business.dto.req.TodoCreateReqDTO;
+import com.navatation.business.dto.req.TodoSortItemDTO;
+import com.navatation.business.dto.req.TodoSortReqDTO;
+import com.navatation.business.dto.req.TodoUpdateReqDTO;
+import com.navatation.business.dto.resp.TodoRespDTO;
+import com.navatation.business.dto.resp.ToggleRespDTO;
 import com.navatation.business.entity.nav.TodoItem;
+import com.navatation.business.entity.root.RootTodoItem;
 import com.navatation.business.mapper.RootTodoItemMapper;
 import com.navatation.business.mapper.TodoItemMapper;
 import com.navatation.business.mapper.UserMapper;
@@ -55,16 +56,16 @@ public class TodoService {
      * @param status 状态筛选（active/completed/null）
      * @return 待办列表
      */
-    public List<TodoVO> getList(String userId, String status) {
+    public List<TodoRespDTO> getList(String userId, String status) {
         if (isAdmin(userId)) {
-            LambdaQueryWrapper<com.navatation.business.entity.root.RootTodoItem> wrapper = new LambdaQueryWrapper<com.navatation.business.entity.root.RootTodoItem>()
-                    .eq(com.navatation.business.entity.root.RootTodoItem::getUserId, userId)
-                    .orderByAsc(com.navatation.business.entity.root.RootTodoItem::getSortOrder);
+            LambdaQueryWrapper<RootTodoItem> wrapper = new LambdaQueryWrapper<RootTodoItem>()
+                    .eq(RootTodoItem::getUserId, userId)
+                    .orderByAsc(RootTodoItem::getSortOrder);
 
             if ("active".equals(status)) {
-                wrapper.eq(com.navatation.business.entity.root.RootTodoItem::getCompleted, false);
+                wrapper.eq(RootTodoItem::getCompleted, false);
             } else if ("completed".equals(status)) {
-                wrapper.eq(com.navatation.business.entity.root.RootTodoItem::getCompleted, true);
+                wrapper.eq(RootTodoItem::getCompleted, true);
             }
 
             return rootTodoItemMapper.selectList(wrapper).stream()
@@ -93,13 +94,13 @@ public class TodoService {
      * @param req 创建请求
      * @return 创建的待办项
      */
-    public TodoVO create(String userId, TodoCreateRequest req) {
+    public TodoRespDTO create(String userId, TodoCreateReqDTO req) {
         if (isAdmin(userId)) {
             double maxSort = rootTodoItemMapper.selectList(
-                    new LambdaQueryWrapper<com.navatation.business.entity.root.RootTodoItem>().eq(com.navatation.business.entity.root.RootTodoItem::getUserId, userId))
+                    new LambdaQueryWrapper<RootTodoItem>().eq(RootTodoItem::getUserId, userId))
                     .stream().mapToDouble(item -> item.getSortOrder() != null ? item.getSortOrder() : 0.0).max().orElse(0.0);
 
-            com.navatation.business.entity.root.RootTodoItem item = new com.navatation.business.entity.root.RootTodoItem();
+            RootTodoItem item = new RootTodoItem();
             item.setTodoId(IdUtils.genTodoId());
             item.setUserId(userId);
             item.setContent(req.getContent());
@@ -131,9 +132,9 @@ public class TodoService {
      * @param todoId 待办ID
      * @param req 更新请求
      */
-    public void update(String userId, String todoId, TodoUpdateRequest req) {
+    public void update(String userId, String todoId, TodoUpdateReqDTO req) {
         if (isAdmin(userId)) {
-            com.navatation.business.entity.root.RootTodoItem item = rootTodoItemMapper.selectById(todoId);
+            RootTodoItem item = rootTodoItemMapper.selectById(todoId);
             if (item == null || !item.getUserId().equals(userId)) {
                 throw new BizException(ResultCode.NOT_FOUND);
             }
@@ -158,9 +159,9 @@ public class TodoService {
      * @param todoId 待办ID
      * @return 切换后的状态
      */
-    public ToggleVO toggle(String userId, String todoId) {
+    public ToggleRespDTO toggle(String userId, String todoId) {
         if (isAdmin(userId)) {
-            com.navatation.business.entity.root.RootTodoItem item = rootTodoItemMapper.selectById(todoId);
+            RootTodoItem item = rootTodoItemMapper.selectById(todoId);
             if (item == null || !item.getUserId().equals(userId)) {
                 throw new BizException(ResultCode.NOT_FOUND);
             }
@@ -168,7 +169,7 @@ public class TodoService {
             item.setCompletedAt(item.getCompleted() ? LocalDateTime.now() : null);
             rootTodoItemMapper.updateById(item);
 
-            ToggleVO vo = new ToggleVO();
+            ToggleRespDTO vo = new ToggleRespDTO();
             vo.setTodoId(item.getTodoId());
             vo.setCompleted(item.getCompleted());
             vo.setCompletedAt(item.getCompletedAt() != null ? item.getCompletedAt().toString() : null);
@@ -183,7 +184,7 @@ public class TodoService {
         item.setCompletedAt(item.getCompleted() ? LocalDateTime.now() : null);
         todoItemMapper.updateById(item);
 
-        ToggleVO vo = new ToggleVO();
+        ToggleRespDTO vo = new ToggleRespDTO();
         vo.setTodoId(item.getTodoId());
         vo.setCompleted(item.getCompleted());
         vo.setCompletedAt(item.getCompletedAt() != null ? item.getCompletedAt().toString() : null);
@@ -197,7 +198,7 @@ public class TodoService {
      */
     public void delete(String userId, String todoId) {
         if (isAdmin(userId)) {
-            com.navatation.business.entity.root.RootTodoItem item = rootTodoItemMapper.selectById(todoId);
+            RootTodoItem item = rootTodoItemMapper.selectById(todoId);
             if (item == null || !item.getUserId().equals(userId)) {
                 throw new BizException(ResultCode.NOT_FOUND);
             }
@@ -220,16 +221,16 @@ public class TodoService {
      * @param req 排序请求
      */
     @Transactional
-    public void sort(String userId, TodoSortRequest req) {
-        List<String> ids = req.getItems().stream().map(TodoSortItem::getTodoId).collect(Collectors.toList());
+    public void sort(String userId, TodoSortReqDTO req) {
+        List<String> ids = req.getItems().stream().map(TodoSortItemDTO::getTodoId).collect(Collectors.toList());
 
         if (isAdmin(userId)) {
-            Map<String, com.navatation.business.entity.root.RootTodoItem> itemMap = rootTodoItemMapper.selectBatchIds(ids).stream()
+            Map<String, RootTodoItem> itemMap = rootTodoItemMapper.selectBatchIds(ids).stream()
                     .filter(i -> i.getUserId().equals(userId))
-                    .collect(Collectors.toMap(com.navatation.business.entity.root.RootTodoItem::getTodoId, Function.identity()));
+                    .collect(Collectors.toMap(RootTodoItem::getTodoId, Function.identity()));
 
-            for (TodoSortItem si : req.getItems()) {
-                com.navatation.business.entity.root.RootTodoItem item = itemMap.get(si.getTodoId());
+            for (TodoSortItemDTO si : req.getItems()) {
+                RootTodoItem item = itemMap.get(si.getTodoId());
                 if (item != null) {
                     item.setSortOrder(si.getSortOrder());
                     rootTodoItemMapper.updateById(item);
@@ -243,7 +244,7 @@ public class TodoService {
                 .filter(i -> i.getUserId().equals(userId))
                 .collect(Collectors.toMap(TodoItem::getTodoId, Function.identity()));
 
-        for (TodoSortItem si : req.getItems()) {
+        for (TodoSortItemDTO si : req.getItems()) {
             TodoItem item = itemMap.get(si.getTodoId());
             if (item != null) {
                 item.setSortOrder(si.getSortOrder());
@@ -257,18 +258,18 @@ public class TodoService {
      * @param userId 用户ID
      * @return 删除数量
      */
-    public DeleteCountVO clearCompleted(String userId) {
+    public DeleteCountRespDTO clearCompleted(String userId) {
         if (isAdmin(userId)) {
-            List<com.navatation.business.entity.root.RootTodoItem> completed = rootTodoItemMapper.selectList(
-                    new LambdaQueryWrapper<com.navatation.business.entity.root.RootTodoItem>()
-                            .eq(com.navatation.business.entity.root.RootTodoItem::getUserId, userId)
-                            .eq(com.navatation.business.entity.root.RootTodoItem::getCompleted, true));
-            List<String> ids = completed.stream().map(com.navatation.business.entity.root.RootTodoItem::getTodoId).collect(Collectors.toList());
+            List<RootTodoItem> completed = rootTodoItemMapper.selectList(
+                    new LambdaQueryWrapper<RootTodoItem>()
+                            .eq(RootTodoItem::getUserId, userId)
+                            .eq(RootTodoItem::getCompleted, true));
+            List<String> ids = completed.stream().map(RootTodoItem::getTodoId).collect(Collectors.toList());
             if (!ids.isEmpty()) {
                 rootTodoItemMapper.deleteBatchIds(ids);
                 log.info("清除管理员已完成待办成功 userId={} count={}", userId, ids.size());
             }
-            DeleteCountVO vo = new DeleteCountVO();
+            DeleteCountRespDTO vo = new DeleteCountRespDTO();
             vo.setDeletedCount(completed.size());
             return vo;
         }
@@ -283,14 +284,14 @@ public class TodoService {
             todoItemMapper.deleteBatchIds(ids);
             log.info("清除已完成待办成功 userId={} count={}", userId, ids.size());
         }
-        DeleteCountVO vo = new DeleteCountVO();
+        DeleteCountRespDTO vo = new DeleteCountRespDTO();
         vo.setDeletedCount(completed.size());
         return vo;
     }
 
     /** 实体转VO */
-    private TodoVO toVO(TodoItem item) {
-        TodoVO vo = new TodoVO();
+    private TodoRespDTO toVO(TodoItem item) {
+        TodoRespDTO vo = new TodoRespDTO();
         vo.setTodoId(item.getTodoId());
         vo.setContent(item.getContent());
         vo.setCompleted(item.getCompleted());
@@ -300,8 +301,8 @@ public class TodoService {
         return vo;
     }
 
-    private TodoVO toVO(com.navatation.business.entity.root.RootTodoItem item) {
-        TodoVO vo = new TodoVO();
+    private TodoRespDTO toVO(RootTodoItem item) {
+        TodoRespDTO vo = new TodoRespDTO();
         vo.setTodoId(item.getTodoId());
         vo.setContent(item.getContent());
         vo.setCompleted(item.getCompleted());

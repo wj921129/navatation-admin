@@ -1,5 +1,7 @@
 package com.navatation.common;
 
+import java.security.SecureRandom;
+
 /**
  * @Author admin
  * @CreateTime 2026-05-25
@@ -7,7 +9,7 @@ package com.navatation.common;
  */
 public class IdUtils {
 
-    private static final java.security.SecureRandom RANDOM = new java.security.SecureRandom();
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     /**
      * 生成指定长度的纯数字随机字符串

@@ -1,7 +1,7 @@
 package com.navatation.business.controller;
 
 import com.navatation.business.dto.RecommendWidgetRequest;
-import com.navatation.business.dto.RecommendWidgetVO;
+import com.navatation.business.dto.resp.RecommendWidgetRespDTO;
 import com.navatation.business.service.RecommendWidgetService;
 import com.navatation.common.Result;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +25,8 @@ public class RecommendWidgetController {
      * 获取推荐小组件列表
      */
     @GetMapping("/list")
-    public Result<List<RecommendWidgetVO>> list() {
-        List<RecommendWidgetVO> list = recommendWidgetService.getRecommendWidgets();
+    public Result<List<RecommendWidgetRespDTO>> list() {
+        List<RecommendWidgetRespDTO> list = recommendWidgetService.getRecommendWidgets();
         return Result.success(list);
     }
 

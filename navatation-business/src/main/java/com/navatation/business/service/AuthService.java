@@ -1,12 +1,12 @@
 package com.navatation.business.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.navatation.business.dto.LoginRequest;
-import com.navatation.business.dto.LoginVO;
-import com.navatation.business.dto.RefreshTokenRequest;
-import com.navatation.business.dto.ChangePasswordRequest;
-import com.navatation.business.dto.RegisterRequest;
-import com.navatation.business.dto.UserVO;
+import com.navatation.business.dto.req.LoginReqDTO;
+import com.navatation.business.dto.resp.LoginRespDTO;
+import com.navatation.business.dto.req.RefreshTokenReqDTO;
+import com.navatation.business.dto.req.ChangePasswordReqDTO;
+import com.navatation.business.dto.req.RegisterReqDTO;
+import com.navatation.business.dto.resp.UserRespDTO;
 import com.navatation.business.entity.root.RootConfig;
 import com.navatation.business.entity.root.RootCategory;
 import com.navatation.business.entity.root.RootShortcut;
@@ -73,7 +73,7 @@ public class AuthService {
     private final RedisTemplate<String, Object> redisTemplate;
 
     @Transactional
-    public LoginVO login(LoginRequest req) {
+    public LoginRespDTO login(LoginReqDTO req) {
         // 先检查超级管理员
         RootUser rootUser = rootUserMapper.selectOne(
                 new LambdaQueryWrapper<RootUser>().eq(RootUser::getUsername, req.getUsername()));
@@ -96,14 +96,14 @@ public class AuthService {
             rootUser.setLastLoginAt(LocalDateTime.now());
             rootUserMapper.updateById(rootUser);
 
-            UserVO userVO = new UserVO();
+            UserRespDTO userVO = new UserRespDTO();
             userVO.setUserId(rootUser.getUserId());
             userVO.setUsername(rootUser.getUsername());
             userVO.setAvatar(rootUser.getAvatar());
             userVO.setRole("ADMIN");
             userVO.setCreatedAt(rootUser.getCreatedAt() != null ? rootUser.getCreatedAt().toString() : null);
 
-            LoginVO vo = new LoginVO();
+            LoginRespDTO vo = new LoginRespDTO();
             vo.setAccessToken(accessToken);
             vo.setRefreshToken(refreshToken);
             vo.setExpiresIn(jwtTokenProvider.getAccessTokenExpire());
@@ -133,14 +133,14 @@ public class AuthService {
         user.setLastLoginAt(LocalDateTime.now());
         userMapper.updateById(user);
 
-        UserVO userVO = new UserVO();
+        UserRespDTO userVO = new UserRespDTO();
         userVO.setUserId(user.getUserId());
         userVO.setUsername(user.getUsername());
         userVO.setAvatar(user.getAvatar());
         userVO.setRole("USER");
         userVO.setCreatedAt(user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
 
-        LoginVO vo = new LoginVO();
+        LoginRespDTO vo = new LoginRespDTO();
         vo.setAccessToken(accessToken);
         vo.setRefreshToken(refreshToken);
         vo.setExpiresIn(jwtTokenProvider.getAccessTokenExpire());
@@ -150,7 +150,7 @@ public class AuthService {
     }
 
     @Transactional
-    public void register(RegisterRequest req) {
+    public void register(RegisterReqDTO req) {
         if (!req.getPassword().equals(req.getConfirmPassword())) {
             throw new BizException(ResultCode.BAD_REQUEST);
         }
@@ -291,7 +291,7 @@ public class AuthService {
     }
 
     @Transactional
-    public void changePassword(String userId, ChangePasswordRequest req) {
+    public void changePassword(String userId, ChangePasswordReqDTO req) {
         if (!req.getNewPassword().equals(req.getConfirmPassword())) {
             throw new BizException(ResultCode.BAD_REQUEST.getCode(), "两次输入新密码不一致");
         }
@@ -319,7 +319,7 @@ public class AuthService {
         log.info("用户密码修改成功 userId={} username={}", user.getUserId(), user.getUsername());
     }
 
-    public LoginVO refresh(RefreshTokenRequest req) {
+    public LoginRespDTO refresh(RefreshTokenReqDTO req) {
         if (!jwtTokenProvider.validateToken(req.getRefreshToken())) {
             throw new BizException(ResultCode.TOKEN_INVALID);
         }
@@ -336,14 +336,14 @@ public class AuthService {
             String newRefreshToken = jwtTokenProvider.generateRefreshToken(userId);
             redisTemplate.opsForValue().set(RedisConstants.KEY_AUTH_REFRESH_TOKEN + userId, newRefreshToken, 7, TimeUnit.DAYS);
             
-            UserVO userVO = new UserVO();
+            UserRespDTO userVO = new UserRespDTO();
             userVO.setUserId(rootUser.getUserId());
             userVO.setUsername(rootUser.getUsername());
             userVO.setAvatar(rootUser.getAvatar());
             userVO.setRole("ADMIN");
             userVO.setCreatedAt(rootUser.getCreatedAt() != null ? rootUser.getCreatedAt().toString() : null);
 
-            LoginVO vo = new LoginVO();
+            LoginRespDTO vo = new LoginRespDTO();
             vo.setAccessToken(newAccessToken);
             vo.setRefreshToken(newRefreshToken);
             vo.setUserInfo(userVO);
@@ -360,14 +360,14 @@ public class AuthService {
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(userId);
         redisTemplate.opsForValue().set(RedisConstants.KEY_AUTH_REFRESH_TOKEN + userId, newRefreshToken, 7, TimeUnit.DAYS);
 
-        UserVO userVO = new UserVO();
+        UserRespDTO userVO = new UserRespDTO();
         userVO.setUserId(user.getUserId());
         userVO.setUsername(user.getUsername());
         userVO.setAvatar(user.getAvatar());
         userVO.setRole("USER");
         userVO.setCreatedAt(user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
 
-        LoginVO vo = new LoginVO();
+        LoginRespDTO vo = new LoginRespDTO();
         vo.setAccessToken(newAccessToken);
         vo.setRefreshToken(newRefreshToken);
         vo.setUserInfo(userVO);
@@ -389,10 +389,10 @@ public class AuthService {
         log.info("用户登出成功 userId={}", userId);
     }
 
-    public UserVO getCurrentUser(String userId) {
+    public UserRespDTO getCurrentUser(String userId) {
         RootUser rootUser = rootUserMapper.selectById(userId);
         if (rootUser != null) {
-            UserVO vo = new UserVO();
+            UserRespDTO vo = new UserRespDTO();
             vo.setUserId(rootUser.getUserId());
             vo.setUsername(rootUser.getUsername());
             vo.setAvatar(rootUser.getAvatar());
@@ -405,7 +405,7 @@ public class AuthService {
         if (user == null) {
             throw new BizException(ResultCode.USER_NOT_FOUND);
         }
-        UserVO vo = new UserVO();
+        UserRespDTO vo = new UserRespDTO();
         vo.setUserId(user.getUserId());
         vo.setUsername(user.getUsername());
         vo.setAvatar(user.getAvatar());

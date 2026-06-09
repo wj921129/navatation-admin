@@ -1,21 +1,21 @@
 package com.navatation.business.controller;
 
 import com.navatation.business.dto.BatchCreateItemVO;
-import com.navatation.business.dto.BatchCreateRequest;
-import com.navatation.business.dto.CategoryRequest;
-import com.navatation.business.dto.CategoryVO;
-import com.navatation.business.dto.FaviconRequest;
-import com.navatation.business.dto.FaviconVO;
-import com.navatation.business.dto.IconUploadVO;
-import com.navatation.business.dto.RecommendCategoryVO;
-import com.navatation.business.dto.ShortcutVO;
-import com.navatation.business.dto.SortRequest;
-import com.navatation.business.dto.UpdateShortcutRequest;
-import com.navatation.business.dto.RecommendCategoryRequest;
-import com.navatation.business.dto.RecommendSiteRequest;
-import com.navatation.business.dto.RecommendSiteVO;
+import com.navatation.business.dto.req.BatchCreateReqDTO;
+import com.navatation.business.dto.req.CategoryReqDTO;
+import com.navatation.business.dto.resp.CategoryRespDTO;
+import com.navatation.business.dto.req.FaviconReqDTO;
+import com.navatation.business.dto.resp.FaviconRespDTO;
+import com.navatation.business.dto.resp.IconUploadRespDTO;
+import com.navatation.business.dto.resp.RecommendCategoryRespDTO;
+import com.navatation.business.dto.resp.ShortcutRespDTO;
+import com.navatation.business.dto.req.SortReqDTO;
+import com.navatation.business.dto.req.UpdateShortcutReqDTO;
+import com.navatation.business.dto.req.RecommendCategoryReqDTO;
+import com.navatation.business.dto.req.RecommendSiteReqDTO;
+import com.navatation.business.dto.resp.RecommendSiteRespDTO;
 import com.navatation.business.dto.BatchRecommendSiteSaveRequest;
-import com.navatation.business.dto.BatchFaviconRequest;
+import com.navatation.business.dto.req.BatchFaviconReqDTO;
 import com.navatation.business.service.NavService;
 import com.navatation.common.Result;
 import com.navatation.framework.security.JwtTokenProvider;
@@ -55,20 +55,20 @@ public class NavController {
 
     // ---- Category ----
     @GetMapping("/categories")
-    public Result<List<CategoryVO>> getCategories(@RequestHeader("Authorization") String auth) {
+    public Result<List<CategoryRespDTO>> getCategories(@RequestHeader("Authorization") String auth) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("获取分类列表 入参:userId={}", userId);
-        List<CategoryVO> result = navService.getCategories(userId);
+        List<CategoryRespDTO> result = navService.getCategories(userId);
         log.info("获取分类列表 出参:count={}", result.size());
         return Result.success(result);
     }
 
     @PostMapping("/categories")
-    public Result<CategoryVO> createCategory(@RequestHeader("Authorization") String auth,
-                                              @RequestBody CategoryRequest req) {
+    public Result<CategoryRespDTO> createCategory(@RequestHeader("Authorization") String auth,
+                                              @RequestBody CategoryReqDTO req) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("创建分类 入参:userId={},name={}", userId, req.getName());
-        CategoryVO result = navService.createCategory(userId, req);
+        CategoryRespDTO result = navService.createCategory(userId, req);
         log.info("创建分类 出参:categoryId={}", result.getCategoryId());
         return Result.success("创建成功", result);
     }
@@ -76,7 +76,7 @@ public class NavController {
     @PutMapping("/categories/{categoryId}")
     public Result<?> updateCategory(@RequestHeader("Authorization") String auth,
                                      @PathVariable String categoryId,
-                                     @RequestBody CategoryRequest req) {
+                                     @RequestBody CategoryReqDTO req) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("更新分类 入参:userId={},categoryId={}", userId, categoryId);
         navService.updateCategory(userId, categoryId, req);
@@ -96,18 +96,18 @@ public class NavController {
 
     // ---- Shortcut ----
     @GetMapping("/shortcuts")
-    public Result<List<ShortcutVO>> getShortcuts(@RequestHeader("Authorization") String auth,
+    public Result<List<ShortcutRespDTO>> getShortcuts(@RequestHeader("Authorization") String auth,
                                                   @RequestParam(required = false) String categoryId) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("获取快捷方式列表 入参:userId={},categoryId={}", userId, categoryId);
-        List<ShortcutVO> result = navService.getShortcuts(userId, categoryId);
+        List<ShortcutRespDTO> result = navService.getShortcuts(userId, categoryId);
         log.info("获取快捷方式列表 出参:count={}", result.size());
         return Result.success(result);
     }
 
     @PostMapping("/shortcuts/batch")
     public Result<List<BatchCreateItemVO>> batchCreate(@RequestHeader("Authorization") String auth,
-                                                 @RequestBody BatchCreateRequest req) {
+                                                 @RequestBody BatchCreateReqDTO req) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("批量创建快捷方式 入参:userId={},count={}", userId, req.getShortcuts().size());
         List<BatchCreateItemVO> result = navService.batchCreate(userId, req);
@@ -116,12 +116,12 @@ public class NavController {
     }
 
     @PutMapping("/shortcuts/{shortcutId}")
-    public Result<ShortcutVO> updateShortcut(@RequestHeader("Authorization") String auth,
+    public Result<ShortcutRespDTO> updateShortcut(@RequestHeader("Authorization") String auth,
                                               @PathVariable String shortcutId,
-                                              @RequestBody UpdateShortcutRequest req) {
+                                              @RequestBody UpdateShortcutReqDTO req) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("更新快捷方式 入参:userId={},shortcutId={}", userId, shortcutId);
-        ShortcutVO result = navService.updateShortcut(userId, shortcutId, req);
+        ShortcutRespDTO result = navService.updateShortcut(userId, shortcutId, req);
         log.info("更新快捷方式 出参:name={}", result.getName());
         return Result.success("更新成功", result);
     }
@@ -138,7 +138,7 @@ public class NavController {
 
     @PutMapping("/shortcuts/sort")
     public Result<?> sortShortcuts(@RequestHeader("Authorization") String auth,
-                                    @RequestBody SortRequest req) {
+                                    @RequestBody SortReqDTO req) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("快捷方式排序 入参:userId={},count={}", userId, req.getItems().size());
         navService.sortShortcuts(userId, req);
@@ -148,56 +148,56 @@ public class NavController {
 
     // ---- Favicon ----
     @PostMapping("/favicon")
-    public Result<FaviconVO> fetchFavicon(@RequestHeader("Authorization") String auth,
-                                           @RequestBody FaviconRequest req) {
+    public Result<FaviconRespDTO> fetchFavicon(@RequestHeader("Authorization") String auth,
+                                           @RequestBody FaviconReqDTO req) {
         log.info("获取Favicon 入参:url={}", req.getUrl());
-        FaviconVO result = navService.fetchFavicon(req.getUrl());
+        FaviconRespDTO result = navService.fetchFavicon(req.getUrl());
         log.info("获取Favicon 出参:faviconUrl={}", result.getFaviconUrl());
         return Result.success(result);
     }
 
     @PostMapping("/favicon/batch")
-    public Result<Map<String, FaviconVO>> fetchFaviconsInBatch(@RequestHeader("Authorization") String auth,
-                                                               @RequestBody @Valid BatchFaviconRequest req) {
+    public Result<Map<String, FaviconRespDTO>> fetchFaviconsInBatch(@RequestHeader("Authorization") String auth,
+                                                               @RequestBody @Valid BatchFaviconReqDTO req) {
         log.info("批量获取Favicon 入参:urls count={}", req.getUrls() != null ? req.getUrls().size() : 0);
-        Map<String, FaviconVO> result = navService.fetchFaviconsInBatch(req.getUrls());
+        Map<String, FaviconRespDTO> result = navService.fetchFaviconsInBatch(req.getUrls());
         log.info("批量获取Favicon 出参:count={}", result.size());
         return Result.success(result);
     }
 
     // ---- Icon Upload ----
     @PostMapping("/icon/upload")
-    public Result<IconUploadVO> uploadIcon(@RequestHeader("Authorization") String auth,
+    public Result<IconUploadRespDTO> uploadIcon(@RequestHeader("Authorization") String auth,
                                             @RequestParam("file") MultipartFile file) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("上传图标 入参:userId={},filename={},size={}", userId, file.getOriginalFilename(), file.getSize());
-        IconUploadVO result = navService.uploadIcon(userId, file);
+        IconUploadRespDTO result = navService.uploadIcon(userId, file);
         log.info("上传图标 出参:iconUrl={}", result.getIconUrl());
         return Result.success("上传成功", result);
     }
 
     // ---- Recommended ----
     @GetMapping("/recommended")
-    public Result<List<RecommendCategoryVO>> getRecommended() {
+    public Result<List<RecommendCategoryRespDTO>> getRecommended() {
         log.info("获取推荐站点");
-        List<RecommendCategoryVO> result = navService.getRecommended();
+        List<RecommendCategoryRespDTO> result = navService.getRecommended();
         log.info("获取推荐站点 出参:count={}", result.size());
         return Result.success(result);
     }
 
     @PostMapping("/recommended/categories")
-    public Result<RecommendCategoryVO> addRecommendCategory(@RequestHeader("Authorization") String auth,
-                                                            @RequestBody RecommendCategoryRequest req) {
+    public Result<RecommendCategoryRespDTO> addRecommendCategory(@RequestHeader("Authorization") String auth,
+                                                            @RequestBody RecommendCategoryReqDTO req) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("添加推荐分类 入参:userId={},name={}", userId, req.getName());
-        RecommendCategoryVO result = navService.addRecommendCategory(userId, req);
+        RecommendCategoryRespDTO result = navService.addRecommendCategory(userId, req);
         return Result.success("添加成功", result);
     }
 
     @PutMapping("/recommended/categories/{categoryId}")
     public Result<?> updateRecommendCategory(@RequestHeader("Authorization") String auth,
                                              @PathVariable String categoryId,
-                                             @RequestBody RecommendCategoryRequest req) {
+                                             @RequestBody RecommendCategoryReqDTO req) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("更新推荐分类 入参:userId={},categoryId={}", userId, categoryId);
         navService.updateRecommendCategory(userId, categoryId, req);
@@ -214,18 +214,18 @@ public class NavController {
     }
 
     @PostMapping("/recommended/sites")
-    public Result<RecommendSiteVO> addRecommendSite(@RequestHeader("Authorization") String auth,
-                                                    @RequestBody RecommendSiteRequest req) {
+    public Result<RecommendSiteRespDTO> addRecommendSite(@RequestHeader("Authorization") String auth,
+                                                    @RequestBody RecommendSiteReqDTO req) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("添加推荐网址 入参:userId={},name={}", userId, req.getName());
-        RecommendSiteVO result = navService.addRecommendSite(userId, req);
+        RecommendSiteRespDTO result = navService.addRecommendSite(userId, req);
         return Result.success("添加成功", result);
     }
 
     @PutMapping("/recommended/sites/{siteId}")
     public Result<?> updateRecommendSite(@RequestHeader("Authorization") String auth,
                                          @PathVariable String siteId,
-                                         @RequestBody RecommendSiteRequest req) {
+                                         @RequestBody RecommendSiteReqDTO req) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("更新推荐网址 入参:userId={},siteId={}", userId, siteId);
         navService.updateRecommendSite(userId, siteId, req);

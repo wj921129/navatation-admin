@@ -1,6 +1,6 @@
 package com.navatation.business.controller;
 
-import com.navatation.business.dto.GuestConfigVO;
+import com.navatation.business.dto.resp.GuestConfigRespDTO;
 import com.navatation.business.service.PublicService;
 import com.navatation.common.Result;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +16,7 @@ public class PublicController {
     private final PublicService publicService;
 
     @GetMapping("/guest-config")
-    public Result<GuestConfigVO> getGuestConfig() {
+    public Result<GuestConfigRespDTO> getGuestConfig() {
         System.out.println("HIT PUBLIC CONTROLLER GUEST CONFIG!");
         return Result.success(publicService.getGuestConfig());
     }

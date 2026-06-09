@@ -3,16 +3,16 @@ package com.navatation.business.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.toolkit.Db;
 import com.navatation.business.dto.BatchCreateItemVO;
-import com.navatation.business.dto.BatchCreateRequest;
+import com.navatation.business.dto.req.BatchCreateReqDTO;
 import com.navatation.business.dto.BatchRecommendSiteSaveRequest;
 import com.navatation.business.dto.CreateShortcutItem;
 import com.navatation.business.dto.RecommendSiteItem;
-import com.navatation.business.dto.RecommendSiteRequest;
-import com.navatation.business.dto.RecommendSiteVO;
-import com.navatation.business.dto.ShortcutVO;
-import com.navatation.business.dto.SortItem;
-import com.navatation.business.dto.SortRequest;
-import com.navatation.business.dto.UpdateShortcutRequest;
+import com.navatation.business.dto.req.RecommendSiteReqDTO;
+import com.navatation.business.dto.resp.RecommendSiteRespDTO;
+import com.navatation.business.dto.resp.ShortcutRespDTO;
+import com.navatation.business.dto.req.SortItemDTO;
+import com.navatation.business.dto.req.SortReqDTO;
+import com.navatation.business.dto.req.UpdateShortcutReqDTO;
 import com.navatation.business.entity.nav.NavCategory;
 import com.navatation.business.entity.nav.NavShortcut;
 import com.navatation.business.entity.recommend.RecommendCategory;
@@ -59,7 +59,7 @@ public class NavShortcutService {
         return rootUserMapper.selectById(userId) != null;
     }
 
-    public List<ShortcutVO> getShortcuts(String userId, String categoryId) {
+    public List<ShortcutRespDTO> getShortcuts(String userId, String categoryId) {
         if (isAdmin(userId)) {
             LambdaQueryWrapper<com.navatation.business.entity.root.RootShortcut> wrapper = new LambdaQueryWrapper<com.navatation.business.entity.root.RootShortcut>()
                     .eq(com.navatation.business.entity.root.RootShortcut::getUserId, userId)
@@ -84,7 +84,7 @@ public class NavShortcutService {
     }
 
     @Transactional
-    public List<BatchCreateItemVO> batchCreate(String userId, BatchCreateRequest req) {
+    public List<BatchCreateItemVO> batchCreate(String userId, BatchCreateReqDTO req) {
         String categoryId = req.getCategoryId();
 
         if (isAdmin(userId)) {
@@ -188,7 +188,7 @@ public class NavShortcutService {
         return results;
     }
 
-    public ShortcutVO updateShortcut(String userId, String shortcutId, UpdateShortcutRequest req) {
+    public ShortcutRespDTO updateShortcut(String userId, String shortcutId, UpdateShortcutReqDTO req) {
         if (isAdmin(userId)) {
             com.navatation.business.entity.root.RootShortcut shortcut = rootShortcutMapper.selectById(shortcutId);
             if (shortcut == null || !shortcut.getUserId().equals(userId)) {
@@ -250,15 +250,15 @@ public class NavShortcutService {
     }
 
     @Transactional
-    public void sortShortcuts(String userId, SortRequest req) {
-        List<String> ids = req.getItems().stream().map(SortItem::getShortcutId).collect(Collectors.toList());
+    public void sortShortcuts(String userId, SortReqDTO req) {
+        List<String> ids = req.getItems().stream().map(SortItemDTO::getShortcutId).collect(Collectors.toList());
 
         if (isAdmin(userId)) {
             Map<String, com.navatation.business.entity.root.RootShortcut> shortcutMap = rootShortcutMapper.selectBatchIds(ids).stream()
                     .filter(s -> s.getUserId().equals(userId))
                     .collect(Collectors.toMap(com.navatation.business.entity.root.RootShortcut::getShortcutId, Function.identity()));
 
-            for (SortItem item : req.getItems()) {
+            for (SortItemDTO item : req.getItems()) {
                 com.navatation.business.entity.root.RootShortcut shortcut = shortcutMap.get(item.getShortcutId());
                 if (shortcut != null) {
                     shortcut.setSortOrder(item.getSortOrder());
@@ -272,7 +272,7 @@ public class NavShortcutService {
                 .filter(s -> s.getUserId().equals(userId))
                 .collect(Collectors.toMap(NavShortcut::getShortcutId, Function.identity()));
 
-        for (SortItem item : req.getItems()) {
+        for (SortItemDTO item : req.getItems()) {
             NavShortcut shortcut = shortcutMap.get(item.getShortcutId());
             if (shortcut != null) {
                 shortcut.setSortOrder(item.getSortOrder());
@@ -282,7 +282,7 @@ public class NavShortcutService {
     }
 
     @Transactional
-    public RecommendSiteVO addRecommendSite(String userId, RecommendSiteRequest req) {
+    public RecommendSiteRespDTO addRecommendSite(String userId, RecommendSiteReqDTO req) {
         if (!isAdmin(userId)) {
             throw new BizException(ResultCode.FORBIDDEN);
         }
@@ -297,7 +297,7 @@ public class NavShortcutService {
         site.setSortOrder(0.0);
         recommendSiteMapper.insert(site);
 
-        RecommendSiteVO vo = new RecommendSiteVO();
+        RecommendSiteRespDTO vo = new RecommendSiteRespDTO();
         vo.setSiteId(site.getSiteId());
         vo.setCategoryId(site.getCategoryId());
         vo.setName(site.getName());
@@ -310,7 +310,7 @@ public class NavShortcutService {
     }
 
     @Transactional
-    public void updateRecommendSite(String userId, String siteId, RecommendSiteRequest req) {
+    public void updateRecommendSite(String userId, String siteId, RecommendSiteReqDTO req) {
         if (!isAdmin(userId)) {
             throw new BizException(ResultCode.FORBIDDEN);
         }
@@ -415,8 +415,8 @@ public class NavShortcutService {
         log.info("管理员批量保存推荐网址成功 categoryId={}, totalCount={}", categoryId, incomingSites.size());
     }
 
-    private ShortcutVO toShortcutVO(NavShortcut s) {
-        ShortcutVO vo = new ShortcutVO();
+    private ShortcutRespDTO toShortcutVO(NavShortcut s) {
+        ShortcutRespDTO vo = new ShortcutRespDTO();
         vo.setShortcutId(s.getShortcutId());
         vo.setCategoryId(s.getCategoryId());
         vo.setName(s.getName());
@@ -429,8 +429,8 @@ public class NavShortcutService {
         return vo;
     }
 
-    private ShortcutVO toShortcutVO(com.navatation.business.entity.root.RootShortcut s) {
-        ShortcutVO vo = new ShortcutVO();
+    private ShortcutRespDTO toShortcutVO(com.navatation.business.entity.root.RootShortcut s) {
+        ShortcutRespDTO vo = new ShortcutRespDTO();
         vo.setShortcutId(s.getShortcutId());
         vo.setCategoryId(s.getCategoryId());
         vo.setName(s.getName());

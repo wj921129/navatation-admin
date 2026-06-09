@@ -1,7 +1,7 @@
 package com.navatation.business;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.navatation.business.dto.RegisterRequest;
+import com.navatation.business.dto.req.RegisterReqDTO;
 import com.navatation.business.entity.nav.NavCategory;
 import com.navatation.business.entity.nav.NavShortcut;
 import com.navatation.business.entity.nav.UserWidget;
@@ -82,7 +82,7 @@ public class AuthServiceIntegrationTest {
 
         // 2. 模拟新用户注册请求
         String username = "st_" + (System.currentTimeMillis() % 100000000L);
-        RegisterRequest req = new RegisterRequest();
+        RegisterReqDTO req = new RegisterReqDTO();
         req.setUsername(username);
         req.setPassword("TestSyncPass123!");
         req.setConfirmPassword("TestSyncPass123!");

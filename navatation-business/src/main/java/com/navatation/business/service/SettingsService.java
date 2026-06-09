@@ -2,9 +2,9 @@ package com.navatation.business.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.navatation.business.constant.SettingsConstants;
-import com.navatation.business.dto.SettingsRequest;
-import com.navatation.business.dto.SettingsVO;
-import com.navatation.business.dto.WallpaperVO;
+import com.navatation.business.dto.req.SettingsReqDTO;
+import com.navatation.business.dto.resp.SettingsRespDTO;
+import com.navatation.business.dto.resp.WallpaperRespDTO;
 import com.navatation.business.entity.recommend.RecommendConfig;
 import com.navatation.business.entity.user.User;
 import com.navatation.business.entity.user.UserConfig;
@@ -56,10 +56,10 @@ public class SettingsService {
      * @param userId 用户ID
      * @return 用户设置
      */
-    public SettingsVO getSettings(String userId) {
+    public SettingsRespDTO getSettings(String userId) {
         if (isAdmin(userId)) {
-            com.navatation.business.entity.root.RootConfig rootConfig = rootConfigMapper.selectOne(
-                    new LambdaQueryWrapper<com.navatation.business.entity.root.RootConfig>().eq(com.navatation.business.entity.root.RootConfig::getUserId, userId));
+            RootConfig rootConfig = rootConfigMapper.selectOne(
+                    new LambdaQueryWrapper<RootConfig>().eq(RootConfig::getUserId, userId));
             if (rootConfig == null) {
                 rootConfig = createDefaultRoot(userId);
             }
@@ -79,10 +79,10 @@ public class SettingsService {
      * @param userId 用户ID
      * @param req 设置请求
      */
-    public void saveSettings(String userId, SettingsRequest req) {
+    public void saveSettings(String userId, SettingsReqDTO req) {
         if (isAdmin(userId)) {
-            com.navatation.business.entity.root.RootConfig rootConfig = rootConfigMapper.selectOne(
-                    new LambdaQueryWrapper<com.navatation.business.entity.root.RootConfig>().eq(com.navatation.business.entity.root.RootConfig::getUserId, userId));
+            RootConfig rootConfig = rootConfigMapper.selectOne(
+                    new LambdaQueryWrapper<RootConfig>().eq(RootConfig::getUserId, userId));
             if (rootConfig == null) {
                 rootConfig = createDefaultRoot(userId);
             }
@@ -107,10 +107,10 @@ public class SettingsService {
      * @param userId 用户ID
      * @param req 设置请求
      */
-    public void patchSettings(String userId, SettingsRequest req) {
+    public void patchSettings(String userId, SettingsReqDTO req) {
         if (isAdmin(userId)) {
-            com.navatation.business.entity.root.RootConfig rootConfig = rootConfigMapper.selectOne(
-                    new LambdaQueryWrapper<com.navatation.business.entity.root.RootConfig>().eq(com.navatation.business.entity.root.RootConfig::getUserId, userId));
+            RootConfig rootConfig = rootConfigMapper.selectOne(
+                    new LambdaQueryWrapper<RootConfig>().eq(RootConfig::getUserId, userId));
             if (rootConfig == null) {
                 rootConfig = createDefaultRoot(userId);
             }
@@ -136,12 +136,12 @@ public class SettingsService {
      * @param file 壁纸文件
      * @return 壁纸URL
      */
-    public WallpaperVO uploadWallpaper(String userId, MultipartFile file) {
+    public WallpaperRespDTO uploadWallpaper(String userId, MultipartFile file) {
         try {
-            String targetDir = wallpaperPath + java.io.File.separator + userId;
-            String uniqueFileName = com.navatation.common.FileUploadUtil.saveFile(file, targetDir);
+            String targetDir = wallpaperPath + File.separator + userId;
+            String uniqueFileName = FileUploadUtil.saveFile(file, targetDir);
             
-            WallpaperVO vo = new WallpaperVO();
+            WallpaperRespDTO vo = new WallpaperRespDTO();
             vo.setWallpaperUrl("/uploads/back_ground/custom/" + userId + "/" + uniqueFileName);
             log.info("壁纸上传成功 userId={}, filename={}", userId, uniqueFileName);
             return vo;
@@ -155,12 +155,12 @@ public class SettingsService {
      * 随机从本地壁纸目录中选择一个壁纸返回
      * @return 壁纸VO
      */
-    public WallpaperVO getRandomWallpaper() {
+    public WallpaperRespDTO getRandomWallpaper() {
         try {
             File dir = new File(localWallpaperPath);
             if (!dir.exists()) {
                 // 目录不存在则自动创建，支持3次重试
-                com.navatation.common.FileUploadUtil.createDirectoryWithRetry(localWallpaperPath);
+                FileUploadUtil.createDirectoryWithRetry(localWallpaperPath);
             }
 
             // 过滤合法图片文件
@@ -173,22 +173,22 @@ public class SettingsService {
             // 卫语句：如果没有找到任何壁纸文件，返回系统默认兜底壁纸
             if (files == null || files.length == 0) {
                 log.warn("本地壁纸目录为空，返回系统默认兜底壁纸: {}", localWallpaperPath);
-                WallpaperVO vo = new WallpaperVO();
+                WallpaperRespDTO vo = new WallpaperRespDTO();
                 vo.setWallpaperUrl(SettingsConstants.DEFAULT_WALLPAPER);
                 return vo;
             }
 
             // 随机选择一个
-            int idx = java.util.concurrent.ThreadLocalRandom.current().nextInt(files.length);
+            int idx = ThreadLocalRandom.current().nextInt(files.length);
             File chosenFile = files[idx];
 
-            WallpaperVO vo = new WallpaperVO();
+            WallpaperRespDTO vo = new WallpaperRespDTO();
             vo.setWallpaperUrl("/uploads/back_ground/local/" + chosenFile.getName());
             log.info("随机壁纸获取成功 filename={}", chosenFile.getName());
             return vo;
         } catch (Exception e) {
             log.error("获取随机壁纸异常，进行兜底返回", e);
-            WallpaperVO vo = new WallpaperVO();
+            WallpaperRespDTO vo = new WallpaperRespDTO();
             vo.setWallpaperUrl(SettingsConstants.DEFAULT_WALLPAPER);
             return vo;
         }
@@ -218,8 +218,8 @@ public class SettingsService {
     }
 
     /** 创建默认管理员配置 */
-    private com.navatation.business.entity.root.RootConfig createDefaultRoot(String userId) {
-        com.navatation.business.entity.root.RootConfig config = new com.navatation.business.entity.root.RootConfig();
+    private RootConfig createDefaultRoot(String userId) {
+        RootConfig config = new RootConfig();
         config.setConfigId(IdUtils.genConfigId());
         config.setUserId(userId);
         config.setSearchEngine(SettingsConstants.DEFAULT_SEARCH_ENGINE);
@@ -241,7 +241,7 @@ public class SettingsService {
     }
 
     /** 将请求参数应用到配置实体 */
-    private void applyRequest(UserConfig config, SettingsRequest req) {
+    private void applyRequest(UserConfig config, SettingsReqDTO req) {
         if (req.getSearchEngine() != null) {
             config.setSearchEngine(req.getSearchEngine());
         }
@@ -290,8 +290,8 @@ public class SettingsService {
     }
 
     /** 实体转VO */
-    private SettingsVO toVO(UserConfig config) {
-        SettingsVO vo = new SettingsVO();
+    private SettingsRespDTO toVO(UserConfig config) {
+        SettingsRespDTO vo = new SettingsRespDTO();
         vo.setSearchEngine(config.getSearchEngine());
         vo.setBackgroundImage(config.getBackgroundImage());
         vo.setBackgroundType(config.getBackgroundType());
@@ -310,7 +310,7 @@ public class SettingsService {
         return vo;
     }
 
-    private void applyRequest(com.navatation.business.entity.root.RootConfig config, SettingsRequest req) {
+    private void applyRequest(RootConfig config, SettingsReqDTO req) {
         if (req.getSearchEngine() != null) config.setSearchEngine(req.getSearchEngine());
         if (req.getBackgroundImage() != null) config.setBackgroundImage(req.getBackgroundImage());
         if (req.getBackgroundType() != null) config.setBackgroundType(req.getBackgroundType());
@@ -328,8 +328,8 @@ public class SettingsService {
         if (req.getTheme() != null) config.setTheme(req.getTheme());
     }
 
-    private SettingsVO toVO(com.navatation.business.entity.root.RootConfig config) {
-        SettingsVO vo = new SettingsVO();
+    private SettingsRespDTO toVO(RootConfig config) {
+        SettingsRespDTO vo = new SettingsRespDTO();
         vo.setSearchEngine(config.getSearchEngine());
         vo.setBackgroundImage(config.getBackgroundImage());
         vo.setBackgroundType(config.getBackgroundType());
@@ -348,7 +348,7 @@ public class SettingsService {
         return vo;
     }
 
-    private void applyRequest(RecommendConfig config, SettingsRequest req) {
+    private void applyRequest(RecommendConfig config, SettingsReqDTO req) {
         if (req.getSearchEngine() != null) config.setSearchEngine(req.getSearchEngine());
         if (req.getBackgroundImage() != null) config.setBackgroundImage(req.getBackgroundImage());
         if (req.getBackgroundType() != null) config.setBackgroundType(req.getBackgroundType());
@@ -366,8 +366,8 @@ public class SettingsService {
         if (req.getTheme() != null) config.setTheme(req.getTheme());
     }
 
-    private SettingsVO toVO(RecommendConfig config) {
-        SettingsVO vo = new SettingsVO();
+    private SettingsRespDTO toVO(RecommendConfig config) {
+        SettingsRespDTO vo = new SettingsRespDTO();
         vo.setSearchEngine(config.getSearchEngine());
         vo.setBackgroundImage(config.getBackgroundImage());
         vo.setBackgroundType(config.getBackgroundType());

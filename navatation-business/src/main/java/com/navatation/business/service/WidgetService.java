@@ -6,12 +6,12 @@ import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.navatation.business.dto.WidgetRequest;
-import com.navatation.business.dto.WidgetVO;
+import com.navatation.business.dto.req.WidgetReqDTO;
+import com.navatation.business.dto.resp.WidgetRespDTO;
 import com.navatation.business.entity.nav.UserWidget;
 import com.navatation.business.mapper.RootWidgetMapper;
 import com.navatation.business.mapper.UserWidgetMapper;
-import com.navatation.business.mapper.UserMapper;
+import UserMapper;
 import com.navatation.business.mapper.RootUserMapper;
 import com.navatation.common.IdUtils;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +39,7 @@ public class WidgetService {
     private final UserWidgetMapper widgetMapper;
     private final RootWidgetMapper rootWidgetMapper;
     private final ObjectMapper objectMapper;
-    private final com.navatation.business.mapper.UserMapper userMapper;
+    private final UserMapper userMapper;
     private final RecommendWidgetService recommendWidgetService;
 
     private final RootUserMapper rootUserMapper;
@@ -54,11 +54,11 @@ public class WidgetService {
      * @param userId 用户唯一ID
      * @return 组件展现VO列表
      */
-    public List<WidgetVO> getWidgets(String userId) {
+    public List<WidgetRespDTO> getWidgets(String userId) {
         if (isAdmin(userId)) {
-            List<com.navatation.business.entity.root.RootWidget> list = rootWidgetMapper.selectList(
-                    new LambdaQueryWrapper<com.navatation.business.entity.root.RootWidget>()
-                            .eq(com.navatation.business.entity.root.RootWidget::getUserId, userId)
+            List<RootWidget> list = rootWidgetMapper.selectList(
+                    new LambdaQueryWrapper<RootWidget>()
+                            .eq(RootWidget::getUserId, userId)
             );
             if (CollectionUtils.isEmpty(list)) {
                 return Collections.emptyList();
@@ -83,17 +83,17 @@ public class WidgetService {
      * @param requests 待保存的组件请求列表
      */
     @Transactional(rollbackFor = Exception.class)
-    public void saveWidgets(String userId, List<WidgetRequest> requests) {
+    public void saveWidgets(String userId, List<WidgetReqDTO> requests) {
         if (isAdmin(userId)) {
-            rootWidgetMapper.delete(new LambdaQueryWrapper<com.navatation.business.entity.root.RootWidget>().eq(com.navatation.business.entity.root.RootWidget::getUserId, userId));
+            rootWidgetMapper.delete(new LambdaQueryWrapper<RootWidget>().eq(RootWidget::getUserId, userId));
 
             if (CollectionUtils.isEmpty(requests)) {
                 log.info("保存管理员组件 传入列表为空，清除管理员所有组件 userId={}", userId);
                 return;
             }
 
-            for (WidgetRequest req : requests) {
-                com.navatation.business.entity.root.RootWidget entity = new com.navatation.business.entity.root.RootWidget();
+            for (WidgetReqDTO req : requests) {
+                RootWidget entity = new RootWidget();
                 entity.setUserId(userId);
                 entity.setType(req.getType());
                 entity.setStyle(req.getStyle());
@@ -128,7 +128,7 @@ public class WidgetService {
             return;
         }
 
-        for (WidgetRequest req : requests) {
+        for (WidgetReqDTO req : requests) {
             UserWidget entity = new UserWidget();
             entity.setUserId(userId);
             entity.setType(req.getType());
@@ -157,10 +157,10 @@ public class WidgetService {
     }
 
     /**
-     * 将 UserWidget 实体对象转换为 WidgetVO 对象
+     * 将 UserWidget 实体对象转换为 WidgetRespDTO 对象
      */
-    private WidgetVO toVO(UserWidget entity) {
-        WidgetVO vo = new WidgetVO();
+    private WidgetRespDTO toVO(UserWidget entity) {
+        WidgetRespDTO vo = new WidgetRespDTO();
         vo.setWidgetId(entity.getWidgetId());
         vo.setType(entity.getType());
         vo.setStyle(entity.getStyle());
@@ -183,8 +183,8 @@ public class WidgetService {
         return vo;
     }
 
-    private WidgetVO toVO(com.navatation.business.entity.root.RootWidget entity) {
-        WidgetVO vo = new WidgetVO();
+    private WidgetRespDTO toVO(RootWidget entity) {
+        WidgetRespDTO vo = new WidgetRespDTO();
         vo.setWidgetId(entity.getWidgetId());
         vo.setType(entity.getType());
         vo.setStyle(entity.getStyle());

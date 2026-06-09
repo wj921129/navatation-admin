@@ -1,6 +1,6 @@
 package com.navatation.business.helper;
 
-import com.navatation.business.dto.FaviconVO;
+import com.navatation.business.dto.resp.FaviconRespDTO;
 import com.navatation.common.BizException;
 import com.navatation.common.RedisConstants;
 import com.navatation.common.ResultCode;
@@ -46,7 +46,7 @@ public class FaviconFetcherHelper {
             new ThreadPoolExecutor.CallerRunsPolicy()
     );
 
-    public FaviconVO fetchFavicon(String url) {
+    public FaviconRespDTO fetchFavicon(String url) {
         try {
             java.net.URI uri = new java.net.URI(url);
             String scheme = uri.getScheme();
@@ -60,7 +60,7 @@ public class FaviconFetcherHelper {
                 String cachedUrl = (String) redisTemplate.opsForValue().get(cacheKey);
                 if (cachedUrl != null) {
                     log.info("Favicon 缓存命中 host: {} -> {}", host, cachedUrl);
-                    FaviconVO vo = new FaviconVO();
+                    FaviconRespDTO vo = new FaviconRespDTO();
                     vo.setFaviconUrl(cachedUrl);
                     vo.setSourceUrl(url);
                     return vo;
@@ -80,7 +80,7 @@ public class FaviconFetcherHelper {
                 log.warn("写入 Redis Favicon 缓存失败: {}", e.getMessage());
             }
 
-            FaviconVO vo = new FaviconVO();
+            FaviconRespDTO vo = new FaviconRespDTO();
             vo.setFaviconUrl(faviconUrl);
             vo.setSourceUrl(url);
             return vo;
@@ -91,7 +91,7 @@ public class FaviconFetcherHelper {
         }
     }
 
-    public Map<String, FaviconVO> fetchFaviconsInBatch(List<String> urls) {
+    public Map<String, FaviconRespDTO> fetchFaviconsInBatch(List<String> urls) {
         if (urls == null || urls.isEmpty()) {
             return new ConcurrentHashMap<>();
         }
@@ -104,17 +104,17 @@ public class FaviconFetcherHelper {
                 .distinct()
                 .collect(Collectors.toList());
 
-        Map<String, FaviconVO> results = new ConcurrentHashMap<>();
+        Map<String, FaviconRespDTO> results = new ConcurrentHashMap<>();
         List<CompletableFuture<Void>> futures = new ArrayList<>();
 
         for (String url : uniqueUrls) {
             CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                 try {
-                    FaviconVO vo = fetchFavicon(url);
+                    FaviconRespDTO vo = fetchFavicon(url);
                     results.put(url, vo);
                 } catch (Exception e) {
                     log.warn("批量抓取单个 Favicon 异常 url: {}, error: {}", url, e.getMessage());
-                    FaviconVO fallbackVo = new FaviconVO();
+                    FaviconRespDTO fallbackVo = new FaviconRespDTO();
                     fallbackVo.setSourceUrl(url);
                     try {
                         java.net.URI uri = new java.net.URI(url);
@@ -143,7 +143,7 @@ public class FaviconFetcherHelper {
 
         for (String url : uniqueUrls) {
             results.computeIfAbsent(url, u -> {
-                FaviconVO fallback = new FaviconVO();
+                FaviconRespDTO fallback = new FaviconRespDTO();
                 fallback.setSourceUrl(u);
                 try {
                     java.net.URI uri = new java.net.URI(u);

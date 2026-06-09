@@ -1,6 +1,6 @@
 package com.navatation.business.service;
 
-import com.navatation.business.dto.IconUploadVO;
+import com.navatation.business.dto.resp.IconUploadRespDTO;
 import com.navatation.common.BizException;
 import com.navatation.common.NavConstants;
 import com.navatation.common.RedisConstants;
@@ -26,7 +26,7 @@ public class IconUploadService {
     @Value("${app.upload.icon-path}")
     private String iconPath;
 
-    public IconUploadVO uploadIcon(String userId, MultipartFile file) {
+    public IconUploadRespDTO uploadIcon(String userId, MultipartFile file) {
         String contentType = file.getContentType();
         if (contentType == null || !NavConstants.ALLOWED_MIME_TYPES.contains(contentType)) {
             log.warn("图标上传类型不合法 userId={}, contentType={}", userId, contentType);
@@ -53,7 +53,7 @@ public class IconUploadService {
             String uniqueFileName = com.navatation.common.FileUploadUtil.saveFile(file, targetDir);
             log.info("图标上传成功 userId={}, filename={}", userId, uniqueFileName);
 
-            return new IconUploadVO("/uploads/icon/custom/" + userId + "/" + uniqueFileName);
+            return new IconUploadRespDTO("/uploads/icon/custom/" + userId + "/" + uniqueFileName);
         } catch (Exception e) {
             log.error("图标文件保存失败 userId={}", userId, e);
             throw new BizException(ResultCode.INTERNAL_ERROR);

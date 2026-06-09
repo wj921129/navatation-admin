@@ -1,14 +1,14 @@
 package com.navatation.business.controller;
 
-import com.navatation.business.dto.ChangePasswordRequest;
-import com.navatation.business.dto.EncryptedChangePasswordRequest;
-import com.navatation.business.dto.EncryptedLoginRequest;
-import com.navatation.business.dto.EncryptedRegisterRequest;
-import com.navatation.business.dto.LoginRequest;
-import com.navatation.business.dto.LoginVO;
-import com.navatation.business.dto.RefreshTokenRequest;
-import com.navatation.business.dto.RegisterRequest;
-import com.navatation.business.dto.UserVO;
+import com.navatation.business.dto.req.ChangePasswordReqDTO;
+import com.navatation.business.dto.req.EncryptedChangePasswordReqDTO;
+import com.navatation.business.dto.req.EncryptedLoginReqDTO;
+import com.navatation.business.dto.req.EncryptedRegisterReqDTO;
+import com.navatation.business.dto.req.LoginReqDTO;
+import com.navatation.business.dto.resp.LoginRespDTO;
+import com.navatation.business.dto.req.RefreshTokenReqDTO;
+import com.navatation.business.dto.req.RegisterReqDTO;
+import com.navatation.business.dto.resp.UserRespDTO;
 import com.navatation.business.service.AuthService;
 import com.navatation.common.BizException;
 import com.navatation.common.Result;
@@ -57,7 +57,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public Result<UserVO> register(@Valid @RequestBody EncryptedRegisterRequest req) {
+    public Result<UserRespDTO> register(@Valid @RequestBody EncryptedRegisterReqDTO req) {
         log.info("用户注册 入参:username={}", req.getUsername());
 
         // 1. 校验并消费 nonce
@@ -80,17 +80,17 @@ public class AuthController {
         String confirmPassword = parts[1];
 
         // 5. 构造旧 DTO 调用 service
-        RegisterRequest registerReq = new RegisterRequest();
+        RegisterReqDTO registerReq = new RegisterReqDTO();
         registerReq.setUsername(req.getUsername());
         registerReq.setPassword(password);
         registerReq.setConfirmPassword(confirmPassword);
         authService.register(registerReq);
 
         // 6. 注册成功后自动登录
-        LoginRequest loginReq = new LoginRequest();
+        LoginReqDTO loginReq = new LoginReqDTO();
         loginReq.setUsername(req.getUsername());
         loginReq.setPassword(password);
-        LoginVO loginVO = authService.login(loginReq);
+        LoginRespDTO loginVO = authService.login(loginReq);
 
         log.info("用户注册 出参:userId={}", loginVO.getUserInfo().getUserId());
         return Result.success("注册成功", loginVO.getUserInfo());
@@ -99,7 +99,7 @@ public class AuthController {
     @PostMapping("/change-password")
     public Result<?> changePassword(
             @RequestHeader("Authorization") String authHeader,
-            @Valid @RequestBody EncryptedChangePasswordRequest req) {
+            @Valid @RequestBody EncryptedChangePasswordReqDTO req) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(authHeader);
         log.info("用户修改密码 入参:userId={}", userId);
 
@@ -124,7 +124,7 @@ public class AuthController {
         String confirmPassword = parts[2];
 
         // 5. 构造旧 DTO 调用 service
-        ChangePasswordRequest changeReq = new ChangePasswordRequest();
+        ChangePasswordReqDTO changeReq = new ChangePasswordReqDTO();
         changeReq.setOldPassword(oldPassword);
         changeReq.setNewPassword(newPassword);
         changeReq.setConfirmPassword(confirmPassword);
@@ -135,7 +135,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public Result<LoginVO> login(@Valid @RequestBody EncryptedLoginRequest req) {
+    public Result<LoginRespDTO> login(@Valid @RequestBody EncryptedLoginReqDTO req) {
         log.info("用户登录 入参:username={}", req.getUsername());
 
         // 1. 校验并消费 nonce
@@ -157,19 +157,19 @@ public class AuthController {
         String password = parts[0];
 
         // 5. 构造旧 DTO 调用 service
-        LoginRequest loginReq = new LoginRequest();
+        LoginReqDTO loginReq = new LoginReqDTO();
         loginReq.setUsername(req.getUsername());
         loginReq.setPassword(password);
-        LoginVO loginVO = authService.login(loginReq);
+        LoginRespDTO loginVO = authService.login(loginReq);
 
         log.info("用户登录 出参:userId={}", loginVO.getUserInfo().getUserId());
         return Result.success("登录成功", loginVO);
     }
 
     @PostMapping("/refresh")
-    public Result<LoginVO> refresh(@Valid @RequestBody RefreshTokenRequest req) {
+    public Result<LoginRespDTO> refresh(@Valid @RequestBody RefreshTokenReqDTO req) {
         log.info("刷新Token 入参:refreshToken={}", req.getRefreshToken());
-        LoginVO loginVO = authService.refresh(req);
+        LoginRespDTO loginVO = authService.refresh(req);
         log.info("刷新Token 出参:userId={}", loginVO.getUserInfo().getUserId());
         return Result.success("Token 刷新成功", loginVO);
     }
@@ -185,10 +185,10 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public Result<UserVO> me(@RequestHeader("Authorization") String authHeader) {
+    public Result<UserRespDTO> me(@RequestHeader("Authorization") String authHeader) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(authHeader);
         log.info("获取当前用户 入参:userId={}", userId);
-        UserVO userVO = authService.getCurrentUser(userId);
+        UserRespDTO userVO = authService.getCurrentUser(userId);
         log.info("获取当前用户 出参:username={}", userVO.getUsername());
         return Result.success(userVO);
     }

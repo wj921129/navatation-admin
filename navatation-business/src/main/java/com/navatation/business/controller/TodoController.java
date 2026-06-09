@@ -1,11 +1,11 @@
 package com.navatation.business.controller;
 
-import com.navatation.business.dto.DeleteCountVO;
-import com.navatation.business.dto.TodoCreateRequest;
-import com.navatation.business.dto.TodoSortRequest;
-import com.navatation.business.dto.TodoUpdateRequest;
-import com.navatation.business.dto.TodoVO;
-import com.navatation.business.dto.ToggleVO;
+import com.navatation.common.dto.resp.DeleteCountRespDTO;
+import com.navatation.business.dto.req.TodoCreateReqDTO;
+import com.navatation.business.dto.req.TodoSortReqDTO;
+import com.navatation.business.dto.req.TodoUpdateReqDTO;
+import com.navatation.business.dto.resp.TodoRespDTO;
+import com.navatation.business.dto.resp.ToggleRespDTO;
 import com.navatation.business.service.TodoService;
 import com.navatation.common.Result;
 import com.navatation.framework.security.JwtTokenProvider;
@@ -43,21 +43,21 @@ public class TodoController {
     private final JwtTokenProvider jwtTokenProvider;
 
     @GetMapping
-    public Result<List<TodoVO>> getList(@RequestHeader("Authorization") String auth,
+    public Result<List<TodoRespDTO>> getList(@RequestHeader("Authorization") String auth,
                                          @RequestParam(required = false) String status) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("获取待办列表 入参:userId={},status={}", userId, status);
-        List<TodoVO> result = todoService.getList(userId, status);
+        List<TodoRespDTO> result = todoService.getList(userId, status);
         log.info("获取待办列表 出参:count={}", result.size());
         return Result.success(result);
     }
 
     @PostMapping
-    public Result<TodoVO> create(@RequestHeader("Authorization") String auth,
-                                  @Valid @RequestBody TodoCreateRequest req) {
+    public Result<TodoRespDTO> create(@RequestHeader("Authorization") String auth,
+                                  @Valid @RequestBody TodoCreateReqDTO req) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("创建待办 入参:userId={},content={}", userId, req.getContent());
-        TodoVO result = todoService.create(userId, req);
+        TodoRespDTO result = todoService.create(userId, req);
         log.info("创建待办 出参:todoId={}", result.getTodoId());
         return Result.success("创建成功", result);
     }
@@ -65,7 +65,7 @@ public class TodoController {
     @PutMapping("/{todoId}")
     public Result<?> update(@RequestHeader("Authorization") String auth,
                              @PathVariable String todoId,
-                             @Valid @RequestBody TodoUpdateRequest req) {
+                             @Valid @RequestBody TodoUpdateReqDTO req) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("更新待办 入参:userId={},todoId={}", userId, todoId);
         todoService.update(userId, todoId, req);
@@ -74,11 +74,11 @@ public class TodoController {
     }
 
     @PatchMapping("/{todoId}/toggle")
-    public Result<ToggleVO> toggle(@RequestHeader("Authorization") String auth,
+    public Result<ToggleRespDTO> toggle(@RequestHeader("Authorization") String auth,
                                     @PathVariable String todoId) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("切换待办状态 入参:userId={},todoId={}", userId, todoId);
-        ToggleVO result = todoService.toggle(userId, todoId);
+        ToggleRespDTO result = todoService.toggle(userId, todoId);
         log.info("切换待办状态 出参:completed={}", result.getCompleted());
         return Result.success(result);
     }
@@ -95,7 +95,7 @@ public class TodoController {
 
     @PutMapping("/sort")
     public Result<?> sort(@RequestHeader("Authorization") String auth,
-                           @RequestBody TodoSortRequest req) {
+                           @RequestBody TodoSortReqDTO req) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("待办排序 入参:userId={},count={}", userId, req.getItems().size());
         todoService.sort(userId, req);
@@ -104,10 +104,10 @@ public class TodoController {
     }
 
     @DeleteMapping("/completed")
-    public Result<DeleteCountVO> clearCompleted(@RequestHeader("Authorization") String auth) {
+    public Result<DeleteCountRespDTO> clearCompleted(@RequestHeader("Authorization") String auth) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("清除已完成待办 入参:userId={}", userId);
-        DeleteCountVO result = todoService.clearCompleted(userId);
+        DeleteCountRespDTO result = todoService.clearCompleted(userId);
         log.info("清除已完成待办 出参:deletedCount={}", result.getDeletedCount());
         return Result.success("已清空 " + result.getDeletedCount() + " 条已完成待办", result);
     }

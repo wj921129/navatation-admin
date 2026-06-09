@@ -25,15 +25,15 @@ public class NavService {
 
     // --- Category Management ---
 
-    public List<CategoryVO> getCategories(String userId) {
+    public List<CategoryRespDTO> getCategories(String userId) {
         return navCategoryService.getCategories(userId);
     }
 
-    public CategoryVO createCategory(String userId, CategoryRequest req) {
+    public CategoryRespDTO createCategory(String userId, CategoryReqDTO req) {
         return navCategoryService.createCategory(userId, req);
     }
 
-    public void updateCategory(String userId, String categoryId, CategoryRequest req) {
+    public void updateCategory(String userId, String categoryId, CategoryReqDTO req) {
         navCategoryService.updateCategory(userId, categoryId, req);
     }
 
@@ -44,15 +44,15 @@ public class NavService {
 
     // --- Shortcut Management ---
 
-    public List<ShortcutVO> getShortcuts(String userId, String categoryId) {
+    public List<ShortcutRespDTO> getShortcuts(String userId, String categoryId) {
         return navShortcutService.getShortcuts(userId, categoryId);
     }
 
-    public List<BatchCreateItemVO> batchCreate(String userId, BatchCreateRequest req) {
+    public List<BatchCreateItemVO> batchCreate(String userId, BatchCreateReqDTO req) {
         return navShortcutService.batchCreate(userId, req);
     }
 
-    public ShortcutVO updateShortcut(String userId, String shortcutId, UpdateShortcutRequest req) {
+    public ShortcutRespDTO updateShortcut(String userId, String shortcutId, UpdateShortcutReqDTO req) {
         return navShortcutService.updateShortcut(userId, shortcutId, req);
     }
 
@@ -60,35 +60,35 @@ public class NavService {
         navShortcutService.deleteShortcut(userId, shortcutId);
     }
 
-    public void sortShortcuts(String userId, SortRequest req) {
+    public void sortShortcuts(String userId, SortReqDTO req) {
         navShortcutService.sortShortcuts(userId, req);
     }
 
     // --- Favicon & Icon Upload ---
 
-    public FaviconVO fetchFavicon(String url) {
+    public FaviconRespDTO fetchFavicon(String url) {
         return faviconFetcherHelper.fetchFavicon(url);
     }
 
-    public Map<String, FaviconVO> fetchFaviconsInBatch(List<String> urls) {
+    public Map<String, FaviconRespDTO> fetchFaviconsInBatch(List<String> urls) {
         return faviconFetcherHelper.fetchFaviconsInBatch(urls);
     }
 
-    public IconUploadVO uploadIcon(String userId, MultipartFile file) {
+    public IconUploadRespDTO uploadIcon(String userId, MultipartFile file) {
         return iconUploadService.uploadIcon(userId, file);
     }
 
     // --- Recommend Sites Management ---
 
-    public List<RecommendCategoryVO> getRecommended() {
+    public List<RecommendCategoryRespDTO> getRecommended() {
         return navCategoryService.getRecommended();
     }
 
-    public RecommendCategoryVO addRecommendCategory(String userId, RecommendCategoryRequest req) {
+    public RecommendCategoryRespDTO addRecommendCategory(String userId, RecommendCategoryReqDTO req) {
         return navCategoryService.addRecommendCategory(userId, req);
     }
 
-    public void updateRecommendCategory(String userId, String categoryId, RecommendCategoryRequest req) {
+    public void updateRecommendCategory(String userId, String categoryId, RecommendCategoryReqDTO req) {
         navCategoryService.updateRecommendCategory(userId, categoryId, req);
     }
 
@@ -96,11 +96,11 @@ public class NavService {
         navCategoryService.deleteRecommendCategory(userId, categoryId);
     }
 
-    public RecommendSiteVO addRecommendSite(String userId, RecommendSiteRequest req) {
+    public RecommendSiteRespDTO addRecommendSite(String userId, RecommendSiteReqDTO req) {
         return navShortcutService.addRecommendSite(userId, req);
     }
 
-    public void updateRecommendSite(String userId, String siteId, RecommendSiteRequest req) {
+    public void updateRecommendSite(String userId, String siteId, RecommendSiteReqDTO req) {
         navShortcutService.updateRecommendSite(userId, siteId, req);
     }
 

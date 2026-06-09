@@ -1,8 +1,8 @@
 package com.navatation.business.controller;
 
-import com.navatation.business.dto.SettingsRequest;
-import com.navatation.business.dto.SettingsVO;
-import com.navatation.business.dto.WallpaperVO;
+import com.navatation.business.dto.req.SettingsReqDTO;
+import com.navatation.business.dto.resp.SettingsRespDTO;
+import com.navatation.business.dto.resp.WallpaperRespDTO;
 import com.navatation.business.service.SettingsService;
 import com.navatation.common.Result;
 import com.navatation.framework.security.JwtTokenProvider;
@@ -36,17 +36,17 @@ public class SettingsController {
     private final JwtTokenProvider jwtTokenProvider;
 
     @GetMapping
-    public Result<SettingsVO> getSettings(@RequestHeader("Authorization") String auth) {
+    public Result<SettingsRespDTO> getSettings(@RequestHeader("Authorization") String auth) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("获取用户设置 入参:userId={}", userId);
-        SettingsVO result = settingsService.getSettings(userId);
+        SettingsRespDTO result = settingsService.getSettings(userId);
         log.info("获取用户设置 出参:theme={}", result.getTheme());
         return Result.success(result);
     }
 
     @PutMapping
     public Result<?> saveSettings(@RequestHeader("Authorization") String auth,
-                                   @RequestBody SettingsRequest req) {
+                                   @RequestBody SettingsReqDTO req) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("保存用户设置 入参:userId={}", userId);
         settingsService.saveSettings(userId, req);
@@ -56,7 +56,7 @@ public class SettingsController {
 
     @PatchMapping
     public Result<?> patchSettings(@RequestHeader("Authorization") String auth,
-                                    @RequestBody SettingsRequest req) {
+                                    @RequestBody SettingsReqDTO req) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("局部更新用户设置 入参:userId={}", userId);
         settingsService.patchSettings(userId, req);
@@ -65,19 +65,19 @@ public class SettingsController {
     }
 
     @PostMapping("/wallpaper/upload")
-    public Result<WallpaperVO> uploadWallpaper(@RequestHeader("Authorization") String auth,
+    public Result<WallpaperRespDTO> uploadWallpaper(@RequestHeader("Authorization") String auth,
                                                 @RequestParam("file") MultipartFile file) {
         String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
         log.info("上传壁纸 入参:userId={},filename={}", userId, file.getOriginalFilename());
-        WallpaperVO result = settingsService.uploadWallpaper(userId, file);
+        WallpaperRespDTO result = settingsService.uploadWallpaper(userId, file);
         log.info("上传壁纸 出参:wallpaperUrl={}", result.getWallpaperUrl());
         return Result.success("上传成功", result);
     }
 
     @GetMapping("/wallpaper/random")
-    public Result<WallpaperVO> getRandomWallpaper() {
+    public Result<WallpaperRespDTO> getRandomWallpaper() {
         log.info("获取随机壁纸 入参:无");
-        WallpaperVO result = settingsService.getRandomWallpaper();
+        WallpaperRespDTO result = settingsService.getRandomWallpaper();
         log.info("获取随机壁纸 出参:wallpaperUrl={}", result.getWallpaperUrl());
         return Result.success("获取随机壁纸成功", result);
     }

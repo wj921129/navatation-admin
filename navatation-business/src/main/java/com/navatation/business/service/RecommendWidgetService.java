@@ -7,7 +7,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.navatation.business.dto.RecommendWidgetRequest;
-import com.navatation.business.dto.RecommendWidgetVO;
+import com.navatation.business.dto.resp.RecommendWidgetRespDTO;
 import com.navatation.business.entity.recommend.RecommendWidget;
 import com.navatation.business.mapper.RecommendWidgetMapper;
 import com.navatation.common.IdUtils;
@@ -39,7 +39,7 @@ public class RecommendWidgetService {
     /**
      * 获取所有推荐的小组件
      */
-    public List<RecommendWidgetVO> getRecommendWidgets() {
+    public List<RecommendWidgetRespDTO> getRecommendWidgets() {
         List<RecommendWidget> list = recommendWidgetMapper.selectList(new LambdaQueryWrapper<>());
         if (CollectionUtils.isEmpty(list)) {
             return Collections.emptyList();
@@ -83,8 +83,8 @@ public class RecommendWidgetService {
         log.info("保存推荐小组件成功，数量: {}", requests.size());
     }
 
-    private RecommendWidgetVO toVO(RecommendWidget entity) {
-        RecommendWidgetVO vo = new RecommendWidgetVO();
+    private RecommendWidgetRespDTO toVO(RecommendWidget entity) {
+        RecommendWidgetRespDTO vo = new RecommendWidgetRespDTO();
         vo.setWidgetId(entity.getWidgetId());
         vo.setWidgetType(entity.getWidgetType());
         vo.setWidgetStyle(entity.getWidgetStyle());

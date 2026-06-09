@@ -1,15 +1,15 @@
 package com.navatation.business.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.navatation.business.dto.CategoryVO;
-import com.navatation.business.dto.GuestConfigVO;
-import com.navatation.business.dto.ShortcutVO;
-import com.navatation.business.dto.WidgetVO;
+import com.navatation.business.dto.resp.CategoryRespDTO;
+import com.navatation.business.dto.resp.GuestConfigRespDTO;
+import com.navatation.business.dto.resp.ShortcutRespDTO;
+import com.navatation.business.dto.resp.WidgetRespDTO;
 import com.navatation.business.entity.recommend.RecommendConfig;
 import com.navatation.business.mapper.RecommendConfigMapper;
 import com.navatation.business.entity.user.User;
 import com.navatation.business.mapper.UserMapper;
-import com.navatation.business.dto.SettingsVO;
+import com.navatation.business.dto.resp.SettingsRespDTO;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,22 +31,22 @@ public class PublicService {
     private final RecommendConfigMapper recommendConfigMapper;
     private final RecommendWidgetService recommendWidgetService;
 
-    public GuestConfigVO getGuestConfig() {
+    public GuestConfigRespDTO getGuestConfig() {
         // Find ADMIN user
         com.navatation.business.entity.root.RootUser admin = rootUserMapper.selectOne(new LambdaQueryWrapper<com.navatation.business.entity.root.RootUser>().last("LIMIT 1"));
         if (admin == null) {
             log.warn("超级管理员账户不存在，返回空游客配置");
-            return new GuestConfigVO();
+            return new GuestConfigRespDTO();
         }
 
         String adminId = admin.getUserId();
-        GuestConfigVO vo = new GuestConfigVO();
+        GuestConfigRespDTO vo = new GuestConfigRespDTO();
         
-        SettingsVO settingsVO = settingsService.getSettings(adminId);
+        SettingsRespDTO settingsVO = settingsService.getSettings(adminId);
         vo.setSettings(settingsVO);
         
         // 游客所有配置都与管理员首页样式同步，因此小组件直接使用管理员的组件配置
-        List<WidgetVO> widgetVOs = widgetService.getWidgets(adminId);
+        List<WidgetRespDTO> widgetVOs = widgetService.getWidgets(adminId);
         vo.setWidgets(widgetVOs);
         
         vo.setCategories(navService.getCategories(adminId));

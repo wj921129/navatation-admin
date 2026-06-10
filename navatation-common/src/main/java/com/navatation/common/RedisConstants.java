@@ -34,4 +34,13 @@ public class RedisConstants {
     /** 自定义图标文件上传速率限制前缀 (关联 userId) */
     public static final String KEY_NAV_RATE_UPLOAD = "nav:rate:icon_upload:";
 
+    /**
+     * ==========================================
+     * 3. 系统控制模块 (System & Control)
+     * ==========================================
+     */
+
+    /** 接口防抖与幂等性控制前缀 */
+    public static final String KEY_SYS_IDEMPOTENT = "sys:idempotent:";
+
 }

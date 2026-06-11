@@ -1,9 +1,0 @@
-
-The following files have been resolved:
-   com.navatation:navatation-framework:jar:1.0.0-SNAPSHOT:compile[36m -- module navatation.framework[0;1;33m (auto)[m
-   com.baomidou:mybatis-plus-spring-boot3-starter:jar:3.5.7:compile[36m -- module com.baomidou.mybatis.plus.spring.boot3.starter[0;1m [auto][m
-   com.mysql:mysql-connector-j:jar:8.0.33:runtime[36m -- module mysql.connector.j[0;1;33m (auto)[m
-   org.projectlombok:lombok:jar:1.18.34:compile (optional)[36m -- module lombok[m
-   org.springframework.boot:spring-boot-starter-validation:jar:3.3.5:compile[36m -- module spring.boot.starter.validation[0;1m [auto][m
-   org.springframework.boot:spring-boot-starter-test:jar:3.3.5:test[36m -- module spring.boot.starter.test[0;1m [auto][m
-

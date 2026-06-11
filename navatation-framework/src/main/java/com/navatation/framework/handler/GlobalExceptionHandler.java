@@ -9,6 +9,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+
 /** @Author admin
  * @CreateTime 2026-05-15
  * @Description 全局异常处理器，统一处理业务异常、参数校验异常及未知异常 */
@@ -33,6 +36,25 @@ public class GlobalExceptionHandler {
                 .reduce((a, b) -> a + "; " + b)
                 .orElse("参数校验失败");
         return Result.fail(400, msg);
+    }
+
+    /**
+     * 处理 HTTP 方法不支持异常
+     */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
+    public Result<?> handleMethodNotSupported(HttpRequestMethodNotSupportedException e) {
+        return Result.fail(HttpStatus.METHOD_NOT_ALLOWED.value(), "不支持的请求方法");
+    }
+
+    /**
+     * 处理 404 找不到路由异常
+     * （注意：需要配置 spring.mvc.throw-exception-if-no-handler-found=true 才会进入这里）
+     */
+    @ExceptionHandler(NoHandlerFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public Result<?> handleNoHandlerFound(NoHandlerFoundException e) {
+        return Result.fail(HttpStatus.NOT_FOUND.value(), "请求接口不存在");
     }
 
     /**

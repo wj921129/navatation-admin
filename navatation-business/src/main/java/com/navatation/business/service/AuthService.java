@@ -27,6 +27,14 @@ import com.navatation.business.mapper.RootCategoryMapper;
 import com.navatation.business.mapper.RootShortcutMapper;
 import com.navatation.business.mapper.RootWidgetMapper;
 import com.navatation.business.mapper.UserWidgetMapper;
+import com.navatation.business.entity.recommend.RecommendConfig;
+import com.navatation.business.entity.recommend.RecommendCategory;
+import com.navatation.business.entity.recommend.RecommendSite;
+import com.navatation.business.entity.recommend.RecommendWidget;
+import com.navatation.business.mapper.RecommendConfigMapper;
+import com.navatation.business.mapper.RecommendCategoryMapper;
+import com.navatation.business.mapper.RecommendSiteMapper;
+import com.navatation.business.mapper.RecommendWidgetMapper;
 import com.navatation.common.BizException;
 import com.navatation.common.RedisConstants;
 import com.navatation.common.ResultCode;
@@ -41,6 +49,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import com.navatation.business.constant.SettingsConstants;
@@ -71,6 +80,10 @@ public class AuthService {
     private final RootShortcutMapper rootShortcutMapper;
     private final RootWidgetMapper rootWidgetMapper;
     private final UserWidgetMapper userWidgetMapper;
+    private final RecommendConfigMapper recommendConfigMapper;
+    private final RecommendCategoryMapper recommendCategoryMapper;
+    private final RecommendSiteMapper recommendSiteMapper;
+    private final RecommendWidgetMapper recommendWidgetMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final RedisTemplate<String, Object> redisTemplate;
@@ -92,7 +105,7 @@ public class AuthService {
                 throw new BizException(ResultCode.PASSWORD_ERROR);
             }
 
-            String accessToken = jwtTokenProvider.generateAccessToken(rootUser.getUserId(), rootUser.getUsername());
+            String accessToken = jwtTokenProvider.generateAccessToken(rootUser.getUserId(), rootUser.getUsername(), "ROLE_ADMIN");
             String refreshToken = jwtTokenProvider.generateRefreshToken(rootUser.getUserId());
 
             redisTemplate.opsForValue().set(
@@ -129,7 +142,7 @@ public class AuthService {
             throw new BizException(ResultCode.PASSWORD_ERROR);
         }
 
-        String accessToken = jwtTokenProvider.generateAccessToken(user.getUserId(), user.getUsername());
+        String accessToken = jwtTokenProvider.generateAccessToken(user.getUserId(), user.getUsername(), "ROLE_USER");
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUserId());
 
         redisTemplate.opsForValue().set(
@@ -178,20 +191,12 @@ public class AuthService {
         user.setStatus(USER_STATUS_ENABLED);
         userMapper.insert(user);
 
-        // 2. 查找超级管理员 (ADMIN) 的 userId，以作为拷贝的数据源
-        RootUser admin = rootUserMapper.selectOne(new LambdaQueryWrapper<RootUser>().last("LIMIT 1"));
-        String adminId = admin != null ? admin.getUserId() : null;
-
-        // 3. 同步超级管理员的视觉设置配置，若无则使用系统默认兜底配置
+        // 2. 同步推荐视觉设置配置，若无则使用系统默认兜底配置
         UserConfig config = new UserConfig();
         config.setConfigId(IdUtils.genConfigId());
         config.setUserId(user.getUserId());
         
-        RootConfig adminConfig = null;
-        if (adminId != null) {
-            adminConfig = rootConfigMapper.selectOne(
-                    new LambdaQueryWrapper<RootConfig>().eq(RootConfig::getUserId, adminId));
-        }
+        RecommendConfig adminConfig = recommendConfigMapper.selectOne(new LambdaQueryWrapper<RecommendConfig>().last("LIMIT 1"));
 
         if (adminConfig != null) {
             config.setSearchEngine(adminConfig.getSearchEngine());
@@ -227,30 +232,29 @@ public class AuthService {
         }
         userConfigMapper.insert(config);
 
-        // 4. 同步首页导航网址与分类，若无管理员数据则降级创建默认常用分类
-        List<RootCategory> adminCategories = null;
-        if (adminId != null) {
-            adminCategories = rootCategoryMapper.selectList(
-                    new LambdaQueryWrapper<RootCategory>()
-                            .eq(RootCategory::getUserId, adminId)
-                            .orderByAsc(RootCategory::getSortOrder));
-        }
+        // 3. 同步首页导航网址与分类，若无管理员数据则降级创建默认常用分类
+        List<RecommendCategory> adminCategories = recommendCategoryMapper.selectList(
+                new LambdaQueryWrapper<RecommendCategory>()
+                        .orderByAsc(RecommendCategory::getSortOrder));
+
+        List<NavCategory> saveCategories = new ArrayList<>();
+        List<NavShortcut> saveShortcuts = new ArrayList<>();
 
         if (adminCategories != null && !adminCategories.isEmpty()) {
-            for (RootCategory adminCat : adminCategories) {
+            for (RecommendCategory adminCat : adminCategories) {
                 NavCategory userCat = new NavCategory();
                 userCat.setCategoryId(IdUtils.genCategoryId());
                 userCat.setUserId(user.getUserId());
                 userCat.setName(adminCat.getName());
                 userCat.setSortOrder(adminCat.getSortOrder());
-                navCategoryMapper.insert(userCat);
+                saveCategories.add(userCat);
 
-                List<RootShortcut> adminShortcuts = rootShortcutMapper.selectList(
-                        new LambdaQueryWrapper<RootShortcut>()
-                                .eq(RootShortcut::getCategoryId, adminCat.getCategoryId())
-                                .orderByAsc(RootShortcut::getSortOrder));
+                List<RecommendSite> adminShortcuts = recommendSiteMapper.selectList(
+                        new LambdaQueryWrapper<RecommendSite>()
+                                .eq(RecommendSite::getCategoryId, adminCat.getCategoryId())
+                                .orderByAsc(RecommendSite::getSortOrder));
                 if (adminShortcuts != null && !adminShortcuts.isEmpty()) {
-                    for (RootShortcut adminShortcut : adminShortcuts) {
+                    for (RecommendSite adminShortcut : adminShortcuts) {
                         NavShortcut userShortcut = new NavShortcut();
                         userShortcut.setShortcutId(IdUtils.genShortcutId());
                         userShortcut.setCategoryId(userCat.getCategoryId());
@@ -262,7 +266,7 @@ public class AuthService {
                         userShortcut.setIconColor(adminShortcut.getIconColor());
                         userShortcut.setSortOrder(adminShortcut.getSortOrder());
                         userShortcut.setClickCount(0L);
-                        navShortcutMapper.insert(userShortcut);
+                        saveShortcuts.add(userShortcut);
                     }
                 }
             }
@@ -272,28 +276,36 @@ public class AuthService {
             defaultCategory.setUserId(user.getUserId());
             defaultCategory.setName("常用");
             defaultCategory.setSortOrder(0.0);
-            navCategoryMapper.insert(defaultCategory);
+            saveCategories.add(defaultCategory);
         }
 
-        // 5. 同步小组件表，拷贝所有时钟、专注等小组件卡片
-        List<RootWidget> adminWidgets = null;
-        if (adminId != null) {
-            adminWidgets = rootWidgetMapper.selectList(
-                    new LambdaQueryWrapper<RootWidget>().eq(RootWidget::getUserId, adminId));
+        if (!CollectionUtils.isEmpty(saveCategories)) {
+            Db.saveBatch(saveCategories);
         }
+        if (!CollectionUtils.isEmpty(saveShortcuts)) {
+            Db.saveBatch(saveShortcuts);
+        }
+
+        // 4. 同步小组件表，拷贝所有时钟、专注等小组件卡片
+        List<RecommendWidget> adminWidgets = recommendWidgetMapper.selectList(new LambdaQueryWrapper<>());
+        List<UserWidget> saveWidgets = new ArrayList<>();
 
         if (adminWidgets != null && !adminWidgets.isEmpty()) {
-            for (RootWidget adminWidget : adminWidgets) {
+            for (RecommendWidget adminWidget : adminWidgets) {
                 UserWidget userWidget = new UserWidget();
                 userWidget.setWidgetId(IdUtils.genWidgetId());
                 userWidget.setUserId(user.getUserId());
-                userWidget.setType(adminWidget.getType());
-                userWidget.setStyle(adminWidget.getStyle());
-                userWidget.setX(adminWidget.getX());
-                userWidget.setY(adminWidget.getY());
-                userWidget.setMeta(adminWidget.getMeta());
-                userWidgetMapper.insert(userWidget);
+                userWidget.setType(adminWidget.getWidgetType());
+                userWidget.setStyle(adminWidget.getWidgetStyle());
+                userWidget.setX(adminWidget.getLayoutX());
+                userWidget.setY(adminWidget.getLayoutY());
+                userWidget.setMeta(adminWidget.getWidgetData());
+                saveWidgets.add(userWidget);
             }
+        }
+
+        if (!CollectionUtils.isEmpty(saveWidgets)) {
+            Db.saveBatch(saveWidgets);
         }
 
         log.info("用户注册成功 userId={} username={}", user.getUserId(), user.getUsername());
@@ -347,7 +359,7 @@ public class AuthService {
 
         RootUser rootUser = rootUserMapper.selectById(userId);
         if (rootUser != null) {
-            String newAccessToken = jwtTokenProvider.generateAccessToken(userId, rootUser.getUsername());
+            String newAccessToken = jwtTokenProvider.generateAccessToken(userId, rootUser.getUsername(), "ROLE_ADMIN");
             String newRefreshToken = jwtTokenProvider.generateRefreshToken(userId);
             redisTemplate.opsForValue().set(RedisConstants.KEY_AUTH_REFRESH_TOKEN + userId, newRefreshToken, 7, TimeUnit.DAYS);
             
@@ -371,7 +383,7 @@ public class AuthService {
             throw new BizException(ResultCode.USER_NOT_FOUND);
         }
 
-        String newAccessToken = jwtTokenProvider.generateAccessToken(userId, user.getUsername());
+        String newAccessToken = jwtTokenProvider.generateAccessToken(userId, user.getUsername(), "ROLE_USER");
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(userId);
         redisTemplate.opsForValue().set(RedisConstants.KEY_AUTH_REFRESH_TOKEN + userId, newRefreshToken, 7, TimeUnit.DAYS);
 

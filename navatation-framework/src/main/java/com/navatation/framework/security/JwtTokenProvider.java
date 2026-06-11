@@ -43,12 +43,13 @@ public class JwtTokenProvider {
      * @param username 用户名
      * @return JWT AccessToken
      */
-    public String generateAccessToken(String userId, String username) {
+    public String generateAccessToken(String userId, String username, String role) {
         Date now = new Date();
         return Jwts.builder()
                 .id(UUID.randomUUID().toString())
                 .subject(username)
                 .claim("userId", userId)
+                .claim("role", role)
                 .issuedAt(now)
                 .expiration(new Date(now.getTime() + accessTokenExpire * 1000))
                 .signWith(secretKey)
@@ -107,6 +108,16 @@ public class JwtTokenProvider {
     public String getUserIdFromToken(String token) {
         Object userIdObj = parseToken(token).get("userId");
         return userIdObj != null ? userIdObj.toString() : null;
+    }
+
+    /**
+     * 从Token中提取角色
+     * @param token JWT字符串
+     * @return 角色
+     */
+    public String getRoleFromToken(String token) {
+        Object roleObj = parseToken(token).get("role");
+        return roleObj != null ? roleObj.toString() : null;
     }
 
     /**

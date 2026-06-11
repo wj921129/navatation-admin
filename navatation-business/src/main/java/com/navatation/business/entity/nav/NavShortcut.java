@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @TableName("navatation_nav_shortcut")
-public class NavShortcut {
+public class NavShortcut implements com.navatation.business.entity.BaseShortcut {
     private Long rowId;
 
     @TableId(type = IdType.INPUT)

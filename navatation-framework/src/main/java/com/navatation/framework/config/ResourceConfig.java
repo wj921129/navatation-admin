@@ -27,10 +27,10 @@ public class ResourceConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/uploads/icon/custom/**")
                 .addResourceLocations("file:" + iconPath + "/");
 
-        registry.addResourceHandler("/uploads/back_ground/custom/**")
+        registry.addResourceHandler("/uploads/bg_custom/**")
                 .addResourceLocations("file:" + wallpaperPath + "/");
 
-        registry.addResourceHandler("/uploads/back_ground/local/**")
+        registry.addResourceHandler("/uploads/sys_data/bg_img/**")
                 .addResourceLocations("file:" + localWallpaperPath + "/");
     }
 }

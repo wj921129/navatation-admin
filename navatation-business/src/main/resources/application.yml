@@ -35,9 +35,9 @@ app:
   rsa:
     key-path: ./rsa
   upload:
-    icon-path: ${APP_UPLOAD_ICON_PATH:E:/workspace/navatation/user_data/icon/custom}
-    wallpaper-path: ${APP_UPLOAD_WALLPAPER_PATH:E:/workspace/navatation/user_data/back_ground/custom}
-    local-wallpaper-path: ${APP_UPLOAD_LOCAL_WALLPAPER_PATH:E:/workspace/navatation/user_data/back_ground/local}
+    icon-path: ${APP_UPLOAD_ICON_PATH:../data/user_data/icon}
+    wallpaper-path: ${APP_UPLOAD_WALLPAPER_PATH:../data/user_data/bg_custom}
+    local-wallpaper-path: ${APP_UPLOAD_LOCAL_WALLPAPER_PATH:../data/sys_data/bg_img}
   jwt:
     secret: navatation-jwt-secret-key-2026-must-be-at-least-256-bits-long
     access-token-expire: 7200

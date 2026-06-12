@@ -145,7 +145,7 @@ public class SettingsService {
             String uniqueFileName = FileUploadUtil.saveFile(file, targetDir);
             
             WallpaperRespDTO vo = new WallpaperRespDTO();
-            vo.setWallpaperUrl("/uploads/back_ground/custom/" + userId + "/" + uniqueFileName);
+            vo.setWallpaperUrl("/uploads/bg_custom/" + userId + "/" + uniqueFileName);
             log.info("壁纸上传成功 userId={}, filename={}", userId, uniqueFileName);
             return vo;
         } catch (Exception e) {
@@ -186,7 +186,7 @@ public class SettingsService {
             File chosenFile = files[idx];
 
             WallpaperRespDTO vo = new WallpaperRespDTO();
-            vo.setWallpaperUrl("/uploads/back_ground/local/" + chosenFile.getName());
+            vo.setWallpaperUrl("/uploads/sys_data/bg_img/" + chosenFile.getName());
             log.info("随机壁纸获取成功 filename={}", chosenFile.getName());
             return vo;
         } catch (Exception e) {

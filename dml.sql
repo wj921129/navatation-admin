@@ -102,3 +102,27 @@ INSERT INTO `navatation_recommend_site` (`site_id`, `category_id`, `name`, `url`
 ('RS62', 'RC8', 'Notion',   'https://notion.so',  'BUILTIN', 'Briefcase', '#000000', 6),
 ('RS63', 'RC8', 'Figma',    'https://figma.com',  'BUILTIN', 'Briefcase', '#F24E1E', 7),
 ('RS64', 'RC8', 'Slack',    'https://slack.com',  'BUILTIN', 'Briefcase', '#4A154B', 8);
+
+-- ============================================================
+-- 为系统超级管理员(admin)初始化一套默认的游客预设分类和网址
+-- ============================================================
+INSERT IGNORE INTO `navatation_root_nav_category` (`category_id`, `user_id`, `name`, `sort_order`)
+VALUES ('C00000000000000000001', 'U000000000000000000001', '我的导航', 1);
+
+INSERT IGNORE INTO `navatation_root_nav_shortcut` (`shortcut_id`, `category_id`, `user_id`, `name`, `url`, `icon_type`, `icon_value`, `icon_color`, `sort_order`) VALUES
+('S00000000000000000001', 'C00000000000000000001', 'U000000000000000000001', 'Google', 'https://google.com', 'BUILTIN', 'Search', '#4285F4', 1),
+('S00000000000000000002', 'C00000000000000000001', 'U000000000000000000001', 'YouTube', 'https://youtube.com', 'BUILTIN', 'Youtube', '#FF0000', 2),
+('S00000000000000000003', 'C00000000000000000001', 'U000000000000000000001', 'Facebook', 'https://facebook.com', 'BUILTIN', 'Facebook', '#1877F2', 3),
+('S00000000000000000004', 'C00000000000000000001', 'U000000000000000000001', 'Twitter', 'https://twitter.com', 'BUILTIN', 'Twitter', '#1DA1F2', 4),
+('S00000000000000000005', 'C00000000000000000001', 'U000000000000000000001', 'Instagram', 'https://instagram.com', 'BUILTIN', 'Instagram', '#E4405F', 5),
+('S00000000000000000006', 'C00000000000000000001', 'U000000000000000000001', 'LinkedIn', 'https://linkedin.com', 'BUILTIN', 'Linkedin', '#0A66C2', 6),
+('S00000000000000000007', 'C00000000000000000001', 'U000000000000000000001', 'GitHub', 'https://github.com', 'BUILTIN', 'Github', '#181717', 7),
+('S00000000000000000008', 'C00000000000000000001', 'U000000000000000000001', 'Amazon', 'https://amazon.com', 'BUILTIN', 'ShoppingCart', '#FF9900', 8),
+('S00000000000000000009', 'C00000000000000000001', 'U000000000000000000001', 'Netflix', 'https://netflix.com', 'BUILTIN', 'Film', '#E50914', 9),
+('S00000000000000000010', 'C00000000000000000001', 'U000000000000000000001', 'Spotify', 'https://spotify.com', 'BUILTIN', 'Music', '#1DB954', 10),
+('S00000000000000000011', 'C00000000000000000001', 'U000000000000000000001', 'Reddit', 'https://reddit.com', 'BUILTIN', 'MessageCircle', '#FF4500', 11),
+('S00000000000000000012', 'C00000000000000000001', 'U000000000000000000001', 'Gmail', 'https://gmail.com', 'BUILTIN', 'Mail', '#EA4335', 12),
+('S00000000000000000013', 'C00000000000000000001', 'U000000000000000000001', 'Twitch', 'https://twitch.tv', 'BUILTIN', 'Video', '#9146FF', 13),
+('S00000000000000000014', 'C00000000000000000001', 'U000000000000000000001', 'Discord', 'https://discord.com', 'BUILTIN', 'MessageSquare', '#5865F2', 14),
+('S00000000000000000015', 'C00000000000000000001', 'U000000000000000000001', 'Slack', 'https://slack.com', 'BUILTIN', 'Slack', '#4A154B', 15),
+('S00000000000000000016', 'C00000000000000000001', 'U000000000000000000001', 'Dribbble', 'https://dribbble.com', 'BUILTIN', 'Dribbble', '#EA4C89', 16);

@@ -68,10 +68,6 @@ public class NavShortcutService {
     private final RootUserMapper rootUserMapper;
 
     private boolean isAdmin(String userId) {
-        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getAuthorities() != null && !auth.getAuthorities().isEmpty()) {
-            return auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-        }
         return rootUserMapper.selectById(userId) != null;
     }
 

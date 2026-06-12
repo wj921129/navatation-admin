@@ -1,0 +1,1 @@
+import org.springframework.core.io.*; public class TestResource { public static void main(String[] args) throws Exception { Resource r = new FileUrlResource("file:///C:/workspace/my-workspace/navatation/navatation-admin/data/sys_data/bg_img/wallpaper_16.jpg"); System.out.println("exists: " + r.exists()); } }

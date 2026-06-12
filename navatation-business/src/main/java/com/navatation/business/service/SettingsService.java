@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import java.io.File;
 
@@ -43,6 +44,7 @@ public class SettingsService {
     private final UserMapper userMapper;
 
     private final RootUserMapper rootUserMapper;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     private boolean isAdmin(String userId) {
         return rootUserMapper.selectById(userId) != null;
@@ -92,6 +94,7 @@ public class SettingsService {
             applyRequest(rootConfig, req);
             rootConfigMapper.updateById(rootConfig);
             log.info("保存管理员设置成功 userId={}", userId);
+            redisTemplate.opsForHash().delete("navatation:guest_config", "settings");
             return;
         }
 
@@ -120,6 +123,7 @@ public class SettingsService {
             applyRequest(rootConfig, req);
             rootConfigMapper.updateById(rootConfig);
             log.info("局部更新管理员设置成功 userId={}", userId);
+            redisTemplate.opsForHash().delete("navatation:guest_config", "settings");
             return;
         }
 

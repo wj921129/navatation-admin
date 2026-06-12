@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,6 +47,7 @@ public class WidgetService {
     private final RecommendWidgetService recommendWidgetService;
 
     private final RootUserMapper rootUserMapper;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     private boolean isAdmin(String userId) {
         return rootUserMapper.selectById(userId) != null;
@@ -92,6 +94,7 @@ public class WidgetService {
 
             if (CollectionUtils.isEmpty(requests)) {
                 log.info("保存管理员组件 传入列表为空，清除管理员所有组件 userId={}", userId);
+                redisTemplate.opsForHash().delete("navatation:guest_config", "widgets");
                 return;
             }
 
@@ -125,6 +128,7 @@ public class WidgetService {
                 Db.saveBatch(saveList);
             }
             log.info("保存管理员组件成功 userId={}, count={}", userId, requests.size());
+            redisTemplate.opsForHash().delete("navatation:guest_config", "widgets");
             return;
         }
 

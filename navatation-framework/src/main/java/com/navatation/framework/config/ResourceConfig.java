@@ -24,13 +24,17 @@ public class ResourceConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        String iconAbsolutePath = "file:" + new java.io.File(iconPath).getAbsolutePath().replace("\\", "/") + "/";
+        String wallpaperAbsolutePath = "file:" + new java.io.File(wallpaperPath).getAbsolutePath().replace("\\", "/") + "/";
+        String localWallpaperAbsolutePath = "file:" + new java.io.File(localWallpaperPath).getAbsolutePath().replace("\\", "/") + "/";
+
         registry.addResourceHandler("/uploads/icon/custom/**")
-                .addResourceLocations(java.nio.file.Paths.get(iconPath).toAbsolutePath().normalize().toUri().toString() + "/");
+                .addResourceLocations(iconAbsolutePath);
 
         registry.addResourceHandler("/uploads/bg_custom/**")
-                .addResourceLocations(java.nio.file.Paths.get(wallpaperPath).toAbsolutePath().normalize().toUri().toString() + "/");
+                .addResourceLocations(wallpaperAbsolutePath);
 
         registry.addResourceHandler("/uploads/sys_data/bg_img/**")
-                .addResourceLocations(java.nio.file.Paths.get(localWallpaperPath).toAbsolutePath().normalize().toUri().toString() + "/");
+                .addResourceLocations(localWallpaperAbsolutePath);
     }
 }

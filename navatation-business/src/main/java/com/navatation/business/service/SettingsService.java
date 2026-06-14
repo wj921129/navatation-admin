@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.data.redis.core.RedisTemplate;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
 
@@ -45,6 +46,7 @@ public class SettingsService {
 
     private final RootUserMapper rootUserMapper;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final ObjectMapper objectMapper;
 
     private boolean isAdmin(String userId) {
         return rootUserMapper.selectById(userId) != null;
@@ -68,7 +70,19 @@ public class SettingsService {
             if (rootConfig == null) {
                 rootConfig = createDefaultRoot(userId);
             }
-            return toVO(rootConfig);
+            SettingsRespDTO vo = toVO(rootConfig);
+            try {
+                String cacheKey = "navatation:guest_config";
+                String cachedStr = (String) redisTemplate.opsForHash().get(cacheKey, "settings");
+                String currentStr = objectMapper.writeValueAsString(vo);
+                if (cachedStr == null || !cachedStr.equals(currentStr)) {
+                    redisTemplate.opsForHash().put(cacheKey, "settings", currentStr);
+                    log.info("管理员获取设置时发现缓存不一致，已刷新游客设置缓存");
+                }
+            } catch (Exception e) {
+                log.warn("刷新游客设置缓存失败", e);
+            }
+            return vo;
         }
 
         UserConfig config = userConfigMapper.selectOne(

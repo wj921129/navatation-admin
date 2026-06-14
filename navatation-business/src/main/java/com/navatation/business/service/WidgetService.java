@@ -65,10 +65,24 @@ public class WidgetService {
                     new LambdaQueryWrapper<RootWidget>()
                             .eq(RootWidget::getUserId, userId)
             );
+            List<WidgetRespDTO> voList;
             if (CollectionUtils.isEmpty(list)) {
-                return Collections.emptyList();
+                voList = Collections.emptyList();
+            } else {
+                voList = list.stream().map(this::toVO).collect(java.util.stream.Collectors.toList());
             }
-            return list.stream().map(this::toVO).collect(Collectors.toList());
+            try {
+                String cacheKey = "navatation:guest_config";
+                String cachedStr = (String) redisTemplate.opsForHash().get(cacheKey, "widgets");
+                String currentStr = objectMapper.writeValueAsString(voList);
+                if (cachedStr == null || !cachedStr.equals(currentStr)) {
+                    redisTemplate.opsForHash().put(cacheKey, "widgets", currentStr);
+                    org.slf4j.LoggerFactory.getLogger(WidgetService.class).info("管理员获取组件时发现缓存不一致，已刷新游客组件缓存");
+                }
+            } catch (Exception e) {
+                org.slf4j.LoggerFactory.getLogger(WidgetService.class).warn("刷新游客组件缓存失败", e);
+            }
+            return voList;
         }
 
         List<UserWidget> list = widgetMapper.selectList(

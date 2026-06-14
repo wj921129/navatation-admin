@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.data.redis.core.RedisTemplate;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,7 @@ public class NavService {
     private final IconUploadService iconUploadService;
     private final RootUserMapper rootUserMapper;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final ObjectMapper objectMapper;
 
     private boolean isAdmin(String userId) {
         return rootUserMapper.selectById(userId) != null;
@@ -47,7 +49,21 @@ public class NavService {
     // --- Category Management ---
 
     public List<CategoryRespDTO> getCategories(String userId) {
-        return navCategoryService.getCategories(userId);
+        List<CategoryRespDTO> res = navCategoryService.getCategories(userId);
+        if (isAdmin(userId)) {
+            try {
+                String cacheKey = "navatation:guest_config";
+                String cachedStr = (String) redisTemplate.opsForHash().get(cacheKey, "categories");
+                String currentStr = objectMapper.writeValueAsString(res);
+                if (cachedStr == null || !cachedStr.equals(currentStr)) {
+                    redisTemplate.opsForHash().put(cacheKey, "categories", currentStr);
+                    org.slf4j.LoggerFactory.getLogger(NavService.class).info("管理员获取分类时发现缓存不一致，已刷新游客分类缓存");
+                }
+            } catch (Exception e) {
+                org.slf4j.LoggerFactory.getLogger(NavService.class).warn("刷新游客分类缓存失败", e);
+            }
+        }
+        return res;
     }
 
     public CategoryRespDTO createCategory(String userId, CategoryReqDTO req) {
@@ -70,7 +86,21 @@ public class NavService {
     // --- Shortcut Management ---
 
     public List<ShortcutRespDTO> getShortcuts(String userId, String categoryId) {
-        return navShortcutService.getShortcuts(userId, categoryId);
+        List<ShortcutRespDTO> res = navShortcutService.getShortcuts(userId, categoryId);
+        if (isAdmin(userId) && categoryId == null) {
+            try {
+                String cacheKey = "navatation:guest_config";
+                String cachedStr = (String) redisTemplate.opsForHash().get(cacheKey, "shortcuts");
+                String currentStr = objectMapper.writeValueAsString(res);
+                if (cachedStr == null || !cachedStr.equals(currentStr)) {
+                    redisTemplate.opsForHash().put(cacheKey, "shortcuts", currentStr);
+                    org.slf4j.LoggerFactory.getLogger(NavService.class).info("管理员获取快捷方式时发现缓存不一致，已刷新游客快捷方式缓存");
+                }
+            } catch (Exception e) {
+                org.slf4j.LoggerFactory.getLogger(NavService.class).warn("刷新游客快捷方式缓存失败", e);
+            }
+        }
+        return res;
     }
 
     public List<BatchCreateItemRespDTO> batchCreate(String userId, BatchCreateReqDTO req) {

@@ -49,7 +49,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/public/guest-config").permitAll()
                 .requestMatchers("/api/v1/public/**").permitAll()
                 .requestMatchers("/api/v1/nav/recommended").permitAll()
-                .requestMatchers("/api/v1/settings/wallpaper/random").permitAll()
+                .requestMatchers("/api/v1/settings/wallpaper/random", "/api/v1/settings/debug/resource").permitAll()
                 .requestMatchers("/api/v1/**").authenticated()
                 .anyRequest().permitAll()
             )

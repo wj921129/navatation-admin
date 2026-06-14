@@ -84,4 +84,15 @@ public class SettingsController {
         log.info("获取随机壁纸 出参:wallpaperUrl={}", result.getWallpaperUrl());
         return Result.success("获取随机壁纸成功", result);
     }
+
+    @GetMapping("/debug/resource")
+    public Result<String> debugResource(@org.springframework.beans.factory.annotation.Value("${app.upload.local-wallpaper-path}") String path) {
+        try {
+            org.springframework.core.io.ResourceLoader rl = new org.springframework.core.io.DefaultResourceLoader();
+            org.springframework.core.io.Resource r = rl.getResource("file:" + path + "/wallpaper_4.jpg");
+            return Result.success("Debug info", "Path: file:" + path + "/wallpaper_4.jpg, Exists: " + r.exists() + ", URL: " + r.getURL() + ", File: " + r.getFile().getAbsolutePath());
+        } catch(Exception e) {
+            return Result.success("Debug info", "Exception: " + e.getMessage());
+        }
+    }
 }

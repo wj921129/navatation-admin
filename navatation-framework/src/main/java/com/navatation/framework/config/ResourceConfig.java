@@ -24,9 +24,9 @@ public class ResourceConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        String iconAbsolutePath = "file:" + new java.io.File(iconPath).getAbsolutePath().replace("\\", "/") + "/";
-        String wallpaperAbsolutePath = "file:" + new java.io.File(wallpaperPath).getAbsolutePath().replace("\\", "/") + "/";
-        String localWallpaperAbsolutePath = "file:" + new java.io.File(localWallpaperPath).getAbsolutePath().replace("\\", "/") + "/";
+        String iconAbsolutePath = "file:" + new java.io.File(iconPath).getAbsolutePath() + "/";
+        String wallpaperAbsolutePath = "file:" + new java.io.File(wallpaperPath).getAbsolutePath() + "/";
+        String localWallpaperAbsolutePath = "file:" + new java.io.File(localWallpaperPath).getAbsolutePath() + "/";
 
         registry.addResourceHandler("/uploads/icon/custom/**")
                 .addResourceLocations(iconAbsolutePath);

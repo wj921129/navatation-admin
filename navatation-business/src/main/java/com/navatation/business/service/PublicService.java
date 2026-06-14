@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.navatation.business.dto.resp.nav.CategoryRespDTO;
-import com.navatation.business.dto.resp.settings.GuestConfigRespDTO;
 import com.navatation.business.dto.resp.nav.ShortcutRespDTO;
 import com.navatation.business.dto.resp.widget.WidgetRespDTO;
 import com.navatation.business.entity.recommend.RecommendConfig;
@@ -42,70 +41,92 @@ public class PublicService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
 
-    /**
-     * getGuestConfig 方法
-     */
-    public GuestConfigRespDTO getGuestConfig() {
-        // Find ADMIN user
+    private String getAdminId() {
         RootUser admin = rootUserMapper.selectOne(new LambdaQueryWrapper<RootUser>().last("LIMIT 1"));
         if (admin == null) {
-            log.warn("超级管理员账户不存在，返回空游客配置");
-            return new GuestConfigRespDTO();
+            log.warn("超级管理员账户不存在");
+            return null;
         }
+        return admin.getUserId();
+    }
 
-        String adminId = admin.getUserId();
+    public SettingsRespDTO getGuestSettings() {
+        String adminId = getAdminId();
+        if (adminId == null) return null;
+        
         String cacheKey = "navatation:guest_config";
-        GuestConfigRespDTO vo = new GuestConfigRespDTO();
-
         try {
-            // 获取 Hash 中所有的值
-            List<Object> hashValues = redisTemplate.opsForHash().multiGet(cacheKey, List.of("settings", "widgets", "categories", "shortcuts"));
-            
-            // 1. Settings
-            if (hashValues.get(0) != null) {
-                vo.setSettings(objectMapper.readValue((String) hashValues.get(0), SettingsRespDTO.class));
-            } else {
-                SettingsRespDTO settingsVO = settingsService.getSettings(adminId);
-                vo.setSettings(settingsVO);
-                redisTemplate.opsForHash().put(cacheKey, "settings", objectMapper.writeValueAsString(settingsVO));
+            Object cached = redisTemplate.opsForHash().get(cacheKey, "settings");
+            if (cached != null) {
+                return objectMapper.readValue((String) cached, SettingsRespDTO.class);
             }
-
-            // 2. Widgets
-            if (hashValues.get(1) != null) {
-                vo.setWidgets(objectMapper.readValue((String) hashValues.get(1), new TypeReference<List<WidgetRespDTO>>() {}));
-            } else {
-                List<WidgetRespDTO> widgetVOs = widgetService.getWidgets(adminId);
-                vo.setWidgets(widgetVOs);
-                redisTemplate.opsForHash().put(cacheKey, "widgets", objectMapper.writeValueAsString(widgetVOs));
-            }
-
-            // 3. Categories
-            if (hashValues.get(2) != null) {
-                vo.setCategories(objectMapper.readValue((String) hashValues.get(2), new TypeReference<List<CategoryRespDTO>>() {}));
-            } else {
-                List<CategoryRespDTO> categoryVOs = navService.getCategories(adminId);
-                vo.setCategories(categoryVOs);
-                redisTemplate.opsForHash().put(cacheKey, "categories", objectMapper.writeValueAsString(categoryVOs));
-            }
-
-            // 4. Shortcuts
-            if (hashValues.get(3) != null) {
-                vo.setShortcuts(objectMapper.readValue((String) hashValues.get(3), new TypeReference<List<ShortcutRespDTO>>() {}));
-            } else {
-                List<ShortcutRespDTO> shortcutVOs = navService.getShortcuts(adminId, null);
-                vo.setShortcuts(shortcutVOs);
-                redisTemplate.opsForHash().put(cacheKey, "shortcuts", objectMapper.writeValueAsString(shortcutVOs));
-            }
+            SettingsRespDTO settingsVO = settingsService.getSettings(adminId);
+            redisTemplate.opsForHash().put(cacheKey, "settings", objectMapper.writeValueAsString(settingsVO));
+            return settingsVO;
         } catch (Exception e) {
-            log.error("游客配置从 Redis 反序列化失败", e);
-            redisTemplate.delete(cacheKey);
-            // 降级：重新查询但不缓存，避免死循环
-            vo.setSettings(settingsService.getSettings(adminId));
-            vo.setWidgets(widgetService.getWidgets(adminId));
-            vo.setCategories(navService.getCategories(adminId));
-            vo.setShortcuts(navService.getShortcuts(adminId, null));
+            log.error("游客配置Settings从 Redis 反序列化失败", e);
+            redisTemplate.opsForHash().delete(cacheKey, "settings");
+            return settingsService.getSettings(adminId);
         }
+    }
 
-        return vo;
+    public List<WidgetRespDTO> getGuestWidgets() {
+        String adminId = getAdminId();
+        if (adminId == null) return List.of();
+        
+        String cacheKey = "navatation:guest_config";
+        try {
+            Object cached = redisTemplate.opsForHash().get(cacheKey, "widgets");
+            if (cached != null) {
+                return objectMapper.readValue((String) cached, new TypeReference<List<WidgetRespDTO>>() {});
+            }
+            List<WidgetRespDTO> widgetVOs = widgetService.getWidgets(adminId);
+            redisTemplate.opsForHash().put(cacheKey, "widgets", objectMapper.writeValueAsString(widgetVOs));
+            return widgetVOs;
+        } catch (Exception e) {
+            log.error("游客配置Widgets从 Redis 反序列化失败", e);
+            redisTemplate.opsForHash().delete(cacheKey, "widgets");
+            return widgetService.getWidgets(adminId);
+        }
+    }
+
+    public List<CategoryRespDTO> getGuestCategories() {
+        String adminId = getAdminId();
+        if (adminId == null) return List.of();
+        
+        String cacheKey = "navatation:guest_config";
+        try {
+            Object cached = redisTemplate.opsForHash().get(cacheKey, "categories");
+            if (cached != null) {
+                return objectMapper.readValue((String) cached, new TypeReference<List<CategoryRespDTO>>() {});
+            }
+            List<CategoryRespDTO> categoryVOs = navService.getCategories(adminId);
+            redisTemplate.opsForHash().put(cacheKey, "categories", objectMapper.writeValueAsString(categoryVOs));
+            return categoryVOs;
+        } catch (Exception e) {
+            log.error("游客配置Categories从 Redis 反序列化失败", e);
+            redisTemplate.opsForHash().delete(cacheKey, "categories");
+            return navService.getCategories(adminId);
+        }
+    }
+
+    public List<ShortcutRespDTO> getGuestShortcuts() {
+        String adminId = getAdminId();
+        if (adminId == null) return List.of();
+        
+        String cacheKey = "navatation:guest_config";
+        try {
+            Object cached = redisTemplate.opsForHash().get(cacheKey, "shortcuts");
+            if (cached != null) {
+                return objectMapper.readValue((String) cached, new TypeReference<List<ShortcutRespDTO>>() {});
+            }
+            List<ShortcutRespDTO> shortcutVOs = navService.getShortcuts(adminId, null);
+            redisTemplate.opsForHash().put(cacheKey, "shortcuts", objectMapper.writeValueAsString(shortcutVOs));
+            return shortcutVOs;
+        } catch (Exception e) {
+            log.error("游客配置Shortcuts从 Redis 反序列化失败", e);
+            redisTemplate.opsForHash().delete(cacheKey, "shortcuts");
+            return navService.getShortcuts(adminId, null);
+        }
     }
 }

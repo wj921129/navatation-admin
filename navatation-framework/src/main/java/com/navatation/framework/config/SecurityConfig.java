@@ -46,7 +46,6 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/nonce").permitAll()
-                .requestMatchers("/api/v1/public/guest-config").permitAll()
                 .requestMatchers("/api/v1/public/**").permitAll()
                 .requestMatchers("/api/v1/nav/recommended").permitAll()
                 .requestMatchers("/api/v1/settings/wallpaper/random", "/api/v1/settings/debug/resource").permitAll()

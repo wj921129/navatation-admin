@@ -1,6 +1,9 @@
 package com.navatation.business.controller;
 
-import com.navatation.business.dto.resp.settings.GuestConfigRespDTO;
+import com.navatation.business.dto.resp.nav.CategoryRespDTO;
+import com.navatation.business.dto.resp.nav.ShortcutRespDTO;
+import com.navatation.business.dto.resp.settings.SettingsRespDTO;
+import com.navatation.business.dto.resp.widget.WidgetRespDTO;
 import com.navatation.business.service.PublicService;
 import com.navatation.common.Result;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import lombok.extern.slf4j.Slf4j;
+import java.util.List;
 
 /**
  * 公共接口控制器，处理不需要鉴权的请求
@@ -24,11 +28,34 @@ public class PublicController {
     private final PublicService publicService;
 
     /**
-     * 获取访客模式下的默认配置
+     * 获取访客模式下的默认设置
      */
-    @GetMapping("/guest-config")
-    public Result<GuestConfigRespDTO> getGuestConfig() {
-        log.info("HIT PUBLIC CONTROLLER GUEST CONFIG!");
-        return Result.success(publicService.getGuestConfig());
+    @GetMapping("/guest-settings")
+    public Result<SettingsRespDTO> getGuestSettings() {
+        return Result.success(publicService.getGuestSettings());
+    }
+
+    /**
+     * 获取访客模式下的默认小组件
+     */
+    @GetMapping("/guest-widgets")
+    public Result<List<WidgetRespDTO>> getGuestWidgets() {
+        return Result.success(publicService.getGuestWidgets());
+    }
+
+    /**
+     * 获取访客模式下的默认分类
+     */
+    @GetMapping("/guest-categories")
+    public Result<List<CategoryRespDTO>> getGuestCategories() {
+        return Result.success(publicService.getGuestCategories());
+    }
+
+    /**
+     * 获取访客模式下的默认快捷方式
+     */
+    @GetMapping("/guest-shortcuts")
+    public Result<List<ShortcutRespDTO>> getGuestShortcuts() {
+        return Result.success(publicService.getGuestShortcuts());
     }
 }

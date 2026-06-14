@@ -11,6 +11,7 @@ import com.navatation.business.mapper.RecommendConfigMapper;
 import com.navatation.business.entity.user.User;
 import com.navatation.business.mapper.UserMapper;
 import com.navatation.business.dto.resp.settings.SettingsRespDTO;
+import com.navatation.business.dto.resp.todo.TodoRespDTO;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +38,7 @@ public class PublicService {
     private final SettingsService settingsService;
     private final WidgetService widgetService;
     private final NavService navService;
+    private final TodoService todoService;
     private final RecommendConfigMapper recommendConfigMapper;
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
@@ -127,6 +129,26 @@ public class PublicService {
             log.error("游客配置Shortcuts从 Redis 反序列化失败", e);
             redisTemplate.opsForHash().delete(cacheKey, "shortcuts");
             return navService.getShortcuts(adminId, null);
+        }
+    }
+
+    public List<TodoRespDTO> getGuestTodos() {
+        String adminId = getAdminId();
+        if (adminId == null) return List.of();
+        
+        String cacheKey = "navatation:guest_config";
+        try {
+            Object cached = redisTemplate.opsForHash().get(cacheKey, "todos");
+            if (cached != null) {
+                return objectMapper.readValue((String) cached, new TypeReference<List<TodoRespDTO>>() {});
+            }
+            List<TodoRespDTO> todoVOs = todoService.getList(adminId, null);
+            redisTemplate.opsForHash().put(cacheKey, "todos", objectMapper.writeValueAsString(todoVOs));
+            return todoVOs;
+        } catch (Exception e) {
+            log.error("游客配置Todos从 Redis 反序列化失败", e);
+            redisTemplate.opsForHash().delete(cacheKey, "todos");
+            return todoService.getList(adminId, null);
         }
     }
 }

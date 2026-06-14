@@ -58,4 +58,12 @@ public class PublicController {
     public Result<List<ShortcutRespDTO>> getGuestShortcuts() {
         return Result.success(publicService.getGuestShortcuts());
     }
+
+    /**
+     * 获取访客模式下的默认待办事项
+     */
+    @GetMapping("/guest-todos")
+    public Result<List<com.navatation.business.dto.resp.todo.TodoRespDTO>> getGuestTodos() {
+        return Result.success(publicService.getGuestTodos());
+    }
 }

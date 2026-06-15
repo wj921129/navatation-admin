@@ -191,12 +191,22 @@ public class AuthService {
         user.setStatus(USER_STATUS_ENABLED);
         userMapper.insert(user);
 
-        // 2. 同步推荐视觉设置配置，若无则使用系统默认兜底配置
+        // 获取管理员 ID
+        String adminId = null;
+        RootUser admin = rootUserMapper.selectOne(new LambdaQueryWrapper<RootUser>().last("LIMIT 1"));
+        if (admin != null) {
+            adminId = admin.getUserId();
+        }
+
+        // 2. 同步管理员视觉设置配置，若无则使用系统默认兜底配置
         UserConfig config = new UserConfig();
         config.setConfigId(IdUtils.genConfigId());
         config.setUserId(user.getUserId());
         
-        RecommendConfig adminConfig = recommendConfigMapper.selectOne(new LambdaQueryWrapper<RecommendConfig>().last("LIMIT 1"));
+        RootConfig adminConfig = null;
+        if (adminId != null) {
+            adminConfig = rootConfigMapper.selectOne(new LambdaQueryWrapper<RootConfig>().eq(RootConfig::getUserId, adminId).last("LIMIT 1"));
+        }
 
         if (adminConfig != null) {
             config.setSearchEngine(adminConfig.getSearchEngine());
@@ -233,15 +243,19 @@ public class AuthService {
         userConfigMapper.insert(config);
 
         // 3. 同步首页导航网址与分类，若无管理员数据则降级创建默认常用分类
-        List<RecommendCategory> adminCategories = recommendCategoryMapper.selectList(
-                new LambdaQueryWrapper<RecommendCategory>()
-                        .orderByAsc(RecommendCategory::getSortOrder));
+        List<NavCategory> adminCategories = null;
+        if (adminId != null) {
+            adminCategories = navCategoryMapper.selectList(
+                    new LambdaQueryWrapper<NavCategory>()
+                            .eq(NavCategory::getUserId, adminId)
+                            .orderByAsc(NavCategory::getSortOrder));
+        }
 
         List<NavCategory> saveCategories = new ArrayList<>();
         List<NavShortcut> saveShortcuts = new ArrayList<>();
 
         if (adminCategories != null && !adminCategories.isEmpty()) {
-            for (RecommendCategory adminCat : adminCategories) {
+            for (NavCategory adminCat : adminCategories) {
                 NavCategory userCat = new NavCategory();
                 userCat.setCategoryId(IdUtils.genCategoryId());
                 userCat.setUserId(user.getUserId());
@@ -249,12 +263,12 @@ public class AuthService {
                 userCat.setSortOrder(adminCat.getSortOrder());
                 saveCategories.add(userCat);
 
-                List<RecommendSite> adminShortcuts = recommendSiteMapper.selectList(
-                        new LambdaQueryWrapper<RecommendSite>()
-                                .eq(RecommendSite::getCategoryId, adminCat.getCategoryId())
-                                .orderByAsc(RecommendSite::getSortOrder));
+                List<NavShortcut> adminShortcuts = navShortcutMapper.selectList(
+                        new LambdaQueryWrapper<NavShortcut>()
+                                .eq(NavShortcut::getCategoryId, adminCat.getCategoryId())
+                                .orderByAsc(NavShortcut::getSortOrder));
                 if (adminShortcuts != null && !adminShortcuts.isEmpty()) {
-                    for (RecommendSite adminShortcut : adminShortcuts) {
+                    for (NavShortcut adminShortcut : adminShortcuts) {
                         NavShortcut userShortcut = new NavShortcut();
                         userShortcut.setShortcutId(IdUtils.genShortcutId());
                         userShortcut.setCategoryId(userCat.getCategoryId());
@@ -287,19 +301,25 @@ public class AuthService {
         }
 
         // 4. 同步小组件表，拷贝所有时钟、专注等小组件卡片
-        List<RecommendWidget> adminWidgets = recommendWidgetMapper.selectList(new LambdaQueryWrapper<>());
+        List<UserWidget> adminWidgets = null;
+        if (adminId != null) {
+            adminWidgets = userWidgetMapper.selectList(
+                    new LambdaQueryWrapper<UserWidget>()
+                            .eq(UserWidget::getUserId, adminId));
+        }
+        
         List<UserWidget> saveWidgets = new ArrayList<>();
 
         if (adminWidgets != null && !adminWidgets.isEmpty()) {
-            for (RecommendWidget adminWidget : adminWidgets) {
+            for (UserWidget adminWidget : adminWidgets) {
                 UserWidget userWidget = new UserWidget();
                 userWidget.setWidgetId(IdUtils.genWidgetId());
                 userWidget.setUserId(user.getUserId());
-                userWidget.setType(adminWidget.getWidgetType());
-                userWidget.setStyle(adminWidget.getWidgetStyle());
-                userWidget.setX(adminWidget.getLayoutX());
-                userWidget.setY(adminWidget.getLayoutY());
-                userWidget.setMeta(adminWidget.getWidgetData());
+                userWidget.setType(adminWidget.getType());
+                userWidget.setStyle(adminWidget.getStyle());
+                userWidget.setX(adminWidget.getX());
+                userWidget.setY(adminWidget.getY());
+                userWidget.setMeta(adminWidget.getMeta());
                 saveWidgets.add(userWidget);
             }
         }

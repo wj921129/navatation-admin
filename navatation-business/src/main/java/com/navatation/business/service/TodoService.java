@@ -16,6 +16,7 @@ import com.navatation.business.mapper.RecommendTodoItemMapper;
 import com.navatation.business.mapper.TodoItemMapper;
 import com.navatation.business.mapper.UserMapper;
 import com.navatation.common.BizException;
+import org.springframework.data.redis.core.RedisTemplate;
 import com.navatation.common.IdUtils;
 import com.navatation.common.ResultCode;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +46,7 @@ public class TodoService {
     private final TodoItemMapper todoItemMapper;
     private final RecommendTodoItemMapper recommendTodoItemMapper;
     private final UserMapper userMapper;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     private boolean isAdmin(String userId) {
         User user = userMapper.selectById(userId);
@@ -99,6 +101,7 @@ public class TodoService {
             item.setCompleted(false);
             item.setSortOrder(maxSort + 1.0);
             recommendTodoItemMapper.insert(item);
+            redisTemplate.opsForHash().delete("navatation:guest_config", "todos");
             log.info("创建管理员推荐待办成功 userId={} todoId={}", userId, item.getTodoId());
             return toVO(item);
         }
@@ -129,6 +132,7 @@ public class TodoService {
             }
             item.setContent(req.getContent());
             recommendTodoItemMapper.updateById(item);
+            redisTemplate.opsForHash().delete("navatation:guest_config", "todos");
             log.info("更新管理员推荐待办成功 userId={} todoId={}", userId, todoId);
             return;
         }
@@ -154,6 +158,7 @@ public class TodoService {
             item.setCompleted(!Boolean.TRUE.equals(item.getCompleted()));
             item.setCompletedAt(item.getCompleted() ? LocalDateTime.now() : null);
             recommendTodoItemMapper.updateById(item);
+            redisTemplate.opsForHash().delete("navatation:guest_config", "todos");
 
             ToggleRespDTO vo = new ToggleRespDTO();
             vo.setTodoId(item.getTodoId());
@@ -187,6 +192,7 @@ public class TodoService {
                 throw new BizException(ResultCode.NOT_FOUND);
             }
             recommendTodoItemMapper.deleteById(todoId);
+            redisTemplate.opsForHash().delete("navatation:guest_config", "todos");
             log.info("删除管理员推荐待办成功 userId={} todoId={}", userId, todoId);
             return;
         }
@@ -220,6 +226,7 @@ public class TodoService {
             }
             if (!CollectionUtils.isEmpty(updates)) {
                 Db.updateBatchById(updates);
+                redisTemplate.opsForHash().delete("navatation:guest_config", "todos");
             }
             return;
         }
@@ -252,6 +259,7 @@ public class TodoService {
             List<String> ids = completed.stream().map(RecommendTodoItem::getTodoId).collect(Collectors.toList());
             if (!CollectionUtils.isEmpty(ids)) {
                 recommendTodoItemMapper.deleteBatchIds(ids);
+                redisTemplate.opsForHash().delete("navatation:guest_config", "todos");
                 log.info("清除管理员推荐已完成待办成功 userId={} count={}", userId, ids.size());
             }
             DeleteCountRespDTO vo = new DeleteCountRespDTO();

@@ -108,6 +108,18 @@ public class SettingsService {
             applyRequest(rootConfig, req);
             rootConfigMapper.updateById(rootConfig);
             log.info("保存管理员设置成功 userId={}", userId);
+
+            RecommendConfig recommendConfig = recommendConfigMapper.selectOne(new LambdaQueryWrapper<RecommendConfig>().last("LIMIT 1"));
+            if (recommendConfig == null) {
+                recommendConfig = new RecommendConfig();
+                recommendConfig.setConfigId(IdUtils.genConfigId());
+                applyRequest(recommendConfig, req);
+                recommendConfigMapper.insert(recommendConfig);
+            } else {
+                applyRequest(recommendConfig, req);
+                recommendConfigMapper.updateById(recommendConfig);
+            }
+
             redisTemplate.opsForHash().delete("navatation:guest_config", "settings");
             return;
         }
@@ -137,6 +149,18 @@ public class SettingsService {
             applyRequest(rootConfig, req);
             rootConfigMapper.updateById(rootConfig);
             log.info("局部更新管理员设置成功 userId={}", userId);
+
+            RecommendConfig recommendConfig = recommendConfigMapper.selectOne(new LambdaQueryWrapper<RecommendConfig>().last("LIMIT 1"));
+            if (recommendConfig == null) {
+                recommendConfig = new RecommendConfig();
+                recommendConfig.setConfigId(IdUtils.genConfigId());
+                applyRequest(recommendConfig, req);
+                recommendConfigMapper.insert(recommendConfig);
+            } else {
+                applyRequest(recommendConfig, req);
+                recommendConfigMapper.updateById(recommendConfig);
+            }
+
             redisTemplate.opsForHash().delete("navatation:guest_config", "settings");
             return;
         }

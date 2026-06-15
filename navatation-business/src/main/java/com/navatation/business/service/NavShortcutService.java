@@ -59,6 +59,7 @@ public class NavShortcutService {
     private final RecommendShortcutMapper recommendShortcutMapper;
     private final UserMapper userMapper;
     private final FaviconFetcherHelper faviconFetcherHelper;
+    private final NavShortcutIconAsyncService navShortcutIconAsyncService;
 
     private boolean isAdmin(String userId) {
         User user = userMapper.selectById(userId);
@@ -407,38 +408,60 @@ public class NavShortcutService {
 
         List<RecommendShortcut> insertList = new ArrayList<>();
         List<RecommendShortcut> updateList = new ArrayList<>();
+        List<RecommendShortcut> pendingDownloadSites = new ArrayList<>();
 
         for (int i = 0; i < incomingSites.size(); i++) {
             RecommendSiteItemDTO item = incomingSites.get(i);
             BigDecimal currentSortOrder = BigDecimal.valueOf(i + 1);
+            
+            String iconType = item.getIconType() != null ? item.getIconType() : NavConstants.ICON_TYPE_FAVICON;
+            String iconValue = item.getIconValue();
 
             if (item.getSiteId() != null && !item.getSiteId().isEmpty() && existingMap.containsKey(item.getSiteId())) {
                 RecommendShortcut dbSite = existingMap.get(item.getSiteId());
                 dbSite.setName(item.getName());
                 dbSite.setUrl(item.getUrl());
-                dbSite.setIconType(item.getIconType());
-                dbSite.setIconValue(localizeIcon(item.getIconType(), item.getIconValue()));
+                dbSite.setIconType(iconType);
+                dbSite.setIconValue(iconValue);
                 dbSite.setIconColor(item.getIconColor());
                 dbSite.setSortOrder(currentSortOrder);
                 updateList.add(dbSite);
+                if (needsDownload(iconType, iconValue)) {
+                    pendingDownloadSites.add(dbSite);
+                }
             } else {
                 RecommendShortcut newSite = new RecommendShortcut();
                 newSite.setShortcutId(IdUtils.genRecommendSiteId());
                 newSite.setCategoryId(categoryId);
                 newSite.setName(item.getName());
                 newSite.setUrl(item.getUrl());
-                newSite.setIconType(item.getIconType() != null ? item.getIconType() : NavConstants.ICON_TYPE_FAVICON);
-                newSite.setIconValue(localizeIcon(
-                        item.getIconType() != null ? item.getIconType() : NavConstants.ICON_TYPE_FAVICON,
-                        item.getIconValue()));
+                newSite.setIconType(iconType);
+                newSite.setIconValue(iconValue);
                 newSite.setIconColor(item.getIconColor());
                 newSite.setSortOrder(currentSortOrder);
                 insertList.add(newSite);
+                if (needsDownload(iconType, iconValue)) {
+                    pendingDownloadSites.add(newSite);
+                }
             }
         }
 
         if (!insertList.isEmpty()) Db.saveBatch(insertList);
         if (!updateList.isEmpty()) Db.updateBatchById(updateList);
+        
+        if (!pendingDownloadSites.isEmpty()) {
+            navShortcutIconAsyncService.asyncBatchDownloadAndSaveIcons(pendingDownloadSites);
+        }
+    }
+
+    private boolean needsDownload(String iconType, String iconValue) {
+        if (!"FAVICON".equals(iconType) || iconValue == null || iconValue.isEmpty()) {
+            return false;
+        }
+        if (iconValue.startsWith("/uploads/")) {
+            return false;
+        }
+        return iconValue.startsWith("http://") || iconValue.startsWith("https://");
     }
 
     /**

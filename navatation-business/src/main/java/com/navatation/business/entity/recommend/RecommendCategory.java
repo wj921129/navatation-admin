@@ -22,8 +22,6 @@ public class RecommendCategory {
     private String categoryId;
     
     private String name;
-    @TableField("icon_name")
-    private String icon;
     private Double sortOrder;
     
     @TableField(fill = FieldFill.INSERT)

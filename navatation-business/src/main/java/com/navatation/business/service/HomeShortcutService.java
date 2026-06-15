@@ -12,6 +12,7 @@ import com.navatation.business.mapper.UserMapper;
 import com.navatation.common.BizException;
 import com.navatation.common.IdUtils;
 import com.navatation.common.ResultCode;
+import java.math.BigDecimal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -57,7 +58,7 @@ public class HomeShortcutService {
             hs.setIconType(req.getIconType() != null ? req.getIconType() : "BUILTIN");
             hs.setIconValue(req.getIconValue());
             hs.setIconColor(req.getIconColor());
-            hs.setSortOrder(req.getSortOrder() != null ? req.getSortOrder() : 0.0);
+            hs.setSortOrder(req.getSortOrder() != null ? req.getSortOrder() : BigDecimal.ZERO);
             recommendHomeShortcutMapper.insert(hs);
             redisTemplate.opsForHash().delete("navatation:guest_config", "home_shortcuts");
             return toVO(hs);
@@ -71,7 +72,7 @@ public class HomeShortcutService {
         hs.setIconType(req.getIconType() != null ? req.getIconType() : "BUILTIN");
         hs.setIconValue(req.getIconValue());
         hs.setIconColor(req.getIconColor());
-        hs.setSortOrder(req.getSortOrder() != null ? req.getSortOrder() : 0.0);
+        hs.setSortOrder(req.getSortOrder() != null ? req.getSortOrder() : BigDecimal.ZERO);
         navHomeShortcutMapper.insert(hs);
         return toVO(hs);
     }

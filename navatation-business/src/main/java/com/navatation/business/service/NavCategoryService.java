@@ -1,18 +1,19 @@
 package com.navatation.business.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import java.math.BigDecimal;
 import com.navatation.business.dto.req.nav.CategoryReqDTO;
 import com.navatation.business.dto.resp.nav.CategoryRespDTO;
 import com.navatation.business.dto.req.recommend.RecommendCategoryReqDTO;
 import com.navatation.business.dto.resp.recommend.RecommendCategoryRespDTO;
 import com.navatation.business.dto.resp.recommend.RecommendSiteRespDTO;
 import com.navatation.business.entity.nav.NavCategory;
-import com.navatation.business.entity.nav.NavShortcut;
+import com.navatation.business.entity.nav.NavHomeShortcut;
 import com.navatation.business.entity.recommend.RecommendCategory;
 import com.navatation.business.entity.recommend.RecommendShortcut;
 import com.navatation.business.entity.user.User;
 import com.navatation.business.mapper.NavCategoryMapper;
-import com.navatation.business.mapper.NavShortcutMapper;
+import com.navatation.business.mapper.NavHomeShortcutMapper;
 import com.navatation.business.mapper.RecommendCategoryMapper;
 import com.navatation.business.mapper.RecommendShortcutMapper;
 import com.navatation.business.mapper.UserMapper;
@@ -40,7 +41,7 @@ public class NavCategoryService {
     private static final Logger log = LoggerFactory.getLogger(NavCategoryService.class);
 
     private final NavCategoryMapper categoryMapper;
-    private final NavShortcutMapper shortcutMapper;
+    private final NavHomeShortcutMapper shortcutMapper;
     private final RecommendCategoryMapper recommendCategoryMapper;
     private final RecommendShortcutMapper recommendShortcutMapper;
     private final UserMapper userMapper;
@@ -78,8 +79,8 @@ public class NavCategoryService {
 
         List<String> categoryIds = categories.stream().map(NavCategory::getCategoryId).collect(Collectors.toList());
         Map<String, Long> countMap = categoryIds.isEmpty() ? Map.of() :
-                shortcutMapper.selectList(new LambdaQueryWrapper<NavShortcut>().in(NavShortcut::getCategoryId, categoryIds))
-                        .stream().collect(Collectors.groupingBy(NavShortcut::getCategoryId, Collectors.counting()));
+                shortcutMapper.selectList(new LambdaQueryWrapper<NavHomeShortcut>().in(NavHomeShortcut::getCategoryId, categoryIds))
+                        .stream().collect(Collectors.groupingBy(NavHomeShortcut::getCategoryId, Collectors.counting()));
 
         return categories.stream().map(c -> {
             CategoryRespDTO vo = new CategoryRespDTO();
@@ -96,7 +97,7 @@ public class NavCategoryService {
             RecommendCategory category = new RecommendCategory();
             category.setCategoryId(IdUtils.genCategoryId());
             category.setName(req.getName());
-            category.setSortOrder(req.getSortOrder() != null ? req.getSortOrder() : 0.0);
+            category.setSortOrder(req.getSortOrder() != null ? req.getSortOrder() : BigDecimal.ZERO);
             recommendCategoryMapper.insert(category);
             log.info("创建管理员推荐分类成功 userId={} categoryId={} name={}", userId, category.getCategoryId(), category.getName());
 
@@ -112,7 +113,7 @@ public class NavCategoryService {
         category.setCategoryId(IdUtils.genCategoryId());
         category.setUserId(userId);
         category.setName(req.getName());
-        category.setSortOrder(req.getSortOrder() != null ? req.getSortOrder() : 0.0);
+        category.setSortOrder(req.getSortOrder() != null ? req.getSortOrder() : BigDecimal.ZERO);
         categoryMapper.insert(category);
         log.info("创建分类成功 userId={} categoryId={} name={}", userId, category.getCategoryId(), category.getName());
 
@@ -173,8 +174,8 @@ public class NavCategoryService {
         if (category == null || !category.getUserId().equals(userId)) {
             throw new BizException(ResultCode.NOT_FOUND);
         }
-        shortcutMapper.delete(new LambdaQueryWrapper<NavShortcut>()
-                .eq(NavShortcut::getCategoryId, categoryId));
+        shortcutMapper.delete(new LambdaQueryWrapper<NavHomeShortcut>()
+                .eq(NavHomeShortcut::getCategoryId, categoryId));
         categoryMapper.deleteById(categoryId);
         log.info("删除分类成功 userId={} categoryId={}", userId, categoryId);
     }
@@ -226,7 +227,7 @@ public class NavCategoryService {
         RecommendCategory cat = new RecommendCategory();
         cat.setCategoryId(IdUtils.genRecommendCategoryId());
         cat.setName(req.getName());
-        cat.setSortOrder(req.getSortOrder() != null ? req.getSortOrder() : 0.0);
+        cat.setSortOrder(req.getSortOrder() != null ? req.getSortOrder() : BigDecimal.ZERO);
         recommendCategoryMapper.insert(cat);
 
         RecommendCategoryRespDTO vo = new RecommendCategoryRespDTO();

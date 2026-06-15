@@ -1,6 +1,7 @@
 package com.navatation.business.dto.resp.nav;
 
 import lombok.Data;
+import java.math.BigDecimal;
 import com.navatation.business.dto.resp.nav.ShortcutRespDTO;
 
 /**
@@ -17,6 +18,6 @@ public class ShortcutRespDTO {
     private String iconType;
     private String iconValue;
     private String iconColor;
-    private Double sortOrder;
+    private BigDecimal sortOrder;
     private String createdAt;
 }

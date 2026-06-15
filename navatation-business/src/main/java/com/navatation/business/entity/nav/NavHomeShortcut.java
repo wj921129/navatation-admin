@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -13,21 +14,25 @@ import java.time.LocalDateTime;
  */
 @Data
 @TableName("navatation_nav_home_shortcut")
-public class NavHomeShortcut {
+public class NavHomeShortcut implements com.navatation.business.entity.BaseShortcut {
     private Long rowId;
 
     @TableId(type = IdType.INPUT)
     private String shortcutId;
-    
+
+    private String categoryId;
     private String userId;
     private String name;
     private String url;
     private String iconType;
     private String iconValue;
     private String iconColor;
-    private Double sortOrder;
+    private BigDecimal sortOrder;
     private Long clickCount;
     private LocalDateTime lastClickAt;
+
+    /** 逻辑删除：0-正常, 1-已删除 */
+    private Integer deleted;
     
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

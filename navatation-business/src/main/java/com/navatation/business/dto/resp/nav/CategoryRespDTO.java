@@ -1,6 +1,7 @@
 package com.navatation.business.dto.resp.nav;
 
 import lombok.Data;
+import java.math.BigDecimal;
 import com.navatation.business.dto.resp.nav.CategoryRespDTO;
 
 /**
@@ -12,6 +13,6 @@ import com.navatation.business.dto.resp.nav.CategoryRespDTO;
 public class CategoryRespDTO {
     private String categoryId;
     private String name;
-    private Double sortOrder;
+    private BigDecimal sortOrder;
     private Integer shortcutCount;
 }

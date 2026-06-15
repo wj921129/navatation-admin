@@ -10,7 +10,6 @@ import com.navatation.business.dto.req.auth.RegisterReqDTO;
 import com.navatation.business.dto.resp.auth.LoginRespDTO;
 import com.navatation.business.dto.resp.user.UserRespDTO;
 import com.navatation.business.entity.nav.NavCategory;
-import com.navatation.business.entity.nav.NavShortcut;
 import com.navatation.business.entity.nav.NavHomeShortcut;
 import com.navatation.business.entity.nav.TodoItem;
 import com.navatation.business.entity.nav.UserWidget;
@@ -24,7 +23,6 @@ import com.navatation.business.entity.user.User;
 import com.navatation.business.entity.user.UserConfig;
 import com.navatation.business.mapper.NavCategoryMapper;
 import com.navatation.business.mapper.NavHomeShortcutMapper;
-import com.navatation.business.mapper.NavShortcutMapper;
 import com.navatation.business.mapper.RecommendCategoryMapper;
 import com.navatation.business.mapper.RecommendConfigMapper;
 import com.navatation.business.mapper.RecommendHomeShortcutMapper;
@@ -71,7 +69,6 @@ public class AuthService {
     private final UserMapper userMapper;
     private final UserConfigMapper userConfigMapper;
     private final NavCategoryMapper navCategoryMapper;
-    private final NavShortcutMapper navShortcutMapper;
     private final UserWidgetMapper userWidgetMapper;
     private final TodoItemMapper todoItemMapper;
     private final NavHomeShortcutMapper navHomeShortcutMapper;
@@ -197,7 +194,7 @@ public class AuthService {
                 new LambdaQueryWrapper<RecommendCategory>().orderByAsc(RecommendCategory::getSortOrder));
 
         List<NavCategory> saveCategories = new ArrayList<>();
-        List<NavShortcut> saveShortcuts = new ArrayList<>();
+        List<NavHomeShortcut> saveShortcuts = new ArrayList<>();
 
         if (recommendCategories != null && !recommendCategories.isEmpty()) {
             for (RecommendCategory recCat : recommendCategories) {
@@ -214,7 +211,7 @@ public class AuthService {
                                 .orderByAsc(RecommendShortcut::getSortOrder));
                 if (recShortcuts != null && !recShortcuts.isEmpty()) {
                     for (RecommendShortcut recShortcut : recShortcuts) {
-                        NavShortcut userShortcut = new NavShortcut();
+                        NavHomeShortcut userShortcut = new NavHomeShortcut();
                         userShortcut.setShortcutId(IdUtils.genShortcutId());
                         userShortcut.setCategoryId(userCat.getCategoryId());
                         userShortcut.setUserId(user.getUserId());
@@ -234,7 +231,7 @@ public class AuthService {
             defaultCategory.setCategoryId(IdUtils.genCategoryId());
             defaultCategory.setUserId(user.getUserId());
             defaultCategory.setName("常用");
-            defaultCategory.setSortOrder(0.0);
+            defaultCategory.setSortOrder(java.math.BigDecimal.ZERO);
             saveCategories.add(defaultCategory);
         }
 
@@ -275,7 +272,7 @@ public class AuthService {
                 todoItem.setTodoId(IdUtils.genTodoId());
                 todoItem.setUserId(user.getUserId());
                 todoItem.setContent(recTodo.getContent());
-                todoItem.setCompleted(recTodo.getCompleted());
+                todoItem.setCompleted(false);
                 todoItem.setSortOrder(recTodo.getSortOrder());
                 saveTodos.add(todoItem);
             }

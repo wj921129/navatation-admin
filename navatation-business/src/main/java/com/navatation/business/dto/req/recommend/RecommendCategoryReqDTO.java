@@ -1,6 +1,7 @@
 package com.navatation.business.dto.req.recommend;
 
 import lombok.Data;
+import java.math.BigDecimal;
 import com.navatation.business.dto.req.recommend.RecommendCategoryReqDTO;
 
 /**
@@ -12,5 +13,5 @@ import com.navatation.business.dto.req.recommend.RecommendCategoryReqDTO;
 public class RecommendCategoryReqDTO {
     private String name;
     private String icon;
-    private Double sortOrder;
+    private BigDecimal sortOrder;
 }

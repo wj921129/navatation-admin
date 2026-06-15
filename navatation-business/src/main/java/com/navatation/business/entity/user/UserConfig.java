@@ -37,6 +37,9 @@ public class UserConfig {
     private Integer iconsMarginTop;
     private Integer iconsMarginX;
     private String theme;
+
+    /** 逻辑删除：0-正常, 1-已删除 */
+    private Integer deleted;
     
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

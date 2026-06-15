@@ -1,6 +1,7 @@
 package com.navatation.business.dto.req.todo;
 
 import lombok.Data;
+import java.math.BigDecimal;
 import com.navatation.business.dto.req.todo.TodoSortItemDTO;
 
 /**
@@ -11,5 +12,5 @@ import com.navatation.business.dto.req.todo.TodoSortItemDTO;
 @Data
 public class TodoSortItemDTO {
     private String todoId;
-    private Double sortOrder;
+    private BigDecimal sortOrder;
 }

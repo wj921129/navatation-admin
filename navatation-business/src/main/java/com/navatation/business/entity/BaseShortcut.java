@@ -1,5 +1,6 @@
 package com.navatation.business.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public interface BaseShortcut {
@@ -27,8 +28,8 @@ public interface BaseShortcut {
     String getIconColor();
     void setIconColor(String iconColor);
     
-    Double getSortOrder();
-    void setSortOrder(Double sortOrder);
+    BigDecimal getSortOrder();
+    void setSortOrder(BigDecimal sortOrder);
     
     Long getClickCount();
     void setClickCount(Long clickCount);

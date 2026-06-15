@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -23,7 +24,10 @@ public class NavCategory {
     
     private String userId;
     private String name;
-    private Double sortOrder;
+    private BigDecimal sortOrder;
+
+    /** 逻辑删除：0-正常, 1-已删除 */
+    private Integer deleted;
     
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

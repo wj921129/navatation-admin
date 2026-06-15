@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -58,14 +59,9 @@ public class TodoService {
      */
     public List<TodoRespDTO> getList(String userId, String status) {
         if (isAdmin(userId)) {
+            // 推荐待办无完成状态，忽略 status 筛选
             LambdaQueryWrapper<RecommendTodoItem> wrapper = new LambdaQueryWrapper<RecommendTodoItem>()
                     .orderByAsc(RecommendTodoItem::getSortOrder);
-
-            if (STATUS_ACTIVE.equals(status)) {
-                wrapper.eq(RecommendTodoItem::getCompleted, false);
-            } else if (STATUS_COMPLETED.equals(status)) {
-                wrapper.eq(RecommendTodoItem::getCompleted, true);
-            }
 
             return recommendTodoItemMapper.selectList(wrapper).stream()
                     .map(this::toVO)
@@ -92,30 +88,35 @@ public class TodoService {
      */
     public TodoRespDTO create(String userId, TodoCreateReqDTO req) {
         if (isAdmin(userId)) {
-            double maxSort = recommendTodoItemMapper.selectList(new LambdaQueryWrapper<>())
-                    .stream().mapToDouble(item -> item.getSortOrder() != null ? item.getSortOrder() : 0.0).max().orElse(0.0);
+            BigDecimal maxSort = recommendTodoItemMapper.selectList(new LambdaQueryWrapper<>())
+                    .stream()
+                    .map(item -> item.getSortOrder() != null ? item.getSortOrder() : BigDecimal.ZERO)
+                    .max(java.util.Comparator.naturalOrder())
+                    .orElse(BigDecimal.ZERO);
 
             RecommendTodoItem item = new RecommendTodoItem();
             item.setTodoId(IdUtils.genTodoId());
             item.setContent(req.getContent());
-            item.setCompleted(false);
-            item.setSortOrder(maxSort + 1.0);
+            item.setSortOrder(maxSort.add(BigDecimal.ONE));
             recommendTodoItemMapper.insert(item);
             redisTemplate.opsForHash().delete("navatation:guest_config", "todos");
             log.info("创建管理员推荐待办成功 userId={} todoId={}", userId, item.getTodoId());
             return toVO(item);
         }
 
-        double maxSort = todoItemMapper.selectList(
+        BigDecimal maxSort = todoItemMapper.selectList(
                 new LambdaQueryWrapper<TodoItem>().eq(TodoItem::getUserId, userId))
-                .stream().mapToDouble(item -> item.getSortOrder() != null ? item.getSortOrder() : 0.0).max().orElse(0.0);
+                .stream()
+                .map(item -> item.getSortOrder() != null ? item.getSortOrder() : BigDecimal.ZERO)
+                .max(java.util.Comparator.naturalOrder())
+                .orElse(BigDecimal.ZERO);
 
         TodoItem item = new TodoItem();
         item.setTodoId(IdUtils.genTodoId());
         item.setUserId(userId);
         item.setContent(req.getContent());
         item.setCompleted(false);
-        item.setSortOrder(maxSort + 1.0);
+        item.setSortOrder(maxSort.add(BigDecimal.ONE));
         todoItemMapper.insert(item);
         log.info("创建待办成功 userId={} todoId={}", userId, item.getTodoId());
         return toVO(item);
@@ -151,20 +152,8 @@ public class TodoService {
      */
     public ToggleRespDTO toggle(String userId, String todoId) {
         if (isAdmin(userId)) {
-            RecommendTodoItem item = recommendTodoItemMapper.selectById(todoId);
-            if (item == null) {
-                throw new BizException(ResultCode.NOT_FOUND);
-            }
-            item.setCompleted(!Boolean.TRUE.equals(item.getCompleted()));
-            item.setCompletedAt(item.getCompleted() ? LocalDateTime.now() : null);
-            recommendTodoItemMapper.updateById(item);
-            redisTemplate.opsForHash().delete("navatation:guest_config", "todos");
-
-            ToggleRespDTO vo = new ToggleRespDTO();
-            vo.setTodoId(item.getTodoId());
-            vo.setCompleted(item.getCompleted());
-            vo.setCompletedAt(item.getCompletedAt() != null ? item.getCompletedAt().toString() : null);
-            return vo;
+            // 推荐待办为模板数据，无完成状态，不支持切换
+            throw new BizException(400, "推荐待办不支持切换完成状态");
         }
 
         TodoItem item = todoItemMapper.selectById(todoId);
@@ -253,18 +242,8 @@ public class TodoService {
      */
     public DeleteCountRespDTO clearCompleted(String userId) {
         if (isAdmin(userId)) {
-            List<RecommendTodoItem> completed = recommendTodoItemMapper.selectList(
-                    new LambdaQueryWrapper<RecommendTodoItem>()
-                            .eq(RecommendTodoItem::getCompleted, true));
-            List<String> ids = completed.stream().map(RecommendTodoItem::getTodoId).collect(Collectors.toList());
-            if (!CollectionUtils.isEmpty(ids)) {
-                recommendTodoItemMapper.deleteBatchIds(ids);
-                redisTemplate.opsForHash().delete("navatation:guest_config", "todos");
-                log.info("清除管理员推荐已完成待办成功 userId={} count={}", userId, ids.size());
-            }
-            DeleteCountRespDTO vo = new DeleteCountRespDTO();
-            vo.setDeletedCount(completed.size());
-            return vo;
+            // 推荐待办为模板数据，无完成状态，不支持清除已完成
+            throw new BizException(400, "推荐待办不支持清除已完成");
         }
 
         List<TodoItem> completed = todoItemMapper.selectList(
@@ -296,10 +275,10 @@ public class TodoService {
         TodoRespDTO vo = new TodoRespDTO();
         vo.setTodoId(item.getTodoId());
         vo.setContent(item.getContent());
-        vo.setCompleted(item.getCompleted());
+        vo.setCompleted(null); // 推荐待办无完成状态
         vo.setSortOrder(item.getSortOrder());
         vo.setCreatedAt(item.getCreatedAt() != null ? item.getCreatedAt().toString() : null);
-        vo.setCompletedAt(item.getCompletedAt() != null ? item.getCompletedAt().toString() : null);
+        vo.setCompletedAt(null);
         return vo;
     }
 }

@@ -1,6 +1,7 @@
 package com.navatation.business.dto.resp.todo;
 
 import lombok.Data;
+import java.math.BigDecimal;
 import com.navatation.business.dto.resp.todo.TodoRespDTO;
 
 /**
@@ -13,7 +14,7 @@ public class TodoRespDTO {
     private String todoId;
     private String content;
     private Boolean completed;
-    private Double sortOrder;
+    private BigDecimal sortOrder;
     private String createdAt;
     private String completedAt;
 }

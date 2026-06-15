@@ -60,6 +60,9 @@ public class UserWidget {
      */
     private String meta;
 
+    /** 逻辑删除：0-正常, 1-已删除 */
+    private Integer deleted;
+
     /**
      * 创建时间
      */

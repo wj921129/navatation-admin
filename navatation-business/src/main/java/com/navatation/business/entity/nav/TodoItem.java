@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -24,8 +25,11 @@ public class TodoItem {
     private String userId;
     private String content;
     private Boolean completed;
-    private Double sortOrder;
+    private BigDecimal sortOrder;
     private LocalDateTime completedAt;
+
+    /** 逻辑删除：0-正常, 1-已删除 */
+    private Integer deleted;
     
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

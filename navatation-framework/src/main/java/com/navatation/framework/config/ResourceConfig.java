@@ -27,9 +27,9 @@ public class ResourceConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        String iconAbsolutePath = "file:" + new java.io.File(iconPath).getAbsolutePath() + "/";
-        String wallpaperAbsolutePath = "file:" + new java.io.File(wallpaperPath).getAbsolutePath() + "/";
-        String localWallpaperAbsolutePath = "file:" + new java.io.File(localWallpaperPath).getAbsolutePath() + "/";
+        String iconAbsolutePath = java.nio.file.Paths.get(iconPath).toAbsolutePath().normalize().toUri().toString();
+        String wallpaperAbsolutePath = java.nio.file.Paths.get(wallpaperPath).toAbsolutePath().normalize().toUri().toString();
+        String localWallpaperAbsolutePath = java.nio.file.Paths.get(localWallpaperPath).toAbsolutePath().normalize().toUri().toString();
 
         registry.addResourceHandler("/uploads/icon/custom/**")
                 .addResourceLocations(iconAbsolutePath);
@@ -40,7 +40,7 @@ public class ResourceConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/uploads/sys_data/bg_img/**")
                 .addResourceLocations(localWallpaperAbsolutePath);
 
-        String sysIconAbsolutePath = "file:" + new java.io.File(sysIconPath).getAbsolutePath() + "/";
+        String sysIconAbsolutePath = java.nio.file.Paths.get(sysIconPath).toAbsolutePath().normalize().toUri().toString();
         registry.addResourceHandler("/uploads/icon/sys/**")
                 .addResourceLocations(sysIconAbsolutePath);
     }

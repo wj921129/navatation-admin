@@ -1,6 +1,7 @@
 package com.navatation.business.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.navatation.business.constant.SettingsConstants;
 import com.navatation.business.dto.req.settings.SettingsReqDTO;
 import com.navatation.business.dto.resp.settings.SettingsRespDTO;
@@ -9,24 +10,20 @@ import com.navatation.business.entity.recommend.RecommendConfig;
 import com.navatation.business.entity.user.User;
 import com.navatation.business.entity.user.UserConfig;
 import com.navatation.business.mapper.RecommendConfigMapper;
-import com.navatation.business.mapper.RootConfigMapper;
 import com.navatation.business.mapper.UserConfigMapper;
 import com.navatation.business.mapper.UserMapper;
 import com.navatation.common.FileUploadUtil;
-import java.util.concurrent.ThreadLocalRandom;
-import com.navatation.business.entity.root.RootConfig;
-import com.navatation.business.mapper.RootUserMapper;
 import com.navatation.common.IdUtils;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.data.redis.core.RedisTemplate;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * @Author admin
@@ -40,23 +37,21 @@ public class SettingsService {
     private static final Logger log = LoggerFactory.getLogger(SettingsService.class);
 
     private final UserConfigMapper userConfigMapper;
-    private final RootConfigMapper rootConfigMapper;
     private final RecommendConfigMapper recommendConfigMapper;
     private final UserMapper userMapper;
-
-    private final RootUserMapper rootUserMapper;
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
-
-    private boolean isAdmin(String userId) {
-        return rootUserMapper.selectById(userId) != null;
-    }
 
     @Value("${app.upload.wallpaper-path}")
     private String wallpaperPath;
 
     @Value("${app.upload.local-wallpaper-path}")
     private String localWallpaperPath;
+
+    private boolean isAdmin(String userId) {
+        User user = userMapper.selectById(userId);
+        return user != null && "ADMIN".equals(user.getRole());
+    }
 
     /**
      * 获取用户设置，不存在则创建默认配置
@@ -65,12 +60,11 @@ public class SettingsService {
      */
     public SettingsRespDTO getSettings(String userId) {
         if (isAdmin(userId)) {
-            RootConfig rootConfig = rootConfigMapper.selectOne(
-                    new LambdaQueryWrapper<RootConfig>().eq(RootConfig::getUserId, userId));
-            if (rootConfig == null) {
-                rootConfig = createDefaultRoot(userId);
+            RecommendConfig config = recommendConfigMapper.selectOne(new LambdaQueryWrapper<RecommendConfig>().last("LIMIT 1"));
+            if (config == null) {
+                config = createDefaultRecommend();
             }
-            SettingsRespDTO vo = toVO(rootConfig);
+            SettingsRespDTO vo = toVO(config);
             try {
                 String cacheKey = "navatation:guest_config";
                 String cachedStr = (String) redisTemplate.opsForHash().get(cacheKey, "settings");
@@ -100,26 +94,17 @@ public class SettingsService {
      */
     public void saveSettings(String userId, SettingsReqDTO req) {
         if (isAdmin(userId)) {
-            RootConfig rootConfig = rootConfigMapper.selectOne(
-                    new LambdaQueryWrapper<RootConfig>().eq(RootConfig::getUserId, userId));
-            if (rootConfig == null) {
-                rootConfig = createDefaultRoot(userId);
-            }
-            applyRequest(rootConfig, req);
-            rootConfigMapper.updateById(rootConfig);
-            log.info("保存管理员设置成功 userId={}", userId);
-
-            RecommendConfig recommendConfig = recommendConfigMapper.selectOne(new LambdaQueryWrapper<RecommendConfig>().last("LIMIT 1"));
-            if (recommendConfig == null) {
-                recommendConfig = new RecommendConfig();
-                recommendConfig.setConfigId(IdUtils.genConfigId());
-                applyRequest(recommendConfig, req);
-                recommendConfigMapper.insert(recommendConfig);
+            RecommendConfig config = recommendConfigMapper.selectOne(new LambdaQueryWrapper<RecommendConfig>().last("LIMIT 1"));
+            if (config == null) {
+                config = new RecommendConfig();
+                config.setConfigId(IdUtils.genConfigId());
+                applyRequest(config, req);
+                recommendConfigMapper.insert(config);
             } else {
-                applyRequest(recommendConfig, req);
-                recommendConfigMapper.updateById(recommendConfig);
+                applyRequest(config, req);
+                recommendConfigMapper.updateById(config);
             }
-
+            log.info("保存管理员设置成功 userId={}", userId);
             redisTemplate.opsForHash().delete("navatation:guest_config", "settings");
             return;
         }
@@ -141,26 +126,17 @@ public class SettingsService {
      */
     public void patchSettings(String userId, SettingsReqDTO req) {
         if (isAdmin(userId)) {
-            RootConfig rootConfig = rootConfigMapper.selectOne(
-                    new LambdaQueryWrapper<RootConfig>().eq(RootConfig::getUserId, userId));
-            if (rootConfig == null) {
-                rootConfig = createDefaultRoot(userId);
-            }
-            applyRequest(rootConfig, req);
-            rootConfigMapper.updateById(rootConfig);
-            log.info("局部更新管理员设置成功 userId={}", userId);
-
-            RecommendConfig recommendConfig = recommendConfigMapper.selectOne(new LambdaQueryWrapper<RecommendConfig>().last("LIMIT 1"));
-            if (recommendConfig == null) {
-                recommendConfig = new RecommendConfig();
-                recommendConfig.setConfigId(IdUtils.genConfigId());
-                applyRequest(recommendConfig, req);
-                recommendConfigMapper.insert(recommendConfig);
+            RecommendConfig config = recommendConfigMapper.selectOne(new LambdaQueryWrapper<RecommendConfig>().last("LIMIT 1"));
+            if (config == null) {
+                config = new RecommendConfig();
+                config.setConfigId(IdUtils.genConfigId());
+                applyRequest(config, req);
+                recommendConfigMapper.insert(config);
             } else {
-                applyRequest(recommendConfig, req);
-                recommendConfigMapper.updateById(recommendConfig);
+                applyRequest(config, req);
+                recommendConfigMapper.updateById(config);
             }
-
+            log.info("局部更新管理员设置成功 userId={}", userId);
             redisTemplate.opsForHash().delete("navatation:guest_config", "settings");
             return;
         }
@@ -204,18 +180,15 @@ public class SettingsService {
         try {
             File dir = new File(localWallpaperPath);
             if (!dir.exists()) {
-                // 目录不存在则自动创建，支持3次重试
                 FileUploadUtil.createDirectoryWithRetry(localWallpaperPath);
             }
 
-            // 过滤合法图片文件
             File[] files = dir.listFiles((dirObj, name) -> {
                 String lower = name.toLowerCase();
                 return lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg")
                         || lower.endsWith(".webp") || lower.endsWith(".gif");
             });
 
-            // 卫语句：如果没有找到任何壁纸文件，返回系统默认兜底壁纸
             if (files == null || files.length == 0) {
                 log.warn("本地壁纸目录为空，返回系统默认兜底壁纸: {}", localWallpaperPath);
                 WallpaperRespDTO vo = new WallpaperRespDTO();
@@ -223,7 +196,6 @@ public class SettingsService {
                 return vo;
             }
 
-            // 随机选择一个
             int idx = ThreadLocalRandom.current().nextInt(files.length);
             File chosenFile = files[idx];
 
@@ -239,7 +211,6 @@ public class SettingsService {
         }
     }
 
-    /** 创建默认用户配置 */
     private UserConfig createDefault(String userId) {
         UserConfig config = new UserConfig();
         config.setConfigId(IdUtils.genConfigId());
@@ -262,11 +233,9 @@ public class SettingsService {
         return config;
     }
 
-    /** 创建默认管理员配置 */
-    private RootConfig createDefaultRoot(String userId) {
-        RootConfig config = new RootConfig();
+    private RecommendConfig createDefaultRecommend() {
+        RecommendConfig config = new RecommendConfig();
         config.setConfigId(IdUtils.genConfigId());
-        config.setUserId(userId);
         config.setSearchEngine(SettingsConstants.DEFAULT_SEARCH_ENGINE);
         config.setSearchBoxWidth(SettingsConstants.DEFAULT_SEARCH_BOX_WIDTH);
         config.setSearchBoxHeight(SettingsConstants.DEFAULT_SEARCH_BOX_HEIGHT);
@@ -281,81 +250,11 @@ public class SettingsService {
         config.setIconsMarginX(SettingsConstants.DEFAULT_ICONS_MARGIN_X);
         config.setTheme(SettingsConstants.DEFAULT_THEME);
         config.setBackgroundType(SettingsConstants.DEFAULT_BACKGROUND_TYPE);
-        rootConfigMapper.insert(config);
+        recommendConfigMapper.insert(config);
         return config;
     }
 
-    /** 将请求参数应用到配置实体 */
     private void applyRequest(UserConfig config, SettingsReqDTO req) {
-        if (req.getSearchEngine() != null) {
-            config.setSearchEngine(req.getSearchEngine());
-        }
-        if (req.getBackgroundImage() != null) {
-            config.setBackgroundImage(req.getBackgroundImage());
-        }
-        if (req.getBackgroundType() != null) {
-            config.setBackgroundType(req.getBackgroundType());
-        }
-        if (req.getSearchBoxWidth() != null) {
-            config.setSearchBoxWidth(req.getSearchBoxWidth());
-        }
-        if (req.getSearchBoxHeight() != null) {
-            config.setSearchBoxHeight(req.getSearchBoxHeight());
-        }
-        if (req.getSearchBoxMarginTop() != null) {
-            config.setSearchBoxMarginTop(req.getSearchBoxMarginTop());
-        }
-        if (req.getIconSize() != null) {
-            config.setIconSize(req.getIconSize());
-        }
-        if (req.getIconRadius() != null) {
-            config.setIconRadius(req.getIconRadius());
-        }
-        if (req.getIconSpacingX() != null) {
-            config.setIconSpacingX(req.getIconSpacingX());
-        }
-        if (req.getIconSpacingY() != null) {
-            config.setIconSpacingY(req.getIconSpacingY());
-        }
-        if (req.getIconTextGap() != null) {
-            config.setIconTextGap(req.getIconTextGap());
-        }
-        if (req.getTextSize() != null) {
-            config.setTextSize(req.getTextSize());
-        }
-        if (req.getIconsMarginTop() != null) {
-            config.setIconsMarginTop(req.getIconsMarginTop());
-        }
-        if (req.getIconsMarginX() != null) {
-            config.setIconsMarginX(req.getIconsMarginX());
-        }
-        if (req.getTheme() != null) {
-            config.setTheme(req.getTheme());
-        }
-    }
-
-    /** 实体转VO */
-    private SettingsRespDTO toVO(UserConfig config) {
-        SettingsRespDTO vo = new SettingsRespDTO();
-        vo.setSearchEngine(config.getSearchEngine());
-        vo.setBackgroundImage(config.getBackgroundImage());
-        vo.setBackgroundType(config.getBackgroundType());
-        vo.setSearchBoxWidth(config.getSearchBoxWidth());
-        vo.setSearchBoxHeight(config.getSearchBoxHeight());
-        vo.setSearchBoxMarginTop(config.getSearchBoxMarginTop());
-        vo.setIconSize(config.getIconSize());
-        vo.setIconRadius(config.getIconRadius());
-        vo.setIconSpacingX(config.getIconSpacingX());
-        vo.setIconSpacingY(config.getIconSpacingY());
-        vo.setIconTextGap(config.getIconTextGap());
-        vo.setTextSize(config.getTextSize());
-        vo.setIconsMarginTop(config.getIconsMarginTop());
-        vo.setIconsMarginX(config.getIconsMarginX());
-        vo.setTheme(config.getTheme());
-        return vo;
-    }
-
-    private void applyRequest(RootConfig config, SettingsReqDTO req) {
         if (req.getSearchEngine() != null) config.setSearchEngine(req.getSearchEngine());
         if (req.getBackgroundImage() != null) config.setBackgroundImage(req.getBackgroundImage());
         if (req.getBackgroundType() != null) config.setBackgroundType(req.getBackgroundType());
@@ -371,26 +270,6 @@ public class SettingsService {
         if (req.getIconsMarginTop() != null) config.setIconsMarginTop(req.getIconsMarginTop());
         if (req.getIconsMarginX() != null) config.setIconsMarginX(req.getIconsMarginX());
         if (req.getTheme() != null) config.setTheme(req.getTheme());
-    }
-
-    private SettingsRespDTO toVO(RootConfig config) {
-        SettingsRespDTO vo = new SettingsRespDTO();
-        vo.setSearchEngine(config.getSearchEngine());
-        vo.setBackgroundImage(config.getBackgroundImage());
-        vo.setBackgroundType(config.getBackgroundType());
-        vo.setSearchBoxWidth(config.getSearchBoxWidth());
-        vo.setSearchBoxHeight(config.getSearchBoxHeight());
-        vo.setSearchBoxMarginTop(config.getSearchBoxMarginTop());
-        vo.setIconSize(config.getIconSize());
-        vo.setIconRadius(config.getIconRadius());
-        vo.setIconSpacingX(config.getIconSpacingX());
-        vo.setIconSpacingY(config.getIconSpacingY());
-        vo.setIconTextGap(config.getIconTextGap());
-        vo.setTextSize(config.getTextSize());
-        vo.setIconsMarginTop(config.getIconsMarginTop());
-        vo.setIconsMarginX(config.getIconsMarginX());
-        vo.setTheme(config.getTheme());
-        return vo;
     }
 
     private void applyRequest(RecommendConfig config, SettingsReqDTO req) {
@@ -409,6 +288,26 @@ public class SettingsService {
         if (req.getIconsMarginTop() != null) config.setIconsMarginTop(req.getIconsMarginTop());
         if (req.getIconsMarginX() != null) config.setIconsMarginX(req.getIconsMarginX());
         if (req.getTheme() != null) config.setTheme(req.getTheme());
+    }
+
+    private SettingsRespDTO toVO(UserConfig config) {
+        SettingsRespDTO vo = new SettingsRespDTO();
+        vo.setSearchEngine(config.getSearchEngine());
+        vo.setBackgroundImage(config.getBackgroundImage());
+        vo.setBackgroundType(config.getBackgroundType());
+        vo.setSearchBoxWidth(config.getSearchBoxWidth());
+        vo.setSearchBoxHeight(config.getSearchBoxHeight());
+        vo.setSearchBoxMarginTop(config.getSearchBoxMarginTop());
+        vo.setIconSize(config.getIconSize());
+        vo.setIconRadius(config.getIconRadius());
+        vo.setIconSpacingX(config.getIconSpacingX());
+        vo.setIconSpacingY(config.getIconSpacingY());
+        vo.setIconTextGap(config.getIconTextGap());
+        vo.setTextSize(config.getTextSize());
+        vo.setIconsMarginTop(config.getIconsMarginTop());
+        vo.setIconsMarginX(config.getIconsMarginX());
+        vo.setTheme(config.getTheme());
+        return vo;
     }
 
     private SettingsRespDTO toVO(RecommendConfig config) {

@@ -9,25 +9,20 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * @Author admin
- * @CreateTime 2026-06-08
- * @Description 推荐网址实体
+ * @Description 推荐待办事项实体
  */
 @Data
-@TableName("navatation_recommend_site")
-public class RecommendSite {
+@TableName("navatation_recommend_todo_item")
+public class RecommendTodoItem {
     private Long rowId;
-    
+
     @TableId(type = IdType.INPUT)
-    private String siteId;
+    private String todoId;
     
-    private String categoryId;
-    private String name;
-    private String url;
-    private String iconType;
-    private String iconValue;
-    private String iconColor;
+    private String content;
+    private Boolean completed;
     private Double sortOrder;
+    private LocalDateTime completedAt;
     
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

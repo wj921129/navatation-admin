@@ -23,7 +23,8 @@ import com.navatation.business.dto.req.recommend.RecommendCategoryReqDTO;
 import com.navatation.business.dto.resp.nav.ShortcutRespDTO;
 import com.navatation.business.dto.resp.recommend.RecommendCategoryRespDTO;
 import com.navatation.business.dto.req.nav.CategoryReqDTO;
-import com.navatation.business.mapper.RootUserMapper;
+import com.navatation.business.entity.user.User;
+import com.navatation.business.mapper.UserMapper;
 
 /**
  * @Author admin
@@ -38,12 +39,13 @@ public class NavService {
     private final NavShortcutService navShortcutService;
     private final FaviconFetcherHelper faviconFetcherHelper;
     private final IconUploadService iconUploadService;
-    private final RootUserMapper rootUserMapper;
+    private final UserMapper userMapper;
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
 
     private boolean isAdmin(String userId) {
-        return rootUserMapper.selectById(userId) != null;
+        User user = userMapper.selectById(userId);
+        return user != null && "ADMIN".equals(user.getRole());
     }
 
     // --- Category Management ---

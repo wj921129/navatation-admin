@@ -10,13 +10,12 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * @Author wanggy
- * @CreateTime 2026-06-08
- * @Description 推荐小组件实体
+ * 推荐小组件实体
  */
 @Data
 @TableName("navatation_recommend_widget")
 public class RecommendWidget {
+
     /** 物理主键 */
     private Long rowId;
     
@@ -25,25 +24,19 @@ public class RecommendWidget {
     private String widgetId;
     
     /** 组件类型 */
-    private String widgetType;
+    private String type;
     
     /** 组件样式 */
-    private String widgetStyle;
+    private String style;
     
-    /** 组件数据 */
-    private String widgetData;
+    /** X轴位置 */
+    private BigDecimal x;
     
-    /** 布局X坐标 */
-    private BigDecimal layoutX;
-    
-    /** 布局Y坐标 */
-    private BigDecimal layoutY;
-    
-    /** 布局宽度 */
-    private BigDecimal layoutW;
-    
-    /** 布局高度 */
-    private BigDecimal layoutH;
+    /** Y轴位置 */
+    private BigDecimal y;
+
+    /** 组件数据/元数据 */
+    private String meta;
     
     /** 创建时间 */
     @TableField(fill = FieldFill.INSERT)

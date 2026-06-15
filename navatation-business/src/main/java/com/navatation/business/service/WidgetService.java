@@ -3,36 +3,34 @@ package com.navatation.business.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
+import com.baomidou.mybatisplus.extension.toolkit.Db;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.navatation.business.dto.req.widget.WidgetReqDTO;
 import com.navatation.business.dto.resp.widget.WidgetRespDTO;
 import com.navatation.business.entity.nav.UserWidget;
-import com.navatation.business.mapper.RootWidgetMapper;
-import com.navatation.business.mapper.UserWidgetMapper;
+import com.navatation.business.entity.recommend.RecommendWidget;
+import com.navatation.business.entity.user.User;
+import com.navatation.business.mapper.RecommendWidgetMapper;
 import com.navatation.business.mapper.UserMapper;
-import com.navatation.business.mapper.RootUserMapper;
-import com.navatation.business.entity.root.RootWidget;
+import com.navatation.business.mapper.UserWidgetMapper;
 import com.navatation.common.IdUtils;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import com.baomidou.mybatisplus.extension.toolkit.Db;
 
 /**
- * @Author admin
- * @CreateTime 2026-06-03
- * @Description 用户组件服务，处理用户组件的查询与批量覆盖保存
+ * 用户组件服务，处理用户组件的查询与批量覆盖保存
  */
 @Service
 @RequiredArgsConstructor
@@ -41,35 +39,27 @@ public class WidgetService {
     private static final Logger log = LoggerFactory.getLogger(WidgetService.class);
 
     private final UserWidgetMapper widgetMapper;
-    private final RootWidgetMapper rootWidgetMapper;
+    private final RecommendWidgetMapper recommendWidgetMapper;
     private final ObjectMapper objectMapper;
     private final UserMapper userMapper;
-    private final RecommendWidgetService recommendWidgetService;
-
-    private final RootUserMapper rootUserMapper;
     private final RedisTemplate<String, Object> redisTemplate;
 
     private boolean isAdmin(String userId) {
-        return rootUserMapper.selectById(userId) != null;
+        User user = userMapper.selectById(userId);
+        return user != null && "ADMIN".equals(user.getRole());
     }
 
     /**
      * 获取用户配置的所有组件列表
-     *
-     * @param userId 用户唯一ID
-     * @return 组件展现VO列表
      */
     public List<WidgetRespDTO> getWidgets(String userId) {
         if (isAdmin(userId)) {
-            List<RootWidget> list = rootWidgetMapper.selectList(
-                    new LambdaQueryWrapper<RootWidget>()
-                            .eq(RootWidget::getUserId, userId)
-            );
+            List<RecommendWidget> list = recommendWidgetMapper.selectList(new LambdaQueryWrapper<>());
             List<WidgetRespDTO> voList;
             if (CollectionUtils.isEmpty(list)) {
                 voList = Collections.emptyList();
             } else {
-                voList = list.stream().map(this::toVO).collect(java.util.stream.Collectors.toList());
+                voList = list.stream().map(this::toVO).collect(Collectors.toList());
             }
             try {
                 String cacheKey = "navatation:guest_config";
@@ -77,10 +67,10 @@ public class WidgetService {
                 String currentStr = objectMapper.writeValueAsString(voList);
                 if (cachedStr == null || !cachedStr.equals(currentStr)) {
                     redisTemplate.opsForHash().put(cacheKey, "widgets", currentStr);
-                    org.slf4j.LoggerFactory.getLogger(WidgetService.class).info("管理员获取组件时发现缓存不一致，已刷新游客组件缓存");
+                    log.info("管理员获取组件时发现缓存不一致，已刷新游客组件缓存");
                 }
             } catch (Exception e) {
-                org.slf4j.LoggerFactory.getLogger(WidgetService.class).warn("刷新游客组件缓存失败", e);
+                log.warn("刷新游客组件缓存失败", e);
             }
             return voList;
         }
@@ -97,25 +87,21 @@ public class WidgetService {
 
     /**
      * 批量覆盖保存用户的组件配置（删除原有配置并插入新配置）
-     *
-     * @param userId 用户唯一ID
-     * @param requests 待保存的组件请求列表
      */
     @Transactional(rollbackFor = Exception.class)
     public void saveWidgets(String userId, List<WidgetReqDTO> requests) {
         if (isAdmin(userId)) {
-            rootWidgetMapper.delete(new LambdaQueryWrapper<RootWidget>().eq(RootWidget::getUserId, userId));
+            recommendWidgetMapper.delete(new LambdaQueryWrapper<>());
 
             if (CollectionUtils.isEmpty(requests)) {
-                log.info("保存管理员组件 传入列表为空，清除管理员所有组件 userId={}", userId);
+                log.info("保存管理员推荐组件 传入列表为空，清除管理员所有组件 userId={}", userId);
                 redisTemplate.opsForHash().delete("navatation:guest_config", "widgets");
                 return;
             }
 
-            List<RootWidget> saveList = new ArrayList<>();
+            List<RecommendWidget> saveList = new ArrayList<>();
             for (WidgetReqDTO req : requests) {
-                RootWidget entity = new RootWidget();
-                entity.setUserId(userId);
+                RecommendWidget entity = new RecommendWidget();
                 entity.setType(req.getType());
                 entity.setStyle(req.getStyle());
                 entity.setX(req.getX());
@@ -141,7 +127,7 @@ public class WidgetService {
             if (!saveList.isEmpty()) {
                 Db.saveBatch(saveList);
             }
-            log.info("保存管理员组件成功 userId={}, count={}", userId, requests.size());
+            log.info("保存管理员推荐组件成功 userId={}, count={}", userId, requests.size());
             redisTemplate.opsForHash().delete("navatation:guest_config", "widgets");
             return;
         }
@@ -185,9 +171,6 @@ public class WidgetService {
         log.info("保存用户组件成功 userId={}, count={}", userId, requests.size());
     }
 
-    /**
-     * 将 UserWidget 实体对象转换为 WidgetRespDTO 对象
-     */
     private WidgetRespDTO toVO(UserWidget entity) {
         WidgetRespDTO vo = new WidgetRespDTO();
         vo.setWidgetId(entity.getWidgetId());
@@ -212,7 +195,7 @@ public class WidgetService {
         return vo;
     }
 
-    private WidgetRespDTO toVO(RootWidget entity) {
+    private WidgetRespDTO toVO(RecommendWidget entity) {
         WidgetRespDTO vo = new WidgetRespDTO();
         vo.setWidgetId(entity.getWidgetId());
         vo.setType(entity.getType());

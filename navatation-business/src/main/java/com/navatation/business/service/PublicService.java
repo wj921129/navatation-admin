@@ -19,8 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.List;
-import com.navatation.business.entity.root.RootUser;
-import com.navatation.business.mapper.RootUserMapper;
+import com.navatation.business.entity.user.User;
+import com.navatation.business.mapper.UserMapper;
 
 /**
  * PublicService 功能描述
@@ -34,7 +34,6 @@ public class PublicService {
     private static final Logger log = LoggerFactory.getLogger(PublicService.class);
 
     private final UserMapper userMapper;
-    private final RootUserMapper rootUserMapper;
     private final SettingsService settingsService;
     private final WidgetService widgetService;
     private final NavService navService;
@@ -44,7 +43,7 @@ public class PublicService {
     private final ObjectMapper objectMapper;
 
     private String getAdminId() {
-        RootUser admin = rootUserMapper.selectOne(new LambdaQueryWrapper<RootUser>().last("LIMIT 1"));
+        User admin = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getRole, "ADMIN").last("LIMIT 1"));
         if (admin == null) {
             log.warn("超级管理员账户不存在");
             return null;

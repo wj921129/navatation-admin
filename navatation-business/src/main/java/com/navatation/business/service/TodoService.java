@@ -1,29 +1,29 @@
 package com.navatation.business.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.navatation.business.dto.resp.common.DeleteCountRespDTO;
+import com.baomidou.mybatisplus.extension.toolkit.Db;
 import com.navatation.business.dto.req.todo.TodoCreateReqDTO;
 import com.navatation.business.dto.req.todo.TodoSortItemDTO;
 import com.navatation.business.dto.req.todo.TodoSortReqDTO;
 import com.navatation.business.dto.req.todo.TodoUpdateReqDTO;
+import com.navatation.business.dto.resp.common.DeleteCountRespDTO;
 import com.navatation.business.dto.resp.todo.TodoRespDTO;
 import com.navatation.business.dto.resp.todo.ToggleRespDTO;
 import com.navatation.business.entity.nav.TodoItem;
-import com.navatation.business.entity.root.RootTodoItem;
-import com.navatation.business.mapper.RootTodoItemMapper;
+import com.navatation.business.entity.recommend.RecommendTodoItem;
+import com.navatation.business.entity.user.User;
+import com.navatation.business.mapper.RecommendTodoItemMapper;
 import com.navatation.business.mapper.TodoItemMapper;
 import com.navatation.business.mapper.UserMapper;
-import com.navatation.business.mapper.RootUserMapper;
 import com.navatation.common.BizException;
-import com.navatation.common.ResultCode;
 import com.navatation.common.IdUtils;
+import com.navatation.common.ResultCode;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
-import com.baomidou.mybatisplus.extension.toolkit.Db;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,9 +32,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * @Author admin
- * @CreateTime 2026-05-15
- * @Description 待办事项服务，处理待办项的CRUD、完成状态切换、排序及批量清除已完成项
+ * 待办事项服务，处理待办项的CRUD、完成状态切换、排序及批量清除已完成项
  */
 @Service
 @RequiredArgsConstructor
@@ -45,34 +43,29 @@ public class TodoService {
     private static final String STATUS_COMPLETED = "completed";
 
     private final TodoItemMapper todoItemMapper;
-    private final RootTodoItemMapper rootTodoItemMapper;
+    private final RecommendTodoItemMapper recommendTodoItemMapper;
     private final UserMapper userMapper;
 
-    private final RootUserMapper rootUserMapper;
-
     private boolean isAdmin(String userId) {
-        return rootUserMapper.selectById(userId) != null;
+        User user = userMapper.selectById(userId);
+        return user != null && "ADMIN".equals(user.getRole());
     }
 
     /**
      * 查询待办列表，可按状态筛选
-     * @param userId 用户ID
-     * @param status 状态筛选（active/completed/null）
-     * @return 待办列表
      */
     public List<TodoRespDTO> getList(String userId, String status) {
         if (isAdmin(userId)) {
-            LambdaQueryWrapper<RootTodoItem> wrapper = new LambdaQueryWrapper<RootTodoItem>()
-                    .eq(RootTodoItem::getUserId, userId)
-                    .orderByAsc(RootTodoItem::getSortOrder);
+            LambdaQueryWrapper<RecommendTodoItem> wrapper = new LambdaQueryWrapper<RecommendTodoItem>()
+                    .orderByAsc(RecommendTodoItem::getSortOrder);
 
             if (STATUS_ACTIVE.equals(status)) {
-                wrapper.eq(RootTodoItem::getCompleted, false);
+                wrapper.eq(RecommendTodoItem::getCompleted, false);
             } else if (STATUS_COMPLETED.equals(status)) {
-                wrapper.eq(RootTodoItem::getCompleted, true);
+                wrapper.eq(RecommendTodoItem::getCompleted, true);
             }
 
-            return rootTodoItemMapper.selectList(wrapper).stream()
+            return recommendTodoItemMapper.selectList(wrapper).stream()
                     .map(this::toVO)
                     .collect(Collectors.toList());
         }
@@ -94,24 +87,19 @@ public class TodoService {
 
     /**
      * 创建待办项
-     * @param userId 用户ID
-     * @param req 创建请求
-     * @return 创建的待办项
      */
     public TodoRespDTO create(String userId, TodoCreateReqDTO req) {
         if (isAdmin(userId)) {
-            double maxSort = rootTodoItemMapper.selectList(
-                    new LambdaQueryWrapper<RootTodoItem>().eq(RootTodoItem::getUserId, userId))
+            double maxSort = recommendTodoItemMapper.selectList(new LambdaQueryWrapper<>())
                     .stream().mapToDouble(item -> item.getSortOrder() != null ? item.getSortOrder() : 0.0).max().orElse(0.0);
 
-            RootTodoItem item = new RootTodoItem();
+            RecommendTodoItem item = new RecommendTodoItem();
             item.setTodoId(IdUtils.genTodoId());
-            item.setUserId(userId);
             item.setContent(req.getContent());
             item.setCompleted(false);
             item.setSortOrder(maxSort + 1.0);
-            rootTodoItemMapper.insert(item);
-            log.info("创建管理员待办成功 userId={} todoId={}", userId, item.getTodoId());
+            recommendTodoItemMapper.insert(item);
+            log.info("创建管理员推荐待办成功 userId={} todoId={}", userId, item.getTodoId());
             return toVO(item);
         }
 
@@ -132,19 +120,16 @@ public class TodoService {
 
     /**
      * 更新待办内容
-     * @param userId 用户ID
-     * @param todoId 待办ID
-     * @param req 更新请求
      */
     public void update(String userId, String todoId, TodoUpdateReqDTO req) {
         if (isAdmin(userId)) {
-            RootTodoItem item = rootTodoItemMapper.selectById(todoId);
-            if (item == null || !item.getUserId().equals(userId)) {
+            RecommendTodoItem item = recommendTodoItemMapper.selectById(todoId);
+            if (item == null) {
                 throw new BizException(ResultCode.NOT_FOUND);
             }
             item.setContent(req.getContent());
-            rootTodoItemMapper.updateById(item);
-            log.info("更新管理员待办成功 userId={} todoId={}", userId, todoId);
+            recommendTodoItemMapper.updateById(item);
+            log.info("更新管理员推荐待办成功 userId={} todoId={}", userId, todoId);
             return;
         }
 
@@ -159,19 +144,16 @@ public class TodoService {
 
     /**
      * 切换待办完成状态
-     * @param userId 用户ID
-     * @param todoId 待办ID
-     * @return 切换后的状态
      */
     public ToggleRespDTO toggle(String userId, String todoId) {
         if (isAdmin(userId)) {
-            RootTodoItem item = rootTodoItemMapper.selectById(todoId);
-            if (item == null || !item.getUserId().equals(userId)) {
+            RecommendTodoItem item = recommendTodoItemMapper.selectById(todoId);
+            if (item == null) {
                 throw new BizException(ResultCode.NOT_FOUND);
             }
             item.setCompleted(!Boolean.TRUE.equals(item.getCompleted()));
             item.setCompletedAt(item.getCompleted() ? LocalDateTime.now() : null);
-            rootTodoItemMapper.updateById(item);
+            recommendTodoItemMapper.updateById(item);
 
             ToggleRespDTO vo = new ToggleRespDTO();
             vo.setTodoId(item.getTodoId());
@@ -197,17 +179,15 @@ public class TodoService {
 
     /**
      * 删除待办项
-     * @param userId 用户ID
-     * @param todoId 待办ID
      */
     public void delete(String userId, String todoId) {
         if (isAdmin(userId)) {
-            RootTodoItem item = rootTodoItemMapper.selectById(todoId);
-            if (item == null || !item.getUserId().equals(userId)) {
+            RecommendTodoItem item = recommendTodoItemMapper.selectById(todoId);
+            if (item == null) {
                 throw new BizException(ResultCode.NOT_FOUND);
             }
-            rootTodoItemMapper.deleteById(todoId);
-            log.info("删除管理员待办成功 userId={} todoId={}", userId, todoId);
+            recommendTodoItemMapper.deleteById(todoId);
+            log.info("删除管理员推荐待办成功 userId={} todoId={}", userId, todoId);
             return;
         }
 
@@ -221,21 +201,18 @@ public class TodoService {
 
     /**
      * 批量更新待办排序
-     * @param userId 用户ID
-     * @param req 排序请求
      */
     @Transactional
     public void sort(String userId, TodoSortReqDTO req) {
         List<String> ids = req.getItems().stream().map(TodoSortItemDTO::getTodoId).collect(Collectors.toList());
 
         if (isAdmin(userId)) {
-            Map<String, RootTodoItem> itemMap = rootTodoItemMapper.selectBatchIds(ids).stream()
-                    .filter(i -> i.getUserId().equals(userId))
-                    .collect(Collectors.toMap(RootTodoItem::getTodoId, Function.identity()));
+            Map<String, RecommendTodoItem> itemMap = recommendTodoItemMapper.selectBatchIds(ids).stream()
+                    .collect(Collectors.toMap(RecommendTodoItem::getTodoId, Function.identity()));
 
-            List<RootTodoItem> updates = new java.util.ArrayList<>();
+            List<RecommendTodoItem> updates = new java.util.ArrayList<>();
             for (TodoSortItemDTO si : req.getItems()) {
-                RootTodoItem item = itemMap.get(si.getTodoId());
+                RecommendTodoItem item = itemMap.get(si.getTodoId());
                 if (item != null) {
                     item.setSortOrder(si.getSortOrder());
                     updates.add(item);
@@ -247,7 +224,6 @@ public class TodoService {
             return;
         }
 
-        // 批量查询所有待排序的待办项
         Map<String, TodoItem> itemMap = todoItemMapper.selectBatchIds(ids).stream()
                 .filter(i -> i.getUserId().equals(userId))
                 .collect(Collectors.toMap(TodoItem::getTodoId, Function.identity()));
@@ -267,19 +243,16 @@ public class TodoService {
 
     /**
      * 批量清除已完成待办项
-     * @param userId 用户ID
-     * @return 删除数量
      */
     public DeleteCountRespDTO clearCompleted(String userId) {
         if (isAdmin(userId)) {
-            List<RootTodoItem> completed = rootTodoItemMapper.selectList(
-                    new LambdaQueryWrapper<RootTodoItem>()
-                            .eq(RootTodoItem::getUserId, userId)
-                            .eq(RootTodoItem::getCompleted, true));
-            List<String> ids = completed.stream().map(RootTodoItem::getTodoId).collect(Collectors.toList());
+            List<RecommendTodoItem> completed = recommendTodoItemMapper.selectList(
+                    new LambdaQueryWrapper<RecommendTodoItem>()
+                            .eq(RecommendTodoItem::getCompleted, true));
+            List<String> ids = completed.stream().map(RecommendTodoItem::getTodoId).collect(Collectors.toList());
             if (!CollectionUtils.isEmpty(ids)) {
-                rootTodoItemMapper.deleteBatchIds(ids);
-                log.info("清除管理员已完成待办成功 userId={} count={}", userId, ids.size());
+                recommendTodoItemMapper.deleteBatchIds(ids);
+                log.info("清除管理员推荐已完成待办成功 userId={} count={}", userId, ids.size());
             }
             DeleteCountRespDTO vo = new DeleteCountRespDTO();
             vo.setDeletedCount(completed.size());
@@ -290,7 +263,6 @@ public class TodoService {
                 new LambdaQueryWrapper<TodoItem>()
                         .eq(TodoItem::getUserId, userId)
                         .eq(TodoItem::getCompleted, true));
-        // 批量删除已完成待办项
         List<String> ids = completed.stream().map(TodoItem::getTodoId).collect(Collectors.toList());
         if (!CollectionUtils.isEmpty(ids)) {
             todoItemMapper.deleteBatchIds(ids);
@@ -301,7 +273,6 @@ public class TodoService {
         return vo;
     }
 
-    /** 实体转VO */
     private TodoRespDTO toVO(TodoItem item) {
         TodoRespDTO vo = new TodoRespDTO();
         vo.setTodoId(item.getTodoId());
@@ -313,7 +284,7 @@ public class TodoService {
         return vo;
     }
 
-    private TodoRespDTO toVO(RootTodoItem item) {
+    private TodoRespDTO toVO(RecommendTodoItem item) {
         TodoRespDTO vo = new TodoRespDTO();
         vo.setTodoId(item.getTodoId());
         vo.setContent(item.getContent());

@@ -23,9 +23,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * @Author wanggy
- * @CreateTime 2026-06-08
- * @Description 推荐小组件服务，提供管理员全局小组件的增删改查
+ * 推荐小组件服务，提供管理员全局小组件的增删改查
  */
 @Service
 @RequiredArgsConstructor
@@ -62,19 +60,17 @@ public class RecommendWidgetService {
         for (RecommendWidgetReqDTO req : requests) {
             RecommendWidget entity = new RecommendWidget();
             entity.setWidgetId(IdUtils.genWidgetId());
-            entity.setWidgetType(req.getWidgetType());
-            entity.setWidgetStyle(req.getWidgetStyle());
-            entity.setLayoutX(req.getLayoutX());
-            entity.setLayoutY(req.getLayoutY());
-            entity.setLayoutW(req.getLayoutW());
-            entity.setLayoutH(req.getLayoutH());
+            entity.setType(req.getType());
+            entity.setStyle(req.getStyle());
+            entity.setX(req.getX());
+            entity.setY(req.getY());
             
-            if (req.getWidgetData() != null) {
+            if (req.getMeta() != null) {
                 try {
-                    entity.setWidgetData(objectMapper.writeValueAsString(req.getWidgetData()));
+                    entity.setMeta(objectMapper.writeValueAsString(req.getMeta()));
                 } catch (JsonProcessingException e) {
                     log.error("推荐小组件元数据序列化失败", e);
-                    entity.setWidgetData("{}");
+                    entity.setMeta("{}");
                 }
             }
             
@@ -86,27 +82,25 @@ public class RecommendWidgetService {
     private RecommendWidgetRespDTO toVO(RecommendWidget entity) {
         RecommendWidgetRespDTO vo = new RecommendWidgetRespDTO();
         vo.setWidgetId(entity.getWidgetId());
-        vo.setWidgetType(entity.getWidgetType());
-        vo.setWidgetStyle(entity.getWidgetStyle());
-        vo.setLayoutX(entity.getLayoutX());
-        vo.setLayoutY(entity.getLayoutY());
-        vo.setLayoutW(entity.getLayoutW());
-        vo.setLayoutH(entity.getLayoutH());
+        vo.setType(entity.getType());
+        vo.setStyle(entity.getStyle());
+        vo.setX(entity.getX());
+        vo.setY(entity.getY());
         vo.setCreatedAt(entity.getCreatedAt());
         vo.setUpdatedAt(entity.getUpdatedAt());
         
-        String dataStr = entity.getWidgetData();
+        String dataStr = entity.getMeta();
         if (StringUtils.isBlank(dataStr)) {
-            vo.setWidgetData(Collections.emptyMap());
+            vo.setMeta(Collections.emptyMap());
             return vo;
         }
         
         try {
             Map<String, Object> dataMap = objectMapper.readValue(dataStr, new TypeReference<Map<String, Object>>() {});
-            vo.setWidgetData(dataMap);
+            vo.setMeta(dataMap);
         } catch (JsonProcessingException e) {
             log.error("推荐小组件元数据反序列化失败 widgetId={}", entity.getWidgetId(), e);
-            vo.setWidgetData(Collections.emptyMap());
+            vo.setMeta(Collections.emptyMap());
         }
         return vo;
     }

@@ -9,14 +9,13 @@ import com.navatation.business.dto.resp.recommend.RecommendSiteRespDTO;
 import com.navatation.business.entity.nav.NavCategory;
 import com.navatation.business.entity.nav.NavShortcut;
 import com.navatation.business.entity.recommend.RecommendCategory;
-import com.navatation.business.entity.recommend.RecommendSite;
+import com.navatation.business.entity.recommend.RecommendShortcut;
+import com.navatation.business.entity.user.User;
 import com.navatation.business.mapper.NavCategoryMapper;
 import com.navatation.business.mapper.NavShortcutMapper;
 import com.navatation.business.mapper.RecommendCategoryMapper;
-import com.navatation.business.mapper.RecommendSiteMapper;
-import com.navatation.business.mapper.RootCategoryMapper;
-import com.navatation.business.mapper.RootShortcutMapper;
-import com.navatation.business.mapper.RootUserMapper;
+import com.navatation.business.mapper.RecommendShortcutMapper;
+import com.navatation.business.mapper.UserMapper;
 import com.navatation.common.BizException;
 import com.navatation.common.IdUtils;
 import com.navatation.common.ResultCode;
@@ -30,13 +29,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import com.navatation.business.entity.root.RootCategory;
-import com.navatation.business.entity.root.RootShortcut;
 
 /**
  * NavCategoryService 功能描述
- *
- * @date 2026-06-09
  */
 @Service
 @RequiredArgsConstructor
@@ -46,30 +41,25 @@ public class NavCategoryService {
 
     private final NavCategoryMapper categoryMapper;
     private final NavShortcutMapper shortcutMapper;
-    private final RootCategoryMapper rootCategoryMapper;
-    private final RootShortcutMapper rootShortcutMapper;
     private final RecommendCategoryMapper recommendCategoryMapper;
-    private final RecommendSiteMapper recommendSiteMapper;
-    private final RootUserMapper rootUserMapper;
+    private final RecommendShortcutMapper recommendShortcutMapper;
+    private final UserMapper userMapper;
 
     private boolean isAdmin(String userId) {
-        return rootUserMapper.selectById(userId) != null;
+        User user = userMapper.selectById(userId);
+        return user != null && "ADMIN".equals(user.getRole());
     }
 
-        /**
-     * getCategories 方法
-     */
     public List<CategoryRespDTO> getCategories(String userId) {
         if (isAdmin(userId)) {
-            List<RootCategory> categories = rootCategoryMapper.selectList(
-                    new LambdaQueryWrapper<RootCategory>()
-                            .eq(RootCategory::getUserId, userId)
-                            .orderByAsc(RootCategory::getSortOrder));
+            List<RecommendCategory> categories = recommendCategoryMapper.selectList(
+                    new LambdaQueryWrapper<RecommendCategory>()
+                            .orderByAsc(RecommendCategory::getSortOrder));
 
-            List<String> categoryIds = categories.stream().map(RootCategory::getCategoryId).collect(Collectors.toList());
+            List<String> categoryIds = categories.stream().map(RecommendCategory::getCategoryId).collect(Collectors.toList());
             Map<String, Long> countMap = categoryIds.isEmpty() ? Map.of() :
-                    rootShortcutMapper.selectList(new LambdaQueryWrapper<RootShortcut>().in(RootShortcut::getCategoryId, categoryIds))
-                            .stream().collect(Collectors.groupingBy(RootShortcut::getCategoryId, Collectors.counting()));
+                    recommendShortcutMapper.selectList(new LambdaQueryWrapper<RecommendShortcut>().in(RecommendShortcut::getCategoryId, categoryIds))
+                            .stream().collect(Collectors.groupingBy(RecommendShortcut::getCategoryId, Collectors.counting()));
 
             return categories.stream().map(c -> {
                 CategoryRespDTO vo = new CategoryRespDTO();
@@ -101,18 +91,14 @@ public class NavCategoryService {
         }).collect(Collectors.toList());
     }
 
-        /**
-     * createCategory 方法
-     */
     public CategoryRespDTO createCategory(String userId, CategoryReqDTO req) {
         if (isAdmin(userId)) {
-            RootCategory category = new RootCategory();
+            RecommendCategory category = new RecommendCategory();
             category.setCategoryId(IdUtils.genCategoryId());
-            category.setUserId(userId);
             category.setName(req.getName());
             category.setSortOrder(req.getSortOrder() != null ? req.getSortOrder() : 0.0);
-            rootCategoryMapper.insert(category);
-            log.info("创建管理员分类成功 userId={} categoryId={} name={}", userId, category.getCategoryId(), category.getName());
+            recommendCategoryMapper.insert(category);
+            log.info("创建管理员推荐分类成功 userId={} categoryId={} name={}", userId, category.getCategoryId(), category.getName());
 
             CategoryRespDTO vo = new CategoryRespDTO();
             vo.setCategoryId(category.getCategoryId());
@@ -138,13 +124,10 @@ public class NavCategoryService {
         return vo;
     }
 
-        /**
-     * updateCategory 方法
-     */
     public void updateCategory(String userId, String categoryId, CategoryReqDTO req) {
         if (isAdmin(userId)) {
-            RootCategory category = rootCategoryMapper.selectById(categoryId);
-            if (category == null || !category.getUserId().equals(userId)) {
+            RecommendCategory category = recommendCategoryMapper.selectById(categoryId);
+            if (category == null) {
                 throw new BizException(ResultCode.NOT_FOUND);
             }
             if (req.getName() != null) {
@@ -153,8 +136,8 @@ public class NavCategoryService {
             if (req.getSortOrder() != null) {
                 category.setSortOrder(req.getSortOrder());
             }
-            rootCategoryMapper.updateById(category);
-            log.info("更新管理员分类成功 userId={} categoryId={}", userId, categoryId);
+            recommendCategoryMapper.updateById(category);
+            log.info("更新管理员推荐分类成功 userId={} categoryId={}", userId, categoryId);
             return;
         }
 
@@ -172,20 +155,17 @@ public class NavCategoryService {
         log.info("更新分类成功 userId={} categoryId={}", userId, categoryId);
     }
 
-        /**
-     * deleteCategory 方法
-     */
     @Transactional
     public void deleteCategory(String userId, String categoryId) {
         if (isAdmin(userId)) {
-            RootCategory category = rootCategoryMapper.selectById(categoryId);
-            if (category == null || !category.getUserId().equals(userId)) {
+            RecommendCategory category = recommendCategoryMapper.selectById(categoryId);
+            if (category == null) {
                 throw new BizException(ResultCode.NOT_FOUND);
             }
-            rootShortcutMapper.delete(new LambdaQueryWrapper<RootShortcut>()
-                    .eq(RootShortcut::getCategoryId, categoryId));
-            rootCategoryMapper.deleteById(categoryId);
-            log.info("删除管理员分类成功 userId={} categoryId={}", userId, categoryId);
+            recommendShortcutMapper.delete(new LambdaQueryWrapper<RecommendShortcut>()
+                    .eq(RecommendShortcut::getCategoryId, categoryId));
+            recommendCategoryMapper.deleteById(categoryId);
+            log.info("删除管理员推荐分类成功 userId={} categoryId={}", userId, categoryId);
             return;
         }
 
@@ -199,9 +179,6 @@ public class NavCategoryService {
         log.info("删除分类成功 userId={} categoryId={}", userId, categoryId);
     }
 
-        /**
-     * 获取推荐站点及分类列表
-     */
     public List<RecommendCategoryRespDTO> getRecommended() {
         List<RecommendCategory> categories = recommendCategoryMapper.selectList(
                 new LambdaQueryWrapper<RecommendCategory>().orderByAsc(RecommendCategory::getSortOrder));
@@ -210,23 +187,23 @@ public class NavCategoryService {
         }
 
         List<String> categoryIds = categories.stream().map(RecommendCategory::getCategoryId).collect(Collectors.toList());
-        List<RecommendSite> sites = recommendSiteMapper.selectList(
-                new LambdaQueryWrapper<RecommendSite>()
-                        .in(RecommendSite::getCategoryId, categoryIds)
-                        .orderByAsc(RecommendSite::getSortOrder));
+        List<RecommendShortcut> sites = recommendShortcutMapper.selectList(
+                new LambdaQueryWrapper<RecommendShortcut>()
+                        .in(RecommendShortcut::getCategoryId, categoryIds)
+                        .orderByAsc(RecommendShortcut::getSortOrder));
 
-        Map<String, List<RecommendSite>> siteMap = sites.stream()
-                .collect(Collectors.groupingBy(RecommendSite::getCategoryId));
+        Map<String, List<RecommendShortcut>> siteMap = sites.stream()
+                .collect(Collectors.groupingBy(RecommendShortcut::getCategoryId));
 
         return categories.stream().map(cat -> {
             RecommendCategoryRespDTO vo = new RecommendCategoryRespDTO();
             vo.setCategoryId(cat.getCategoryId());
             vo.setCategoryName(cat.getName());
-            vo.setCategoryIcon(cat.getIcon());
+            vo.setCategoryIcon(null); // icon 已移除
             vo.setSortOrder(cat.getSortOrder());
             List<RecommendSiteRespDTO> siteVOs = siteMap.getOrDefault(cat.getCategoryId(), new ArrayList<>()).stream().map(site -> {
                 RecommendSiteRespDTO siteVO = new RecommendSiteRespDTO();
-                siteVO.setSiteId(site.getSiteId());
+                siteVO.setSiteId(site.getShortcutId());
                 siteVO.setCategoryId(site.getCategoryId());
                 siteVO.setName(site.getName());
                 siteVO.setUrl(site.getUrl());
@@ -241,9 +218,6 @@ public class NavCategoryService {
         }).collect(Collectors.toList());
     }
 
-        /**
-     * addRecommendCategory 方法
-     */
     @Transactional
     public RecommendCategoryRespDTO addRecommendCategory(String userId, RecommendCategoryReqDTO req) {
         if (!isAdmin(userId)) {
@@ -252,22 +226,18 @@ public class NavCategoryService {
         RecommendCategory cat = new RecommendCategory();
         cat.setCategoryId(IdUtils.genRecommendCategoryId());
         cat.setName(req.getName());
-        cat.setIcon(req.getIcon());
         cat.setSortOrder(req.getSortOrder() != null ? req.getSortOrder() : 0.0);
         recommendCategoryMapper.insert(cat);
 
         RecommendCategoryRespDTO vo = new RecommendCategoryRespDTO();
         vo.setCategoryId(cat.getCategoryId());
         vo.setCategoryName(cat.getName());
-        vo.setCategoryIcon(cat.getIcon());
+        vo.setCategoryIcon(null);
         vo.setSortOrder(cat.getSortOrder());
         vo.setSites(new ArrayList<>());
         return vo;
     }
 
-        /**
-     * updateRecommendCategory 方法
-     */
     @Transactional
     public void updateRecommendCategory(String userId, String categoryId, RecommendCategoryReqDTO req) {
         if (!isAdmin(userId)) {
@@ -278,14 +248,10 @@ public class NavCategoryService {
             throw new BizException(ResultCode.NOT_FOUND);
         }
         if (req.getName() != null) cat.setName(req.getName());
-        if (req.getIcon() != null) cat.setIcon(req.getIcon());
         if (req.getSortOrder() != null) cat.setSortOrder(req.getSortOrder());
         recommendCategoryMapper.updateById(cat);
     }
 
-        /**
-     * deleteRecommendCategory 方法
-     */
     @Transactional
     public void deleteRecommendCategory(String userId, String categoryId) {
         if (!isAdmin(userId)) {
@@ -295,7 +261,7 @@ public class NavCategoryService {
         if (cat == null) {
             throw new BizException(ResultCode.NOT_FOUND);
         }
-        recommendSiteMapper.delete(new LambdaQueryWrapper<RecommendSite>().eq(RecommendSite::getCategoryId, categoryId));
+        recommendShortcutMapper.delete(new LambdaQueryWrapper<RecommendShortcut>().eq(RecommendShortcut::getCategoryId, categoryId));
         recommendCategoryMapper.deleteById(categoryId);
     }
 }

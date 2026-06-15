@@ -204,7 +204,8 @@ public class FaviconFetcherHelper {
         }
         try {
             String ext = guessExtension(externalUrl);
-            String fileName = host + "." + ext;
+            String hash = org.springframework.util.DigestUtils.md5DigestAsHex(externalUrl.getBytes()).substring(0, 8);
+            String fileName = host + "_" + hash + "." + ext;
             java.io.File targetDir = new java.io.File(sysIconPath);
             if (!targetDir.exists()) {
                 targetDir.mkdirs();
@@ -231,7 +232,7 @@ public class FaviconFetcherHelper {
             String contentType = conn.getContentType();
             String betterExt = extensionFromContentType(contentType);
             if (betterExt != null) {
-                fileName = host + "." + betterExt;
+                fileName = host + "_" + hash + "." + betterExt;
                 targetFile = new java.io.File(targetDir, fileName);
                 if (targetFile.exists()) {
                     return "/uploads/icon/sys/" + fileName;

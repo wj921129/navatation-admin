@@ -1,4 +1,4 @@
-﻿-- DML: Navatation 数据初始化脚本
+-- DML: Navatation 数据初始化脚本
 -- 适用于 MySQL 5.7+
 
 SET NAMES utf8mb4;
@@ -129,11 +129,11 @@ INSERT INTO navatation_recommend_widget (widget_id, type, style, x, y, meta, del
   ('WG0000000000000000000003', 'weather',  'simple', 14.58,  4.23,  '{"locations":[{"name":"武汉, 湖北, 中国","lat":30.58333,"lon":114.26667}]}', 0);
 
 -- 推荐首页快捷方式
-INSERT INTO navatation_recommend_home_shortcut (shortcut_id, name, url, icon_type, icon_value, icon_color, sort_order, deleted) VALUES
-  ('HS000000000000000000000000000001', 'Bilibili', 'https://www.bilibili.com', 'BUILTIN', 'Bilibili', '#00a1d6', 1, 0),
-  ('HS000000000000000000000000000002', 'GitHub',   'https://github.com',       'BUILTIN', 'Github',   '#24292e', 2, 0),
-  ('HS000000000000000000000000000003', 'Google',   'https://www.google.com',   'BUILTIN', 'Google',   '#4285f4', 3, 0),
-  ('HS000000000000000000000000000004', 'YouTube',  'https://www.youtube.com',  'BUILTIN', 'Youtube',  '#ff0000', 4, 0);
+INSERT INTO navatation_recommend_home_shortcut (shortcut_id, name, url, icon_type, icon_value, icon_color, sort_order) VALUES
+  ('HS000000000000000000000000000001', 'Bilibili', 'https://www.bilibili.com', 'BUILTIN', 'Bilibili', '#00a1d6', 1),
+  ('HS000000000000000000000000000002', 'GitHub',   'https://github.com',       'BUILTIN', 'Github',   '#24292e', 2),
+  ('HS000000000000000000000000000003', 'Google',   'https://www.google.com',   'BUILTIN', 'Google',   '#4285f4', 3),
+  ('HS000000000000000000000000000004', 'YouTube',  'https://www.youtube.com',  'BUILTIN', 'Youtube',  '#ff0000', 4);
 
 -- ============================================
 -- 3. Admin 用户数据初始化

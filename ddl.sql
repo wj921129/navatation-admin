@@ -243,7 +243,6 @@ CREATE TABLE `navatation_recommend_home_shortcut` (
   `icon_value` varchar(2048) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `icon_color` varchar(7) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `sort_order` decimal(10,2) NOT NULL DEFAULT '0.00',
-  `deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT '逻辑删除：0-正常, 1-已删除',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`row_id`),
@@ -252,3 +251,6 @@ CREATE TABLE `navatation_recommend_home_shortcut` (
 
 SET FOREIGN_KEY_CHECKS=1;
 SET UNIQUE_CHECKS=1;
+
+-- [变更记录] 移除 navatation_recommend_home_shortcut 表的 deleted 字段，改为物理删除
+-- ALTER TABLE `navatation_recommend_home_shortcut` DROP COLUMN `deleted`;

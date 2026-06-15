@@ -27,8 +27,6 @@ public class RecommendHomeShortcut {
     private String iconColor;
     private BigDecimal sortOrder;
 
-    /** 逻辑删除：0-正常, 1-已删除 */
-    private Integer deleted;
     
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

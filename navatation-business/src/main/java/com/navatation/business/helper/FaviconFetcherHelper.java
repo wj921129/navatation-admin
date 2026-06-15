@@ -93,14 +93,19 @@ public class FaviconFetcherHelper {
                 faviconUrls.add(scheme + "://" + host + "/favicon.ico");
             }
 
+            // 将抓取到的外链自动下载到本地（解决前端直接加载时的跨域 403、防盗链、CORP 限制等问题）
+            List<String> localizedUrls = faviconUrls.stream()
+                    .map(u -> downloadToLocal(u, host))
+                    .collect(Collectors.toList());
+
             try {
-                redisTemplate.opsForValue().set(cacheKey, MAPPER.writeValueAsString(faviconUrls), 7, TimeUnit.DAYS);
+                redisTemplate.opsForValue().set(cacheKey, MAPPER.writeValueAsString(localizedUrls), 7, TimeUnit.DAYS);
             } catch (Exception e) {
                 log.warn("写入 Redis Favicon 缓存失败: {}", e.getMessage());
             }
 
             FaviconRespDTO vo = new FaviconRespDTO();
-            vo.setFaviconUrls(faviconUrls);
+            vo.setFaviconUrls(localizedUrls);
             vo.setSourceUrl(url);
             return vo;
         } catch (BizException e) {

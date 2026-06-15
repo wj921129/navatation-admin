@@ -50,7 +50,7 @@ public class RecommendWidgetService {
      */
     @Transactional(rollbackFor = Exception.class)
     public void saveRecommendWidgets(List<RecommendWidgetReqDTO> requests) {
-        recommendWidgetMapper.delete(new LambdaQueryWrapper<>());
+        recommendWidgetMapper.physicalDeleteAll();
         
         if (CollectionUtils.isEmpty(requests)) {
             log.info("清空所有推荐小组件");

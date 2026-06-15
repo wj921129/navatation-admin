@@ -2,7 +2,9 @@ package com.navatation.business.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.navatation.business.entity.nav.UserWidget;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 /**
  * @Author admin
@@ -11,4 +13,7 @@ import org.apache.ibatis.annotations.Mapper;
  */
 @Mapper
 public interface UserWidgetMapper extends BaseMapper<UserWidget> {
+    
+    @Delete("DELETE FROM navatation_user_widget WHERE user_id = #{userId}")
+    void physicalDeleteByUserId(@Param("userId") String userId);
 }

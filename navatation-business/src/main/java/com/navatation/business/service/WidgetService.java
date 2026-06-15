@@ -91,7 +91,7 @@ public class WidgetService {
     @Transactional(rollbackFor = Exception.class)
     public void saveWidgets(String userId, List<WidgetReqDTO> requests) {
         if (isAdmin(userId)) {
-            recommendWidgetMapper.delete(new LambdaQueryWrapper<>());
+            recommendWidgetMapper.physicalDeleteAll();
 
             if (CollectionUtils.isEmpty(requests)) {
                 log.info("保存管理员推荐组件 传入列表为空，清除管理员所有组件 userId={}", userId);
@@ -132,7 +132,7 @@ public class WidgetService {
             return;
         }
 
-        widgetMapper.delete(new LambdaQueryWrapper<UserWidget>().eq(UserWidget::getUserId, userId));
+        widgetMapper.physicalDeleteByUserId(userId);
 
         if (CollectionUtils.isEmpty(requests)) {
             log.info("保存用户组件 传入列表为空，清除用户所有组件 userId={}", userId);

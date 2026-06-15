@@ -2,6 +2,7 @@ package com.navatation.business.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.navatation.business.entity.recommend.RecommendWidget;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
@@ -11,4 +12,7 @@ import org.apache.ibatis.annotations.Mapper;
  */
 @Mapper
 public interface RecommendWidgetMapper extends BaseMapper<RecommendWidget> {
+
+    @Delete("DELETE FROM navatation_recommend_widget")
+    void physicalDeleteAll();
 }

@@ -430,3 +430,73 @@ CREATE TABLE `navatation_user_widget` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2026-06-12 14:22:32
+
+
+CREATE TABLE IF NOT EXISTS `navatation_recommend_category` (
+  `row_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '鑷鐗╃悊涓婚敭',
+  `category_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '鍒嗙被ID',
+  `name` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '鍒嗙被鍚嶇О',
+  `icon_name` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '鍥炬爣鍚嶇О',
+  `sort_order` decimal(10,2) DEFAULT '0.00' COMMENT '鎺掑簭',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '鏇存柊鏃堕棿',
+  PRIMARY KEY (`row_id`),
+  UNIQUE KEY `uk_category_id` (`category_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `navatation_recommend_config` (
+  `row_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '鑷鐗╃悊涓婚敭',
+  `config_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '閰嶇疆ID',
+  `search_engine` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '鎼滅储寮曟搸',
+  `background_image` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '鑳屾櫙鍥剧墖',
+  `background_type` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '鑳屾櫙绫诲瀷',
+  `search_box_width` int(11) DEFAULT NULL COMMENT '鎼滅储妗嗗搴?,
+  `search_box_height` int(11) DEFAULT NULL COMMENT '鎼滅储妗嗛珮搴?,
+  `search_box_margin_top` int(11) DEFAULT NULL COMMENT '鎼滅储妗嗚窛椤?,
+  `icon_size` int(11) DEFAULT NULL COMMENT '鍥炬爣澶у皬',
+  `icon_radius` int(11) DEFAULT NULL COMMENT '鍥炬爣鍦嗚',
+  `icon_spacing_x` int(11) DEFAULT NULL COMMENT '姘村钩闂磋窛',
+  `icon_spacing_y` int(11) DEFAULT NULL COMMENT '鍨傜洿闂磋窛',
+  `icon_text_gap` int(11) DEFAULT NULL COMMENT '鍥炬枃闂磋窛',
+  `text_size` int(11) DEFAULT NULL COMMENT '鏂囧瓧澶у皬',
+  `icons_margin_top` int(11) DEFAULT NULL COMMENT '瀵艰埅鍖鸿窛鎼滅储妗嗚窛绂?,
+  `icons_margin_x` int(11) DEFAULT NULL COMMENT '宸﹀彸杈硅窛',
+  `theme` varchar(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '涓婚妯″紡',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '鏇存柊鏃堕棿',
+  PRIMARY KEY (`row_id`),
+  UNIQUE KEY `uk_config_id` (`config_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `navatation_recommend_site` (
+  `row_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '鑷鐗╃悊涓婚敭',
+  `site_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '绔欑偣ID',
+  `category_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '鍒嗙被ID',
+  `name` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '鍚嶇О',
+  `url` varchar(512) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '閾炬帴',
+  `icon_type` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '鍥炬爣绫诲瀷',
+  `icon_value` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '鍥炬爣鍊?,
+  `icon_color` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '鍥炬爣棰滆壊',
+  `sort_order` decimal(10,2) DEFAULT '0.00' COMMENT '鎺掑簭',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '鏇存柊鏃堕棿',
+  PRIMARY KEY (`row_id`),
+  UNIQUE KEY `uk_site_id` (`site_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `navatation_recommend_widget` (
+  `row_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '鑷鐗╃悊涓婚敭',
+  `widget_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '缁勪欢ID',
+  `widget_type` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '缁勪欢绫诲瀷',
+  `widget_style` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '缁勪欢鏍峰紡',
+  `widget_data` varchar(2048) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '缁勪欢鏁版嵁',
+  `layout_x` decimal(5,2) DEFAULT NULL COMMENT '甯冨眬X',
+  `layout_y` decimal(5,2) DEFAULT NULL COMMENT '甯冨眬Y',
+  `layout_w` decimal(5,2) DEFAULT NULL COMMENT '甯冨眬瀹?,
+  `layout_h` decimal(5,2) DEFAULT NULL COMMENT '甯冨眬楂?,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '鍒涘缓鏃堕棿',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '鏇存柊鏃堕棿',
+  PRIMARY KEY (`row_id`),
+  UNIQUE KEY `uk_widget_id` (`widget_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

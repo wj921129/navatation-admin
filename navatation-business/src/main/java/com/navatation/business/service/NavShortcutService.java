@@ -18,6 +18,7 @@ import com.navatation.business.entity.nav.NavHomeShortcut;
 import com.navatation.business.entity.recommend.RecommendCategory;
 import com.navatation.business.entity.recommend.RecommendShortcut;
 import com.navatation.business.entity.user.User;
+import com.navatation.business.helper.FaviconFetcherHelper;
 import com.navatation.business.mapper.NavCategoryMapper;
 import com.navatation.business.mapper.NavHomeShortcutMapper;
 import com.navatation.business.mapper.RecommendCategoryMapper;
@@ -57,6 +58,7 @@ public class NavShortcutService {
     private final RecommendCategoryMapper recommendCategoryMapper;
     private final RecommendShortcutMapper recommendShortcutMapper;
     private final UserMapper userMapper;
+    private final FaviconFetcherHelper faviconFetcherHelper;
 
     private boolean isAdmin(String userId) {
         User user = userMapper.selectById(userId);
@@ -216,7 +218,9 @@ public class NavShortcutService {
             if (req.getName() != null) shortcut.setName(req.getName());
             if (req.getUrl() != null) shortcut.setUrl(req.getUrl());
             if (req.getIconType() != null) shortcut.setIconType(req.getIconType());
-            if (req.getIconValue() != null) shortcut.setIconValue(req.getIconValue());
+            if (req.getIconValue() != null) shortcut.setIconValue(localizeIcon(
+                    req.getIconType() != null ? req.getIconType() : shortcut.getIconType(),
+                    req.getIconValue()));
             if (req.getIconColor() != null) shortcut.setIconColor(req.getIconColor());
             
             recommendShortcutMapper.updateById(shortcut);
@@ -229,7 +233,9 @@ public class NavShortcutService {
             if (req.getName() != null) shortcut.setName(req.getName());
             if (req.getUrl() != null) shortcut.setUrl(req.getUrl());
             if (req.getIconType() != null) shortcut.setIconType(req.getIconType());
-            if (req.getIconValue() != null) shortcut.setIconValue(req.getIconValue());
+            if (req.getIconValue() != null) shortcut.setIconValue(localizeIcon(
+                    req.getIconType() != null ? req.getIconType() : shortcut.getIconType(),
+                    req.getIconValue()));
             if (req.getIconColor() != null) shortcut.setIconColor(req.getIconColor());
             
             shortcutMapper.updateById(shortcut);
@@ -307,7 +313,7 @@ public class NavShortcutService {
         site.setName(req.getName());
         site.setUrl(req.getUrl());
         site.setIconType(req.getIconType());
-        site.setIconValue(req.getIconValue());
+        site.setIconValue(localizeIcon(req.getIconType(), req.getIconValue()));
         site.setIconColor(req.getIconColor());
         site.setSortOrder(BigDecimal.ZERO);
         recommendShortcutMapper.insert(site);
@@ -340,7 +346,9 @@ public class NavShortcutService {
         if (req.getName() != null) site.setName(req.getName());
         if (req.getUrl() != null) site.setUrl(req.getUrl());
         if (req.getIconType() != null) site.setIconType(req.getIconType());
-        if (req.getIconValue() != null) site.setIconValue(req.getIconValue());
+        if (req.getIconValue() != null) site.setIconValue(localizeIcon(
+                req.getIconType() != null ? req.getIconType() : site.getIconType(),
+                req.getIconValue()));
         if (req.getIconColor() != null) site.setIconColor(req.getIconColor());
 
         recommendShortcutMapper.updateById(site);
@@ -409,7 +417,7 @@ public class NavShortcutService {
                 dbSite.setName(item.getName());
                 dbSite.setUrl(item.getUrl());
                 dbSite.setIconType(item.getIconType());
-                dbSite.setIconValue(item.getIconValue());
+                dbSite.setIconValue(localizeIcon(item.getIconType(), item.getIconValue()));
                 dbSite.setIconColor(item.getIconColor());
                 dbSite.setSortOrder(currentSortOrder);
                 updateList.add(dbSite);
@@ -420,7 +428,9 @@ public class NavShortcutService {
                 newSite.setName(item.getName());
                 newSite.setUrl(item.getUrl());
                 newSite.setIconType(item.getIconType() != null ? item.getIconType() : NavConstants.ICON_TYPE_FAVICON);
-                newSite.setIconValue(item.getIconValue());
+                newSite.setIconValue(localizeIcon(
+                        item.getIconType() != null ? item.getIconType() : NavConstants.ICON_TYPE_FAVICON,
+                        item.getIconValue()));
                 newSite.setIconColor(item.getIconColor());
                 newSite.setSortOrder(currentSortOrder);
                 insertList.add(newSite);
@@ -429,6 +439,31 @@ public class NavShortcutService {
 
         if (!insertList.isEmpty()) Db.saveBatch(insertList);
         if (!updateList.isEmpty()) Db.updateBatchById(updateList);
+    }
+
+    /**
+     * 如果 iconType 为 FAVICON 且 iconValue 是外部 URL，则下载到本地并返回本地路径。
+     */
+    private String localizeIcon(String iconType, String iconValue) {
+        if (!"FAVICON".equals(iconType) || iconValue == null || iconValue.isEmpty()) {
+            return iconValue;
+        }
+        if (iconValue.startsWith("/uploads/")) {
+            return iconValue;
+        }
+        if (!iconValue.startsWith("http://") && !iconValue.startsWith("https://")) {
+            return iconValue;
+        }
+        try {
+            java.net.URI uri = new java.net.URI(iconValue);
+            String host = uri.getHost();
+            if (host != null) {
+                return faviconFetcherHelper.downloadToLocal(iconValue, host);
+            }
+        } catch (Exception e) {
+            log.warn("本地图标化失败 url: {}, error: {}", iconValue, e.getMessage());
+        }
+        return iconValue;
     }
 
     private ShortcutRespDTO toShortcutVO(NavHomeShortcut s) {

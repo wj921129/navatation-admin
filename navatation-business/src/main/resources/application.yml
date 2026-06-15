@@ -43,6 +43,7 @@ app:
     icon-path: ${APP_UPLOAD_ICON_PATH:../data/user_data/icon}
     wallpaper-path: ${APP_UPLOAD_WALLPAPER_PATH:../data/user_data/bg_custom}
     local-wallpaper-path: ${APP_UPLOAD_LOCAL_WALLPAPER_PATH:../data/sys_data/bg_img}
+    sys-icon-path: ${APP_UPLOAD_SYS_ICON_PATH:../data/sys_data/icon}
   jwt:
     secret: navatation-jwt-secret-key-2026-must-be-at-least-256-bits-long
     access-token-expire: 7200

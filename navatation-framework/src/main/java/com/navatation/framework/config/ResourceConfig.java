@@ -22,6 +22,9 @@ public class ResourceConfig implements WebMvcConfigurer {
     @Value("${app.upload.local-wallpaper-path}")
     private String localWallpaperPath;
 
+    @Value("${app.upload.sys-icon-path}")
+    private String sysIconPath;
+
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         String iconAbsolutePath = "file:" + new java.io.File(iconPath).getAbsolutePath() + "/";
@@ -36,5 +39,9 @@ public class ResourceConfig implements WebMvcConfigurer {
 
         registry.addResourceHandler("/uploads/sys_data/bg_img/**")
                 .addResourceLocations(localWallpaperAbsolutePath);
+
+        String sysIconAbsolutePath = "file:" + new java.io.File(sysIconPath).getAbsolutePath() + "/";
+        registry.addResourceHandler("/uploads/icon/sys/**")
+                .addResourceLocations(sysIconAbsolutePath);
     }
 }

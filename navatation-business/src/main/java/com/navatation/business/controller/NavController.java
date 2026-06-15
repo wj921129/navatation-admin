@@ -156,7 +156,7 @@ public class NavController {
                                            @RequestBody FaviconReqDTO req) {
         log.info("获取Favicon 入参:url={}", req.getUrl());
         FaviconRespDTO result = navService.fetchFavicon(req.getUrl());
-        log.info("获取Favicon 出参:faviconUrl={}", result.getFaviconUrl());
+        log.info("获取Favicon 出参:faviconUrls={}", result.getFaviconUrls());
         return Result.success(result);
     }
 

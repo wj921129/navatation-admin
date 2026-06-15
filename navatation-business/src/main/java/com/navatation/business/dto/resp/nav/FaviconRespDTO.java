@@ -1,7 +1,7 @@
 package com.navatation.business.dto.resp.nav;
 
 import lombok.Data;
-import com.navatation.business.dto.resp.nav.FaviconRespDTO;
+import java.util.List;
 
 /**
  * 获取网站图标(Favicon)响应结果
@@ -10,6 +10,6 @@ import com.navatation.business.dto.resp.nav.FaviconRespDTO;
  */
 @Data
 public class FaviconRespDTO {
-    private String faviconUrl;
+    private List<String> faviconUrls;
     private String sourceUrl;
 }

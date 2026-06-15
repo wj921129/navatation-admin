@@ -4,13 +4,18 @@ import com.navatation.business.dto.resp.nav.FaviconRespDTO;
 import com.navatation.common.BizException;
 import com.navatation.common.RedisConstants;
 import com.navatation.common.ResultCode;
+import com.navatation.common.NavConstants;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
@@ -20,10 +25,10 @@ import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import com.navatation.common.NavConstants;
 
 /**
- * FaviconFetcherHelper 功能描述
+ * Favicon 抓取与本地化工具
+ * 支持 HTML 多图标解析、Redis 缓存、外部图标下载到本地
  *
  * @date 2026-06-09
  */
@@ -32,8 +37,12 @@ import com.navatation.common.NavConstants;
 public class FaviconFetcherHelper {
 
     private static final Logger log = LoggerFactory.getLogger(FaviconFetcherHelper.class);
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final RedisTemplate<String, Object> redisTemplate;
+
+    @Value("${app.upload.sys-icon-path}")
+    private String sysIconPath;
 
     private final ExecutorService faviconExecutor = new ThreadPoolExecutor(
             5,
@@ -52,8 +61,8 @@ public class FaviconFetcherHelper {
             new ThreadPoolExecutor.CallerRunsPolicy()
     );
 
-        /**
-     * fetchFavicon 方法
+    /**
+     * 抓取指定 URL 的网站图标，返回多个候选 URL 列表
      */
     public FaviconRespDTO fetchFavicon(String url) {
         try {
@@ -66,11 +75,12 @@ public class FaviconFetcherHelper {
 
             String cacheKey = RedisConstants.KEY_NAV_FAVICON + host;
             try {
-                String cachedUrl = (String) redisTemplate.opsForValue().get(cacheKey);
-                if (cachedUrl != null) {
-                    log.info("Favicon 缓存命中 host: {} -> {}", host, cachedUrl);
+                String cachedJson = (String) redisTemplate.opsForValue().get(cacheKey);
+                if (cachedJson != null) {
+                    log.info("Favicon 缓存命中 host: {}", host);
+                    List<String> cachedUrls = MAPPER.readValue(cachedJson, new TypeReference<List<String>>() {});
                     FaviconRespDTO vo = new FaviconRespDTO();
-                    vo.setFaviconUrl(cachedUrl);
+                    vo.setFaviconUrls(cachedUrls);
                     vo.setSourceUrl(url);
                     return vo;
                 }
@@ -78,19 +88,19 @@ public class FaviconFetcherHelper {
                 log.warn("从 Redis 读取 Favicon 缓存失败: {}", e.getMessage());
             }
 
-            String faviconUrl = tryExtractFromHtml(url, scheme, host);
-            if (faviconUrl == null) {
-                faviconUrl = scheme + "://" + host + "/favicon.ico";
+            List<String> faviconUrls = tryExtractAllFromHtml(url, scheme, host);
+            if (faviconUrls.isEmpty()) {
+                faviconUrls.add(scheme + "://" + host + "/favicon.ico");
             }
 
             try {
-                redisTemplate.opsForValue().set(cacheKey, faviconUrl, 7, TimeUnit.DAYS);
+                redisTemplate.opsForValue().set(cacheKey, MAPPER.writeValueAsString(faviconUrls), 7, TimeUnit.DAYS);
             } catch (Exception e) {
                 log.warn("写入 Redis Favicon 缓存失败: {}", e.getMessage());
             }
 
             FaviconRespDTO vo = new FaviconRespDTO();
-            vo.setFaviconUrl(faviconUrl);
+            vo.setFaviconUrls(faviconUrls);
             vo.setSourceUrl(url);
             return vo;
         } catch (BizException e) {
@@ -130,7 +140,7 @@ public class FaviconFetcherHelper {
                         String scheme = uri.getScheme();
                         String host = uri.getHost();
                         if (scheme != null && host != null) {
-                            fallbackVo.setFaviconUrl(scheme + "://" + host + "/favicon.ico");
+                            fallbackVo.setFaviconUrls(List.of(scheme + "://" + host + "/favicon.ico"));
                         }
                     } catch (Exception ex) {
                         // ignore
@@ -159,7 +169,7 @@ public class FaviconFetcherHelper {
                     String scheme = uri.getScheme();
                     String host = uri.getHost();
                     if (scheme != null && host != null) {
-                        fallback.setFaviconUrl(scheme + "://" + host + "/favicon.ico");
+                        fallback.setFaviconUrls(List.of(scheme + "://" + host + "/favicon.ico"));
                     }
                 } catch (Exception e) {
                     // ignore
@@ -171,7 +181,70 @@ public class FaviconFetcherHelper {
         return results;
     }
 
-        /**
+    /**
+     * 将外部图标 URL 下载到本地 sys-icon-path 目录。
+     * 文件已存在则跳过（幂等）。
+     *
+     * @param externalUrl 外部图标 URL
+     * @param host 目标网站 host，作为文件名
+     * @return 本地相对路径（如 /uploads/icon/sys/youtube.com.png），失败时返回原始 externalUrl
+     */
+    public String downloadToLocal(String externalUrl, String host) {
+        if (externalUrl == null || host == null) {
+            return externalUrl;
+        }
+        // 已是本地路径则直接返回
+        if (externalUrl.startsWith("/uploads/icon/sys/")) {
+            return externalUrl;
+        }
+        try {
+            String ext = guessExtension(externalUrl);
+            String fileName = host + "." + ext;
+            java.io.File targetDir = new java.io.File(sysIconPath);
+            if (!targetDir.exists()) {
+                targetDir.mkdirs();
+            }
+            java.io.File targetFile = new java.io.File(targetDir, fileName);
+            if (targetFile.exists()) {
+                log.info("系统图标已存在，跳过下载: {}", fileName);
+                return "/uploads/icon/sys/" + fileName;
+            }
+
+            java.net.URL url = new java.net.URL(externalUrl);
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
+            conn.setInstanceFollowRedirects(true);
+
+            int status = conn.getResponseCode();
+            if (status != 200) {
+                log.warn("下载系统图标失败 HTTP {} url: {}", status, externalUrl);
+                return externalUrl;
+            }
+
+            String contentType = conn.getContentType();
+            String betterExt = extensionFromContentType(contentType);
+            if (betterExt != null) {
+                fileName = host + "." + betterExt;
+                targetFile = new java.io.File(targetDir, fileName);
+                if (targetFile.exists()) {
+                    return "/uploads/icon/sys/" + fileName;
+                }
+            }
+
+            try (java.io.InputStream in = conn.getInputStream()) {
+                java.nio.file.Files.copy(in, targetFile.toPath());
+            }
+            log.info("系统图标下载成功: {} -> {}", host, fileName);
+            return "/uploads/icon/sys/" + fileName;
+        } catch (Exception e) {
+            log.warn("下载系统图标异常 url: {}, error: {}", externalUrl, e.getMessage());
+            return externalUrl;
+        }
+    }
+
+    /**
      * destroyExecutor 方法
      */
     @PreDestroy
@@ -189,7 +262,11 @@ public class FaviconFetcherHelper {
         log.info("FaviconFetcherHelper 批量抓取 Favicon 线程池已安全关闭。");
     }
 
-    private String tryExtractFromHtml(String pageUrl, String scheme, String host) {
+    /**
+     * 解析目标页面 HTML 中所有图标引用，返回去重后的 URL 列表
+     */
+    private List<String> tryExtractAllFromHtml(String pageUrl, String scheme, String host) {
+        List<String> urls = new ArrayList<>();
         try {
             Document doc = Jsoup.connect(pageUrl)
                     .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
@@ -198,21 +275,23 @@ public class FaviconFetcherHelper {
                     .followRedirects(true)
                     .get();
 
-            Element iconElement = doc.selectFirst("link[rel~=(?i)^(apple-touch-icon|apple-touch-icon-precomposed)$]");
-            if (iconElement == null) {
-                iconElement = doc.selectFirst("link[rel~=(?i)^(shortcut )?icon$]");
-            }
+            // 覆盖所有图标类型：apple-touch-icon、icon、shortcut icon
+            Elements iconElements = doc.select(
+                    "link[rel~=(?i)^(apple-touch-icon|apple-touch-icon-precomposed|icon|shortcut icon)$]");
 
-            if (iconElement != null) {
-                String href = iconElement.attr("href");
+            for (Element el : iconElements) {
+                String href = el.attr("href");
                 if (href != null && !href.isEmpty()) {
-                    return resolveFaviconUrl(href, scheme, host);
+                    String resolved = resolveFaviconUrl(href, scheme, host);
+                    if (!urls.contains(resolved)) {
+                        urls.add(resolved);
+                    }
                 }
             }
         } catch (Exception e) {
-            log.warn("从页面 {} 用 Jsoup 解析 Favicon 失败: {}", pageUrl, e.getMessage());
+            log.warn("从页面 {} 用 Jsoup 解析全部 Favicon 失败: {}", pageUrl, e.getMessage());
         }
-        return null;
+        return urls;
     }
 
     private static String resolveFaviconUrl(String href, String scheme, String host) {
@@ -224,5 +303,24 @@ public class FaviconFetcherHelper {
         }
         String base = scheme + "://" + host;
         return href.startsWith("/") ? base + href : base + "/" + href;
+    }
+
+    private String guessExtension(String url) {
+        String lower = url.toLowerCase();
+        if (lower.contains(".svg")) return "svg";
+        if (lower.contains(".ico")) return "ico";
+        if (lower.contains(".gif")) return "gif";
+        if (lower.contains(".jpg") || lower.contains(".jpeg")) return "jpg";
+        return "png";
+    }
+
+    private String extensionFromContentType(String contentType) {
+        if (contentType == null) return null;
+        if (contentType.contains("svg")) return "svg";
+        if (contentType.contains("icon") || contentType.contains("ico")) return "ico";
+        if (contentType.contains("gif")) return "gif";
+        if (contentType.contains("jpeg")) return "jpg";
+        if (contentType.contains("png")) return "png";
+        return null;
     }
 }

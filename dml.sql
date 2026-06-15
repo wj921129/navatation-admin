@@ -142,3 +142,6 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2026-06-12 14:27:20
+I N S E R T   I N T O   \ 
+ a v a t a t i o n _ r e c o m m e n d _ h o m e _ s h o r t c u t \   V A L U E S   ( 1 , ' H S 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 ' , ' B i l i b i l i ' , ' h t t p s : / / w w w . b i l i b i l i . c o m ' , ' B U I L T I N ' , ' B i l i b i l i ' , ' # 0 0 a 1 d 6 ' , 1 . 0 , C U R R E N T _ T I M E S T A M P , C U R R E N T _ T I M E S T A M P ) ;  
+ 

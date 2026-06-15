@@ -2,6 +2,7 @@ package com.navatation.business.controller;
 
 import com.navatation.business.dto.resp.nav.CategoryRespDTO;
 import com.navatation.business.dto.resp.nav.ShortcutRespDTO;
+import com.navatation.business.dto.resp.nav.HomeShortcutRespDTO;
 import com.navatation.business.dto.resp.settings.SettingsRespDTO;
 import com.navatation.business.dto.resp.widget.WidgetRespDTO;
 import com.navatation.business.service.PublicService;
@@ -65,5 +66,13 @@ public class PublicController {
     @GetMapping("/guest-todos")
     public Result<List<com.navatation.business.dto.resp.todo.TodoRespDTO>> getGuestTodos() {
         return Result.success(publicService.getGuestTodos());
+    }
+
+    /**
+     * 获取访客模式下的默认首页网址
+     */
+    @GetMapping("/guest-home-shortcuts")
+    public Result<List<HomeShortcutRespDTO>> getGuestHomeShortcuts() {
+        return Result.success(publicService.getGuestHomeShortcuts());
     }
 }

@@ -11,19 +11,23 @@ import com.navatation.business.dto.resp.auth.LoginRespDTO;
 import com.navatation.business.dto.resp.user.UserRespDTO;
 import com.navatation.business.entity.nav.NavCategory;
 import com.navatation.business.entity.nav.NavShortcut;
+import com.navatation.business.entity.nav.NavHomeShortcut;
 import com.navatation.business.entity.nav.TodoItem;
 import com.navatation.business.entity.nav.UserWidget;
 import com.navatation.business.entity.recommend.RecommendCategory;
 import com.navatation.business.entity.recommend.RecommendConfig;
+import com.navatation.business.entity.recommend.RecommendHomeShortcut;
 import com.navatation.business.entity.recommend.RecommendShortcut;
 import com.navatation.business.entity.recommend.RecommendTodoItem;
 import com.navatation.business.entity.recommend.RecommendWidget;
 import com.navatation.business.entity.user.User;
 import com.navatation.business.entity.user.UserConfig;
 import com.navatation.business.mapper.NavCategoryMapper;
+import com.navatation.business.mapper.NavHomeShortcutMapper;
 import com.navatation.business.mapper.NavShortcutMapper;
 import com.navatation.business.mapper.RecommendCategoryMapper;
 import com.navatation.business.mapper.RecommendConfigMapper;
+import com.navatation.business.mapper.RecommendHomeShortcutMapper;
 import com.navatation.business.mapper.RecommendShortcutMapper;
 import com.navatation.business.mapper.RecommendTodoItemMapper;
 import com.navatation.business.mapper.RecommendWidgetMapper;
@@ -70,12 +74,14 @@ public class AuthService {
     private final NavShortcutMapper navShortcutMapper;
     private final UserWidgetMapper userWidgetMapper;
     private final TodoItemMapper todoItemMapper;
+    private final NavHomeShortcutMapper navHomeShortcutMapper;
     
     private final RecommendConfigMapper recommendConfigMapper;
     private final RecommendCategoryMapper recommendCategoryMapper;
     private final RecommendShortcutMapper recommendShortcutMapper;
     private final RecommendWidgetMapper recommendWidgetMapper;
     private final RecommendTodoItemMapper recommendTodoItemMapper;
+    private final RecommendHomeShortcutMapper recommendHomeShortcutMapper;
     
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
@@ -276,6 +282,29 @@ public class AuthService {
         }
         if (!CollectionUtils.isEmpty(saveTodos)) {
             Db.saveBatch(saveTodos);
+        }
+
+        // 6. 同步首页网址表
+        List<RecommendHomeShortcut> recommendHomeShortcuts = recommendHomeShortcutMapper.selectList(
+                new LambdaQueryWrapper<RecommendHomeShortcut>().orderByAsc(RecommendHomeShortcut::getSortOrder));
+        List<NavHomeShortcut> saveHomeShortcuts = new ArrayList<>();
+        if (recommendHomeShortcuts != null && !recommendHomeShortcuts.isEmpty()) {
+            for (RecommendHomeShortcut recHome : recommendHomeShortcuts) {
+                NavHomeShortcut navHome = new NavHomeShortcut();
+                navHome.setShortcutId(IdUtils.genShortcutId());
+                navHome.setUserId(user.getUserId());
+                navHome.setName(recHome.getName());
+                navHome.setUrl(recHome.getUrl());
+                navHome.setIconType(recHome.getIconType());
+                navHome.setIconValue(recHome.getIconValue());
+                navHome.setIconColor(recHome.getIconColor());
+                navHome.setSortOrder(recHome.getSortOrder());
+                navHome.setClickCount(0L);
+                saveHomeShortcuts.add(navHome);
+            }
+        }
+        if (!CollectionUtils.isEmpty(saveHomeShortcuts)) {
+            Db.saveBatch(saveHomeShortcuts);
         }
 
         log.info("用户注册成功 userId={} username={}", user.getUserId(), user.getUsername());

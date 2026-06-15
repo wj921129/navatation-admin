@@ -11,12 +11,15 @@ import com.navatation.business.dto.resp.recommend.RecommendCategoryRespDTO;
 import com.navatation.business.dto.resp.nav.ShortcutRespDTO;
 import com.navatation.business.dto.req.nav.SortReqDTO;
 import com.navatation.business.dto.req.nav.UpdateShortcutReqDTO;
+import com.navatation.business.dto.req.nav.HomeShortcutReqDTO;
+import com.navatation.business.dto.resp.nav.HomeShortcutRespDTO;
 import com.navatation.business.dto.req.recommend.RecommendCategoryReqDTO;
 import com.navatation.business.dto.req.recommend.RecommendSiteReqDTO;
 import com.navatation.business.dto.resp.recommend.RecommendSiteRespDTO;
 import com.navatation.business.dto.req.recommend.BatchRecommendSiteSaveReqDTO;
 import com.navatation.business.dto.req.nav.BatchFaviconReqDTO;
 import com.navatation.business.service.NavService;
+import com.navatation.business.service.HomeShortcutService;
 import com.navatation.common.Result;
 import com.navatation.framework.security.JwtTokenProvider;
 import jakarta.validation.Valid;
@@ -51,6 +54,7 @@ public class NavController {
     private static final Logger log = LoggerFactory.getLogger(NavController.class);
 
     private final NavService navService;
+    private final HomeShortcutService homeShortcutService;
     private final JwtTokenProvider jwtTokenProvider;
 
     // ---- Category ----
@@ -261,5 +265,42 @@ public class NavController {
         navService.batchSaveRecommendSites(userId, categoryId, req);
         log.info("批量保存推荐网址 出参:success=true");
         return Result.success("保存成功", null);
+    }
+
+    // ---- Home Shortcut ----
+    @GetMapping("/home-shortcuts")
+    public Result<List<HomeShortcutRespDTO>> getHomeShortcuts(@RequestHeader("Authorization") String auth) {
+        String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
+        log.info("获取首页网址 入参:userId={}", userId);
+        List<HomeShortcutRespDTO> result = homeShortcutService.getHomeShortcuts(userId);
+        return Result.success(result);
+    }
+
+    @PostMapping("/home-shortcuts")
+    public Result<HomeShortcutRespDTO> addHomeShortcut(@RequestHeader("Authorization") String auth,
+                                                  @RequestBody HomeShortcutReqDTO req) {
+        String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
+        log.info("添加首页网址 入参:userId={},name={}", userId, req.getName());
+        HomeShortcutRespDTO result = homeShortcutService.addHomeShortcut(userId, req);
+        return Result.success("添加成功", result);
+    }
+
+    @PutMapping("/home-shortcuts/{shortcutId}")
+    public Result<HomeShortcutRespDTO> updateHomeShortcut(@RequestHeader("Authorization") String auth,
+                                                     @PathVariable String shortcutId,
+                                                     @RequestBody HomeShortcutReqDTO req) {
+        String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
+        log.info("更新首页网址 入参:userId={},shortcutId={}", userId, shortcutId);
+        HomeShortcutRespDTO result = homeShortcutService.updateHomeShortcut(userId, shortcutId, req);
+        return Result.success("更新成功", result);
+    }
+
+    @DeleteMapping("/home-shortcuts/{shortcutId}")
+    public Result<?> deleteHomeShortcut(@RequestHeader("Authorization") String auth,
+                                        @PathVariable String shortcutId) {
+        String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
+        log.info("删除首页网址 入参:userId={},shortcutId={}", userId, shortcutId);
+        homeShortcutService.deleteHomeShortcut(userId, shortcutId);
+        return Result.success("删除成功", null);
     }
 }

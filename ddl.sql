@@ -222,5 +222,41 @@ DROP TABLE IF EXISTS `navatation_root_todo_item`;
 DROP TABLE IF EXISTS `navatation_root_user`;
 DROP TABLE IF EXISTS `navatation_root_user_widget`;
 
+DROP TABLE IF EXISTS `navatation_nav_home_shortcut`;
+CREATE TABLE `navatation_nav_home_shortcut` (
+  `row_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `shortcut_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `user_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `url` varchar(2048) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `icon_type` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'BUILTIN',
+  `icon_value` varchar(2048) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `icon_color` varchar(7) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `sort_order` double NOT NULL DEFAULT '0',
+  `click_count` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `last_click_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`row_id`),
+  UNIQUE KEY `uk_shortcut_id` (`shortcut_id`),
+  KEY `idx_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `navatation_recommend_home_shortcut`;
+CREATE TABLE `navatation_recommend_home_shortcut` (
+  `row_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `shortcut_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `url` varchar(2048) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `icon_type` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'BUILTIN',
+  `icon_value` varchar(2048) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `icon_color` varchar(7) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `sort_order` double NOT NULL DEFAULT '0',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`row_id`),
+  UNIQUE KEY `uk_shortcut_id` (`shortcut_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS=1;
 SET UNIQUE_CHECKS=1;

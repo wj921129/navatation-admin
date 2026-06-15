@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.navatation.business.dto.resp.nav.CategoryRespDTO;
 import com.navatation.business.dto.resp.nav.ShortcutRespDTO;
+import com.navatation.business.dto.resp.nav.HomeShortcutRespDTO;
 import com.navatation.business.dto.resp.widget.WidgetRespDTO;
 import com.navatation.business.entity.recommend.RecommendConfig;
 import com.navatation.business.mapper.RecommendConfigMapper;
@@ -38,6 +39,7 @@ public class PublicService {
     private final WidgetService widgetService;
     private final NavService navService;
     private final TodoService todoService;
+    private final HomeShortcutService homeShortcutService;
     private final RecommendConfigMapper recommendConfigMapper;
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
@@ -148,6 +150,26 @@ public class PublicService {
             log.error("游客配置Todos从 Redis 反序列化失败", e);
             redisTemplate.opsForHash().delete(cacheKey, "todos");
             return todoService.getList(adminId, null);
+        }
+    }
+
+    public List<HomeShortcutRespDTO> getGuestHomeShortcuts() {
+        String adminId = getAdminId();
+        if (adminId == null) return List.of();
+        
+        String cacheKey = "navatation:guest_config";
+        try {
+            Object cached = redisTemplate.opsForHash().get(cacheKey, "home_shortcuts");
+            if (cached != null) {
+                return objectMapper.readValue((String) cached, new TypeReference<List<HomeShortcutRespDTO>>() {});
+            }
+            List<HomeShortcutRespDTO> homeShortcutVOs = homeShortcutService.getHomeShortcuts(adminId);
+            redisTemplate.opsForHash().put(cacheKey, "home_shortcuts", objectMapper.writeValueAsString(homeShortcutVOs));
+            return homeShortcutVOs;
+        } catch (Exception e) {
+            log.error("游客配置HomeShortcuts从 Redis 反序列化失败", e);
+            redisTemplate.opsForHash().delete(cacheKey, "home_shortcuts");
+            return homeShortcutService.getHomeShortcuts(adminId);
         }
     }
 }

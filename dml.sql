@@ -110,6 +110,7 @@ UNLOCK TABLES;
 
 LOCK TABLES `navatation_user` WRITE;
 /*!40000 ALTER TABLE `navatation_user` DISABLE KEYS */;
+INSERT INTO `navatation_user` VALUES (1,'u_admin_001','admin','$2a$12$Mn3ztgUb2sv8E93cosysJ.4DZB3X5wT6TnDnnXRO/Rw.tZeTE6qYG','admin@navatation.com',NULL,'ADMIN',1,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
 /*!40000 ALTER TABLE `navatation_user` ENABLE KEYS */;
 UNLOCK TABLES;
 

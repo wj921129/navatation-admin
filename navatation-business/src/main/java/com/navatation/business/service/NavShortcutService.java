@@ -33,6 +33,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -450,7 +452,16 @@ public class NavShortcutService {
         if (!updateList.isEmpty()) Db.updateBatchById(updateList);
         
         if (!pendingDownloadSites.isEmpty()) {
-            navShortcutIconAsyncService.asyncBatchDownloadAndSaveIcons(pendingDownloadSites);
+            if (TransactionSynchronizationManager.isActualTransactionActive()) {
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        navShortcutIconAsyncService.asyncBatchDownloadAndSaveIcons(pendingDownloadSites);
+                    }
+                });
+            } else {
+                navShortcutIconAsyncService.asyncBatchDownloadAndSaveIcons(pendingDownloadSites);
+            }
         }
     }
 

@@ -58,6 +58,16 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 处理静态资源不存在异常 (Spring Boot 3)
+     */
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public Result<?> handleNoResourceFound(org.springframework.web.servlet.resource.NoResourceFoundException e) {
+        log.warn("静态资源不存在: {}", e.getMessage());
+        return Result.fail(HttpStatus.NOT_FOUND.value(), "资源不存在: " + e.getResourcePath());
+    }
+
+    /**
      * 处理未知系统异常
      */
     @ExceptionHandler(Exception.class)

@@ -38,14 +38,16 @@ public class MissingIconDownloadFilter implements Filter {
                 File targetDir = new File(sysIconPath);
                 File file = new File(targetDir, filename);
                 if (!file.exists()) {
-                    log.info("发现前端请求的系统图标文件不存在，尝试主动重下载: {}", filename);
-                    String redirectUrl = restoreMissingIcon(filename, file);
-                    if (redirectUrl != null && (redirectUrl.startsWith("http://") || redirectUrl.startsWith("https://"))) {
-                        log.info("图标 {} 本地下载失败或无法访问，重定向至外部地址: {}", filename, redirectUrl);
-                        HttpServletResponse res = (HttpServletResponse) response;
-                        res.sendRedirect(redirectUrl);
-                        return;
-                    }
+                    log.debug("发现前端请求的系统图标文件不存在，触发异步重下载: {}", filename);
+                    // 异步执行下载，不阻塞当前的 Tomcat 响应线程
+                    java.util.concurrent.CompletableFuture.runAsync(() -> {
+                        restoreMissingIcon(filename, file);
+                    });
+                    
+                    // 立即返回 404（或者交给后续的静态资源处理器返回 404），
+                    // 这样前端会显示兜底图标，后端后台慢慢下载，下次刷新时即可正常显示。
+                    chain.doFilter(request, response);
+                    return;
                 }
             }
         }

@@ -16,6 +16,14 @@ import java.io.IOException;
  * 拦截请求，解决因为跨设备、多数据源导致数据库存了图标路径但本地没有文件（404）的问题。
  * 当请求 /uploads/icon/sys/ 下的文件不存在时，自动触发重下载。
  */
+import com.navatation.business.mapper.NavHomeShortcutMapper;
+import com.navatation.business.mapper.RecommendHomeShortcutMapper;
+import com.navatation.business.mapper.RecommendShortcutMapper;
+import com.navatation.business.entity.nav.NavHomeShortcut;
+import com.navatation.business.entity.recommend.RecommendHomeShortcut;
+import com.navatation.business.entity.recommend.RecommendShortcut;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -25,6 +33,9 @@ public class MissingIconDownloadFilter implements Filter {
     private String sysIconPath;
 
     private final FaviconFetcherHelper faviconFetcherHelper;
+    private final NavHomeShortcutMapper navHomeShortcutMapper;
+    private final RecommendHomeShortcutMapper recommendHomeShortcutMapper;
+    private final RecommendShortcutMapper recommendShortcutMapper;
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -81,15 +92,24 @@ public class MissingIconDownloadFilter implements Filter {
                 String externalUrl = favs.get(0);
                 String generatedPath = faviconFetcherHelper.downloadToLocal(externalUrl, host);
                 
-                // 由于 downloadToLocal 可能生成基于新哈希规则或扩展名的文件，
-                // 如果生成的文件名跟请求的缺失文件名不一致，我们将它拷贝一份到缺失的文件名上，
-                // 确保前端该次请求以及历史数据库能够命中该文件。
+                // 由于 downloadToLocal 会保证每个域名只有一份最新的图标，
+                // 我们直接更新数据库中的记录，让引用旧图标的地方改用新图标，而不是去拷贝复制文件！
                 if (generatedPath != null && generatedPath.startsWith("/uploads/icon/sys/")) {
-                    String genFileName = generatedPath.substring("/uploads/icon/sys/".length());
-                    File genFile = new File(targetFile.getParentFile(), genFileName);
-                    if (genFile.exists() && !genFile.getAbsolutePath().equals(targetFile.getAbsolutePath())) {
-                        java.nio.file.Files.copy(genFile.toPath(), targetFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-                        log.info("已将重下载的图标 {} 拷贝恢复为缺失文件 {}", genFileName, filename);
+                    String oldIconValue = "/uploads/icon/sys/" + filename;
+                    if (!generatedPath.equals(oldIconValue)) {
+                        LambdaUpdateWrapper<NavHomeShortcut> uw1 = new LambdaUpdateWrapper<>();
+                        uw1.eq(NavHomeShortcut::getIconValue, oldIconValue).set(NavHomeShortcut::getIconValue, generatedPath);
+                        navHomeShortcutMapper.update(null, uw1);
+
+                        LambdaUpdateWrapper<RecommendHomeShortcut> uw2 = new LambdaUpdateWrapper<>();
+                        uw2.eq(RecommendHomeShortcut::getIconValue, oldIconValue).set(RecommendHomeShortcut::getIconValue, generatedPath);
+                        recommendHomeShortcutMapper.update(null, uw2);
+
+                        LambdaUpdateWrapper<RecommendShortcut> uw3 = new LambdaUpdateWrapper<>();
+                        uw3.eq(RecommendShortcut::getIconValue, oldIconValue).set(RecommendShortcut::getIconValue, generatedPath);
+                        recommendShortcutMapper.update(null, uw3);
+                        
+                        log.info("已将缺失图标对应的新图标路径更新至数据库，旧: {}, 新: {}", oldIconValue, generatedPath);
                     }
                     return null;
                 } else {

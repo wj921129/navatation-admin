@@ -219,6 +219,7 @@ public class FaviconFetcherHelper {
             java.io.File targetFile = new java.io.File(targetDir, fileName);
             if (targetFile.exists()) {
                 log.info("系统图标已存在，跳过下载: {}", fileName);
+                cleanOldHostIcons(targetDir, host, fileName);
                 return "/uploads/icon/sys/" + fileName;
             }
 
@@ -245,6 +246,7 @@ public class FaviconFetcherHelper {
                 }
             }
 
+            cleanOldHostIcons(targetDir, host, fileName);
             try (java.io.InputStream in = conn.getInputStream()) {
                 java.nio.file.Files.copy(in, targetFile.toPath());
             }
@@ -253,6 +255,19 @@ public class FaviconFetcherHelper {
         } catch (Exception e) {
             log.warn("下载系统图标异常 url: {}, error: {}", externalUrl, e.getMessage());
             return externalUrl;
+        }
+    }
+
+    private void cleanOldHostIcons(java.io.File targetDir, String host, String preserveFileName) {
+        if (!targetDir.exists()) return;
+        java.io.File[] oldFiles = targetDir.listFiles((dir, name) -> name.startsWith(host + "_") || name.startsWith(host + "."));
+        if (oldFiles != null) {
+            for (java.io.File old : oldFiles) {
+                if (!old.getName().equals(preserveFileName)) {
+                    old.delete();
+                    log.info("清理同一域名的旧图标文件，保持一个网站仅对应一个文件: {}", old.getName());
+                }
+            }
         }
     }
 

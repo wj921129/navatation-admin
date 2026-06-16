@@ -93,15 +93,25 @@ public class FaviconFetcherHelper {
                 faviconUrls.add(scheme + "://" + host + "/favicon.ico");
             }
 
+            // 过滤掉 404 等无效链接
+            List<String> validUrls = faviconUrls.stream()
+                    .filter(this::isValidFavicon)
+                    .collect(Collectors.toList());
+
+            // 如果全部无效（例如原站图标 404），重启搜索功能：使用第三方服务兜底
+            if (validUrls.isEmpty()) {
+                validUrls.add("https://www.google.com/s2/favicons?domain=" + host + "&sz=128");
+            }
+
             // 直接返回原外链，不再自动下载，留给保存动作触发下载
             try {
-                redisTemplate.opsForValue().set(cacheKey, MAPPER.writeValueAsString(faviconUrls), 7, TimeUnit.DAYS);
+                redisTemplate.opsForValue().set(cacheKey, MAPPER.writeValueAsString(validUrls), 7, TimeUnit.DAYS);
             } catch (Exception e) {
                 log.warn("写入 Redis Favicon 缓存失败: {}", e.getMessage());
             }
 
             FaviconRespDTO vo = new FaviconRespDTO();
-            vo.setFaviconUrls(faviconUrls);
+            vo.setFaviconUrls(validUrls);
             vo.setSourceUrl(url);
             return vo;
         } catch (BizException e) {
@@ -141,7 +151,7 @@ public class FaviconFetcherHelper {
                         String scheme = uri.getScheme();
                         String host = uri.getHost();
                         if (scheme != null && host != null) {
-                            fallbackVo.setFaviconUrls(List.of(scheme + "://" + host + "/favicon.ico"));
+                            fallbackVo.setFaviconUrls(List.of("https://www.google.com/s2/favicons?domain=" + host + "&sz=128"));
                         }
                     } catch (Exception ex) {
                         // ignore
@@ -170,7 +180,7 @@ public class FaviconFetcherHelper {
                     String scheme = uri.getScheme();
                     String host = uri.getHost();
                     if (scheme != null && host != null) {
-                        fallback.setFaviconUrls(List.of(scheme + "://" + host + "/favicon.ico"));
+                        fallback.setFaviconUrls(List.of("https://www.google.com/s2/favicons?domain=" + host + "&sz=128"));
                     }
                 } catch (Exception e) {
                     // ignore
@@ -324,5 +334,35 @@ public class FaviconFetcherHelper {
         if (contentType.contains("jpeg")) return "jpg";
         if (contentType.contains("png")) return "png";
         return null;
+    }
+
+    /**
+     * 发送轻量请求检测图标链接是否存活（过滤 404 等无效链接）
+     */
+    private boolean isValidFavicon(String urlStr) {
+        if (urlStr == null || urlStr.isEmpty()) return false;
+        if (!urlStr.startsWith("http://") && !urlStr.startsWith("https://")) return true;
+        try {
+            java.net.URL url = new java.net.URL(urlStr);
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("HEAD");
+            conn.setConnectTimeout(3000);
+            conn.setReadTimeout(3000);
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0");
+            int status = conn.getResponseCode();
+
+            // 部分服务器可能禁用 HEAD 请求，降级尝试 GET
+            if (status == 405 || status == 403) {
+                conn = (java.net.HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.setConnectTimeout(3000);
+                conn.setReadTimeout(3000);
+                conn.setRequestProperty("User-Agent", "Mozilla/5.0");
+                status = conn.getResponseCode();
+            }
+            return status >= 200 && status < 400;
+        } catch (Exception e) {
+            return false; // 请求超时或域名解析失败等，视为无效
+        }
     }
 }

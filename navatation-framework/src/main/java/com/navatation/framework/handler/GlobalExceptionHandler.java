@@ -63,7 +63,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public Result<?> handleNoResourceFound(org.springframework.web.servlet.resource.NoResourceFoundException e) {
-        log.warn("静态资源不存在: {}", e.getMessage());
+        log.debug("静态资源不存在: {}", e.getMessage());
         return Result.fail(HttpStatus.NOT_FOUND.value(), "资源不存在: " + e.getResourcePath());
     }
 

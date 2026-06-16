@@ -31,37 +31,41 @@ public class NavShortcutIconAsyncService {
         }
         
         long start = System.currentTimeMillis();
-        log.info("开始异步并发下载 {} 个站点的图标...", pendingSites.size());
+        log.info("开始异步串行下载 {} 个站点的图标...", pendingSites.size());
 
-        // 使用 CompletableFuture 对所有站点进行并发处理
-        List<CompletableFuture<Void>> futures = pendingSites.stream()
-                .map(site -> CompletableFuture.runAsync(() -> {
-                    String externalUrl = site.getIconValue();
-                    try {
-                        java.net.URI uri = new java.net.URI(externalUrl);
-                        String host = uri.getHost();
-                        if (host != null) {
-                            String localPath = faviconFetcherHelper.downloadToLocal(externalUrl, host);
-                            if (!externalUrl.equals(localPath)) {
-                                // 如果返回了不同的本地路径，说明下载成功，更新数据库
-                                RecommendShortcut updateEntity = new RecommendShortcut();
-                                updateEntity.setShortcutId(site.getShortcutId());
-                                updateEntity.setIconValue(localPath);
-                                recommendShortcutMapper.updateById(updateEntity);
-                                log.info("异步下载成功，站点 {} 图标更新为: {}", site.getName(), localPath);
-                            } else {
-                                log.warn("站点 {} 的图标下载失败或未改变: {}", site.getName(), externalUrl);
-                            }
-                        }
-                    } catch (Exception e) {
-                        log.warn("处理站点 {} 异步图标拉取失败 url: {}, error: {}", site.getName(), externalUrl, e.getMessage());
+        for (RecommendShortcut site : pendingSites) {
+            String externalUrl = site.getIconValue();
+            try {
+                String targetUrl = site.getUrl();
+                String host = null;
+                if (targetUrl != null && !targetUrl.isEmpty()) {
+                    if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
+                        targetUrl = "http://" + targetUrl;
                     }
-                }))
-                .toList();
-
-        // 阻塞等待当前这批次的所有并发下载任务都完成（不会阻塞主线程，因为整体在 @Async 线程中执行）
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+                    host = new java.net.URI(targetUrl).getHost();
+                }
+                if (host == null) {
+                    host = new java.net.URI(externalUrl).getHost();
+                }
+                
+                if (host != null) {
+                    String localPath = faviconFetcherHelper.downloadToLocal(externalUrl, host);
+                    if (!externalUrl.equals(localPath)) {
+                        // 如果返回了不同的本地路径，说明下载成功，更新数据库
+                        RecommendShortcut updateEntity = new RecommendShortcut();
+                        updateEntity.setShortcutId(site.getShortcutId());
+                        updateEntity.setIconValue(localPath);
+                        recommendShortcutMapper.updateById(updateEntity);
+                        log.info("异步下载成功，站点 {} 图标更新为: {}", site.getName(), localPath);
+                    } else {
+                        log.warn("站点 {} 的图标下载失败或未改变: {}", site.getName(), externalUrl);
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("处理站点 {} 异步图标拉取失败 url: {}, error: {}", site.getName(), externalUrl, e.getMessage());
+            }
+        }
         
-        log.info("异步并发下载任务结束，共处理 {} 个，耗时 {} ms", pendingSites.size(), (System.currentTimeMillis() - start));
+        log.info("异步串行下载任务结束，共处理 {} 个，耗时 {} ms", pendingSites.size(), (System.currentTimeMillis() - start));
     }
 }

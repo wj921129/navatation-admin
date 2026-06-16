@@ -93,19 +93,25 @@ public class FaviconFetcherHelper {
                 faviconUrls.add(scheme + "://" + host + "/favicon.ico");
             }
 
-            // 将抓取到的外链自动下载到本地（解决前端直接加载时的跨域 403、防盗链、CORP 限制等问题）
-            List<String> localizedUrls = faviconUrls.stream()
-                    .map(u -> downloadToLocal(u, host))
+            // 过滤掉 404 等无效链接
+            List<String> validUrls = faviconUrls.stream()
+                    .filter(this::isValidFavicon)
                     .collect(Collectors.toList());
 
+            // 如果全部无效（例如原站图标 404），重启搜索功能：使用第三方服务兜底
+            if (validUrls.isEmpty()) {
+                validUrls.add("https://www.google.com/s2/favicons?domain=" + host + "&sz=128");
+            }
+
+            // 直接返回原外链，不再自动下载，留给保存动作触发下载
             try {
-                redisTemplate.opsForValue().set(cacheKey, MAPPER.writeValueAsString(localizedUrls), 7, TimeUnit.DAYS);
+                redisTemplate.opsForValue().set(cacheKey, MAPPER.writeValueAsString(validUrls), 7, TimeUnit.DAYS);
             } catch (Exception e) {
                 log.warn("写入 Redis Favicon 缓存失败: {}", e.getMessage());
             }
 
             FaviconRespDTO vo = new FaviconRespDTO();
-            vo.setFaviconUrls(localizedUrls);
+            vo.setFaviconUrls(validUrls);
             vo.setSourceUrl(url);
             return vo;
         } catch (BizException e) {
@@ -145,7 +151,7 @@ public class FaviconFetcherHelper {
                         String scheme = uri.getScheme();
                         String host = uri.getHost();
                         if (scheme != null && host != null) {
-                            fallbackVo.setFaviconUrls(List.of(scheme + "://" + host + "/favicon.ico"));
+                            fallbackVo.setFaviconUrls(List.of("https://www.google.com/s2/favicons?domain=" + host + "&sz=128"));
                         }
                     } catch (Exception ex) {
                         // ignore
@@ -174,7 +180,7 @@ public class FaviconFetcherHelper {
                     String scheme = uri.getScheme();
                     String host = uri.getHost();
                     if (scheme != null && host != null) {
-                        fallback.setFaviconUrls(List.of(scheme + "://" + host + "/favicon.ico"));
+                        fallback.setFaviconUrls(List.of("https://www.google.com/s2/favicons?domain=" + host + "&sz=128"));
                     }
                 } catch (Exception e) {
                     // ignore
@@ -204,7 +210,7 @@ public class FaviconFetcherHelper {
         }
         try {
             String ext = guessExtension(externalUrl);
-            String hash = org.springframework.util.DigestUtils.md5DigestAsHex(externalUrl.getBytes()).substring(0, 8);
+            String hash = org.springframework.util.DigestUtils.md5DigestAsHex(host.getBytes()).substring(0, 8);
             String fileName = host + "_" + hash + "." + ext;
             java.io.File targetDir = new java.io.File(sysIconPath);
             if (!targetDir.exists()) {
@@ -213,6 +219,7 @@ public class FaviconFetcherHelper {
             java.io.File targetFile = new java.io.File(targetDir, fileName);
             if (targetFile.exists()) {
                 log.info("系统图标已存在，跳过下载: {}", fileName);
+                cleanOldHostIcons(targetDir, host, fileName);
                 return "/uploads/icon/sys/" + fileName;
             }
 
@@ -239,6 +246,7 @@ public class FaviconFetcherHelper {
                 }
             }
 
+            cleanOldHostIcons(targetDir, host, fileName);
             try (java.io.InputStream in = conn.getInputStream()) {
                 java.nio.file.Files.copy(in, targetFile.toPath());
             }
@@ -247,6 +255,19 @@ public class FaviconFetcherHelper {
         } catch (Exception e) {
             log.warn("下载系统图标异常 url: {}, error: {}", externalUrl, e.getMessage());
             return externalUrl;
+        }
+    }
+
+    private void cleanOldHostIcons(java.io.File targetDir, String host, String preserveFileName) {
+        if (!targetDir.exists()) return;
+        java.io.File[] oldFiles = targetDir.listFiles((dir, name) -> name.startsWith(host + "_") || name.startsWith(host + "."));
+        if (oldFiles != null) {
+            for (java.io.File old : oldFiles) {
+                if (!old.getName().equals(preserveFileName)) {
+                    old.delete();
+                    log.info("清理同一域名的旧图标文件，保持一个网站仅对应一个文件: {}", old.getName());
+                }
+            }
         }
     }
 
@@ -328,5 +349,35 @@ public class FaviconFetcherHelper {
         if (contentType.contains("jpeg")) return "jpg";
         if (contentType.contains("png")) return "png";
         return null;
+    }
+
+    /**
+     * 发送轻量请求检测图标链接是否存活（过滤 404 等无效链接）
+     */
+    private boolean isValidFavicon(String urlStr) {
+        if (urlStr == null || urlStr.isEmpty()) return false;
+        if (!urlStr.startsWith("http://") && !urlStr.startsWith("https://")) return true;
+        try {
+            java.net.URL url = new java.net.URL(urlStr);
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("HEAD");
+            conn.setConnectTimeout(3000);
+            conn.setReadTimeout(3000);
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0");
+            int status = conn.getResponseCode();
+
+            // 部分服务器可能禁用 HEAD 请求，降级尝试 GET
+            if (status == 405 || status == 403) {
+                conn = (java.net.HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.setConnectTimeout(3000);
+                conn.setReadTimeout(3000);
+                conn.setRequestProperty("User-Agent", "Mozilla/5.0");
+                status = conn.getResponseCode();
+            }
+            return status >= 200 && status < 400;
+        } catch (Exception e) {
+            return false; // 请求超时或域名解析失败等，视为无效
+        }
     }
 }

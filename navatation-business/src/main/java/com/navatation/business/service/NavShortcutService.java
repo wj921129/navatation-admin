@@ -33,6 +33,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -221,7 +223,8 @@ public class NavShortcutService {
             if (req.getIconType() != null) shortcut.setIconType(req.getIconType());
             if (req.getIconValue() != null) shortcut.setIconValue(localizeIcon(
                     req.getIconType() != null ? req.getIconType() : shortcut.getIconType(),
-                    req.getIconValue()));
+                    req.getIconValue(),
+                    req.getUrl() != null ? req.getUrl() : shortcut.getUrl()));
             if (req.getIconColor() != null) shortcut.setIconColor(req.getIconColor());
             
             recommendShortcutMapper.updateById(shortcut);
@@ -236,7 +239,8 @@ public class NavShortcutService {
             if (req.getIconType() != null) shortcut.setIconType(req.getIconType());
             if (req.getIconValue() != null) shortcut.setIconValue(localizeIcon(
                     req.getIconType() != null ? req.getIconType() : shortcut.getIconType(),
-                    req.getIconValue()));
+                    req.getIconValue(),
+                    req.getUrl() != null ? req.getUrl() : shortcut.getUrl()));
             if (req.getIconColor() != null) shortcut.setIconColor(req.getIconColor());
             
             shortcutMapper.updateById(shortcut);
@@ -314,7 +318,7 @@ public class NavShortcutService {
         site.setName(req.getName());
         site.setUrl(req.getUrl());
         site.setIconType(req.getIconType());
-        site.setIconValue(localizeIcon(req.getIconType(), req.getIconValue()));
+        site.setIconValue(localizeIcon(req.getIconType() != null ? req.getIconType() : NavConstants.ICON_TYPE_FAVICON, req.getIconValue(), req.getUrl()));
         site.setIconColor(req.getIconColor());
         site.setSortOrder(BigDecimal.ZERO);
         recommendShortcutMapper.insert(site);
@@ -349,7 +353,8 @@ public class NavShortcutService {
         if (req.getIconType() != null) site.setIconType(req.getIconType());
         if (req.getIconValue() != null) site.setIconValue(localizeIcon(
                 req.getIconType() != null ? req.getIconType() : site.getIconType(),
-                req.getIconValue()));
+                req.getIconValue(),
+                req.getUrl() != null ? req.getUrl() : site.getUrl()));
         if (req.getIconColor() != null) site.setIconColor(req.getIconColor());
 
         recommendShortcutMapper.updateById(site);
@@ -450,7 +455,16 @@ public class NavShortcutService {
         if (!updateList.isEmpty()) Db.updateBatchById(updateList);
         
         if (!pendingDownloadSites.isEmpty()) {
-            navShortcutIconAsyncService.asyncBatchDownloadAndSaveIcons(pendingDownloadSites);
+            if (TransactionSynchronizationManager.isActualTransactionActive()) {
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        navShortcutIconAsyncService.asyncBatchDownloadAndSaveIcons(pendingDownloadSites);
+                    }
+                });
+            } else {
+                navShortcutIconAsyncService.asyncBatchDownloadAndSaveIcons(pendingDownloadSites);
+            }
         }
     }
 
@@ -467,7 +481,7 @@ public class NavShortcutService {
     /**
      * 如果 iconType 为 FAVICON 且 iconValue 是外部 URL，则下载到本地并返回本地路径。
      */
-    private String localizeIcon(String iconType, String iconValue) {
+    private String localizeIcon(String iconType, String iconValue, String shortcutUrl) {
         if (!"FAVICON".equals(iconType) || iconValue == null || iconValue.isEmpty()) {
             return iconValue;
         }
@@ -478,8 +492,16 @@ public class NavShortcutService {
             return iconValue;
         }
         try {
-            java.net.URI uri = new java.net.URI(iconValue);
-            String host = uri.getHost();
+            String host = null;
+            if (shortcutUrl != null && !shortcutUrl.isEmpty()) {
+                if (!shortcutUrl.startsWith("http://") && !shortcutUrl.startsWith("https://")) {
+                    shortcutUrl = "http://" + shortcutUrl;
+                }
+                host = new java.net.URI(shortcutUrl).getHost();
+            }
+            if (host == null) {
+                host = new java.net.URI(iconValue).getHost();
+            }
             if (host != null) {
                 return faviconFetcherHelper.downloadToLocal(iconValue, host);
             }

@@ -3,6 +3,7 @@ package com.navatation.business.filter;
 import com.navatation.business.helper.FaviconFetcherHelper;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,14 +39,20 @@ public class MissingIconDownloadFilter implements Filter {
                 File file = new File(targetDir, filename);
                 if (!file.exists()) {
                     log.info("发现前端请求的系统图标文件不存在，尝试主动重下载: {}", filename);
-                    restoreMissingIcon(filename, file);
+                    String redirectUrl = restoreMissingIcon(filename, file);
+                    if (redirectUrl != null && (redirectUrl.startsWith("http://") || redirectUrl.startsWith("https://"))) {
+                        log.info("图标 {} 本地下载失败或无法访问，重定向至外部地址: {}", filename, redirectUrl);
+                        HttpServletResponse res = (HttpServletResponse) response;
+                        res.sendRedirect(redirectUrl);
+                        return;
+                    }
                 }
             }
         }
         chain.doFilter(request, response);
     }
 
-    private void restoreMissingIcon(String filename, File targetFile) {
+    private String restoreMissingIcon(String filename, File targetFile) {
         String host = filename;
         int underscoreIdx = filename.lastIndexOf('_');
         if (underscoreIdx > 0) {
@@ -75,10 +82,14 @@ public class MissingIconDownloadFilter implements Filter {
                         java.nio.file.Files.copy(genFile.toPath(), targetFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
                         log.info("已将重下载的图标 {} 拷贝恢复为缺失文件 {}", genFileName, filename);
                     }
+                    return null;
+                } else {
+                    return generatedPath;
                 }
             }
         } catch (Exception e) {
             log.warn("主动重下载恢复图标失败 filename: {}, error: {}", filename, e.getMessage());
         }
+        return null;
     }
 }

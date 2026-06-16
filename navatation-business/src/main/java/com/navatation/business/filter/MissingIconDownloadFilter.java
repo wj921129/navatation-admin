@@ -44,9 +44,11 @@ public class MissingIconDownloadFilter implements Filter {
                         restoreMissingIcon(filename, file);
                     });
                     
-                    // 立即返回 404（或者交给后续的静态资源处理器返回 404），
-                    // 这样前端会显示兜底图标，后端后台慢慢下载，下次刷新时即可正常显示。
-                    chain.doFilter(request, response);
+                    // 立即重定向到 Google Favicon 兜底接口，彻底避免 404 且不阻塞线程
+                    String host = getHostFromFilename(filename);
+                    String fallbackUrl = "https://www.google.com/s2/favicons?domain=" + host + "&sz=128";
+                    HttpServletResponse res = (HttpServletResponse) response;
+                    res.sendRedirect(fallbackUrl);
                     return;
                 }
             }
@@ -54,7 +56,7 @@ public class MissingIconDownloadFilter implements Filter {
         chain.doFilter(request, response);
     }
 
-    private String restoreMissingIcon(String filename, File targetFile) {
+    private String getHostFromFilename(String filename) {
         String host = filename;
         int underscoreIdx = filename.lastIndexOf('_');
         if (underscoreIdx > 0) {
@@ -65,6 +67,11 @@ public class MissingIconDownloadFilter implements Filter {
                 host = filename.substring(0, dotIdx);
             }
         }
+        return host;
+    }
+
+    private String restoreMissingIcon(String filename, File targetFile) {
+        String host = getHostFromFilename(filename);
 
         try {
             // 使用 http 获取，FaviconFetcherHelper 内部会自动兜底和重定向

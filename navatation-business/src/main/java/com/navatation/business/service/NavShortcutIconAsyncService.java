@@ -36,8 +36,18 @@ public class NavShortcutIconAsyncService {
         for (RecommendShortcut site : pendingSites) {
             String externalUrl = site.getIconValue();
             try {
-                java.net.URI uri = new java.net.URI(externalUrl);
-                String host = uri.getHost();
+                String targetUrl = site.getUrl();
+                String host = null;
+                if (targetUrl != null && !targetUrl.isEmpty()) {
+                    if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
+                        targetUrl = "http://" + targetUrl;
+                    }
+                    host = new java.net.URI(targetUrl).getHost();
+                }
+                if (host == null) {
+                    host = new java.net.URI(externalUrl).getHost();
+                }
+                
                 if (host != null) {
                     String localPath = faviconFetcherHelper.downloadToLocal(externalUrl, host);
                     if (!externalUrl.equals(localPath)) {

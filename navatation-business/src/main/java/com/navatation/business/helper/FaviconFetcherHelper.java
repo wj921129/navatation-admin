@@ -93,19 +93,15 @@ public class FaviconFetcherHelper {
                 faviconUrls.add(scheme + "://" + host + "/favicon.ico");
             }
 
-            // 将抓取到的外链自动下载到本地（解决前端直接加载时的跨域 403、防盗链、CORP 限制等问题）
-            List<String> localizedUrls = faviconUrls.stream()
-                    .map(u -> downloadToLocal(u, host))
-                    .collect(Collectors.toList());
-
+            // 直接返回原外链，不再自动下载，留给保存动作触发下载
             try {
-                redisTemplate.opsForValue().set(cacheKey, MAPPER.writeValueAsString(localizedUrls), 7, TimeUnit.DAYS);
+                redisTemplate.opsForValue().set(cacheKey, MAPPER.writeValueAsString(faviconUrls), 7, TimeUnit.DAYS);
             } catch (Exception e) {
                 log.warn("写入 Redis Favicon 缓存失败: {}", e.getMessage());
             }
 
             FaviconRespDTO vo = new FaviconRespDTO();
-            vo.setFaviconUrls(localizedUrls);
+            vo.setFaviconUrls(faviconUrls);
             vo.setSourceUrl(url);
             return vo;
         } catch (BizException e) {
@@ -204,7 +200,7 @@ public class FaviconFetcherHelper {
         }
         try {
             String ext = guessExtension(externalUrl);
-            String hash = org.springframework.util.DigestUtils.md5DigestAsHex(externalUrl.getBytes()).substring(0, 8);
+            String hash = org.springframework.util.DigestUtils.md5DigestAsHex(host.getBytes()).substring(0, 8);
             String fileName = host + "_" + hash + "." + ext;
             java.io.File targetDir = new java.io.File(sysIconPath);
             if (!targetDir.exists()) {

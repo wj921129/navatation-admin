@@ -45,6 +45,7 @@ public class HomeShortcutService {
         return navHomeShortcutMapper.selectList(
                 new LambdaQueryWrapper<NavHomeShortcut>()
                         .eq(NavHomeShortcut::getUserId, userId)
+                        .isNull(NavHomeShortcut::getCategoryId)
                         .orderByAsc(NavHomeShortcut::getSortOrder)
         ).stream().map(this::toVO).collect(Collectors.toList());
     }

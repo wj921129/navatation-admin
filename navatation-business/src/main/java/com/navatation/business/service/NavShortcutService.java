@@ -86,6 +86,8 @@ public class NavShortcutService {
                     .orderByAsc(NavHomeShortcut::getSortOrder);
             if (StringUtils.hasText(categoryId)) {
                 wrapper.eq(NavHomeShortcut::getCategoryId, categoryId);
+            } else {
+                wrapper.isNotNull(NavHomeShortcut::getCategoryId);
             }
             List<NavHomeShortcut> list = shortcutMapper.selectList(wrapper);
             return list.stream().map(this::toShortcutVO).collect(Collectors.toList());

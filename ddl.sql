@@ -137,19 +137,8 @@ CREATE TABLE `navatation_recommend_config` (
   UNIQUE KEY `uk_config_id` (`config_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 废弃的旧推荐分类表，执行 ddl 时显式清理
 DROP TABLE IF EXISTS `navatation_recommend_category`;
-CREATE TABLE `navatation_recommend_category` (
-  `row_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `category_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `name` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `sort_order` decimal(10,2) NOT NULL DEFAULT '0.00',
-  `deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT '逻辑删除：0-正常, 1-已删除',
-  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`row_id`),
-  UNIQUE KEY `uk_category_id` (`category_id`),
-  KEY `idx_sort_order` (`sort_order`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `navatation_recommend_shortcut`;
 CREATE TABLE `navatation_recommend_shortcut` (

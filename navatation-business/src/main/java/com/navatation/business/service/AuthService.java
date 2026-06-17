@@ -13,7 +13,6 @@ import com.navatation.business.entity.nav.NavCategory;
 import com.navatation.business.entity.nav.NavHomeShortcut;
 import com.navatation.business.entity.nav.TodoItem;
 import com.navatation.business.entity.nav.UserWidget;
-import com.navatation.business.entity.recommend.RecommendCategory;
 import com.navatation.business.entity.recommend.RecommendConfig;
 import com.navatation.business.entity.recommend.RecommendHomeShortcut;
 import com.navatation.business.entity.recommend.RecommendShortcut;
@@ -23,7 +22,6 @@ import com.navatation.business.entity.user.User;
 import com.navatation.business.entity.user.UserConfig;
 import com.navatation.business.mapper.NavCategoryMapper;
 import com.navatation.business.mapper.NavHomeShortcutMapper;
-import com.navatation.business.mapper.RecommendCategoryMapper;
 import com.navatation.business.mapper.RecommendConfigMapper;
 import com.navatation.business.mapper.RecommendHomeShortcutMapper;
 import com.navatation.business.mapper.RecommendShortcutMapper;
@@ -74,7 +72,6 @@ public class AuthService {
     private final NavHomeShortcutMapper navHomeShortcutMapper;
     
     private final RecommendConfigMapper recommendConfigMapper;
-    private final RecommendCategoryMapper recommendCategoryMapper;
     private final RecommendShortcutMapper recommendShortcutMapper;
     private final RecommendWidgetMapper recommendWidgetMapper;
     private final RecommendTodoItemMapper recommendTodoItemMapper;
@@ -190,14 +187,19 @@ public class AuthService {
         userConfigMapper.insert(config);
 
         // 3. 同步首页导航网址与分类，若无数据则降级创建默认常用分类
-        List<RecommendCategory> recommendCategories = recommendCategoryMapper.selectList(
-                new LambdaQueryWrapper<RecommendCategory>().orderByAsc(RecommendCategory::getSortOrder));
+        User adminUser = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getRole, "ADMIN").last("LIMIT 1"));
+        String adminId = adminUser != null ? adminUser.getUserId() : "u_admin_001";
+
+        List<NavCategory> recommendCategories = navCategoryMapper.selectList(
+                new LambdaQueryWrapper<NavCategory>()
+                        .eq(NavCategory::getUserId, adminId)
+                        .orderByAsc(NavCategory::getSortOrder));
 
         List<NavCategory> saveCategories = new ArrayList<>();
         List<NavHomeShortcut> saveShortcuts = new ArrayList<>();
 
         if (recommendCategories != null && !recommendCategories.isEmpty()) {
-            for (RecommendCategory recCat : recommendCategories) {
+            for (NavCategory recCat : recommendCategories) {
                 NavCategory userCat = new NavCategory();
                 userCat.setCategoryId(IdUtils.genCategoryId());
                 userCat.setUserId(user.getUserId());

@@ -9,12 +9,10 @@ import com.navatation.business.dto.resp.recommend.RecommendCategoryRespDTO;
 import com.navatation.business.dto.resp.recommend.RecommendSiteRespDTO;
 import com.navatation.business.entity.nav.NavCategory;
 import com.navatation.business.entity.nav.NavHomeShortcut;
-import com.navatation.business.entity.recommend.RecommendCategory;
 import com.navatation.business.entity.recommend.RecommendShortcut;
 import com.navatation.business.entity.user.User;
 import com.navatation.business.mapper.NavCategoryMapper;
 import com.navatation.business.mapper.NavHomeShortcutMapper;
-import com.navatation.business.mapper.RecommendCategoryMapper;
 import com.navatation.business.mapper.RecommendShortcutMapper;
 import com.navatation.business.mapper.UserMapper;
 import com.navatation.common.BizException;
@@ -42,7 +40,6 @@ public class NavCategoryService {
 
     private final NavCategoryMapper categoryMapper;
     private final NavHomeShortcutMapper shortcutMapper;
-    private final RecommendCategoryMapper recommendCategoryMapper;
     private final RecommendShortcutMapper recommendShortcutMapper;
     private final UserMapper userMapper;
 
@@ -53,11 +50,12 @@ public class NavCategoryService {
 
     public List<CategoryRespDTO> getCategories(String userId) {
         if (isAdmin(userId)) {
-            List<RecommendCategory> categories = recommendCategoryMapper.selectList(
-                    new LambdaQueryWrapper<RecommendCategory>()
-                            .orderByAsc(RecommendCategory::getSortOrder));
+            List<NavCategory> categories = categoryMapper.selectList(
+                    new LambdaQueryWrapper<NavCategory>()
+                            .eq(NavCategory::getUserId, userId)
+                            .orderByAsc(NavCategory::getSortOrder));
 
-            List<String> categoryIds = categories.stream().map(RecommendCategory::getCategoryId).collect(Collectors.toList());
+            List<String> categoryIds = categories.stream().map(NavCategory::getCategoryId).collect(Collectors.toList());
             Map<String, Long> countMap = categoryIds.isEmpty() ? Map.of() :
                     recommendShortcutMapper.selectList(new LambdaQueryWrapper<RecommendShortcut>().in(RecommendShortcut::getCategoryId, categoryIds))
                             .stream().collect(Collectors.groupingBy(RecommendShortcut::getCategoryId, Collectors.counting()));
@@ -94,11 +92,12 @@ public class NavCategoryService {
 
     public CategoryRespDTO createCategory(String userId, CategoryReqDTO req) {
         if (isAdmin(userId)) {
-            RecommendCategory category = new RecommendCategory();
+            NavCategory category = new NavCategory();
             category.setCategoryId(IdUtils.genCategoryId());
+            category.setUserId(userId);
             category.setName(req.getName());
             category.setSortOrder(req.getSortOrder() != null ? req.getSortOrder() : BigDecimal.ZERO);
-            recommendCategoryMapper.insert(category);
+            categoryMapper.insert(category);
             log.info("创建管理员推荐分类成功 userId={} categoryId={} name={}", userId, category.getCategoryId(), category.getName());
 
             CategoryRespDTO vo = new CategoryRespDTO();
@@ -127,8 +126,8 @@ public class NavCategoryService {
 
     public void updateCategory(String userId, String categoryId, CategoryReqDTO req) {
         if (isAdmin(userId)) {
-            RecommendCategory category = recommendCategoryMapper.selectById(categoryId);
-            if (category == null) {
+            NavCategory category = categoryMapper.selectById(categoryId);
+            if (category == null || !category.getUserId().equals(userId)) {
                 throw new BizException(ResultCode.NOT_FOUND);
             }
             if (req.getName() != null) {
@@ -137,7 +136,7 @@ public class NavCategoryService {
             if (req.getSortOrder() != null) {
                 category.setSortOrder(req.getSortOrder());
             }
-            recommendCategoryMapper.updateById(category);
+            categoryMapper.updateById(category);
             log.info("更新管理员推荐分类成功 userId={} categoryId={}", userId, categoryId);
             return;
         }
@@ -159,13 +158,13 @@ public class NavCategoryService {
     @Transactional
     public void deleteCategory(String userId, String categoryId) {
         if (isAdmin(userId)) {
-            RecommendCategory category = recommendCategoryMapper.selectById(categoryId);
-            if (category == null) {
+            NavCategory category = categoryMapper.selectById(categoryId);
+            if (category == null || !category.getUserId().equals(userId)) {
                 throw new BizException(ResultCode.NOT_FOUND);
             }
             recommendShortcutMapper.delete(new LambdaQueryWrapper<RecommendShortcut>()
                     .eq(RecommendShortcut::getCategoryId, categoryId));
-            recommendCategoryMapper.deleteById(categoryId);
+            categoryMapper.deleteById(categoryId);
             log.info("删除管理员推荐分类成功 userId={} categoryId={}", userId, categoryId);
             return;
         }
@@ -181,13 +180,18 @@ public class NavCategoryService {
     }
 
     public List<RecommendCategoryRespDTO> getRecommended() {
-        List<RecommendCategory> categories = recommendCategoryMapper.selectList(
-                new LambdaQueryWrapper<RecommendCategory>().orderByAsc(RecommendCategory::getSortOrder));
+        User adminUser = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getRole, "ADMIN").last("LIMIT 1"));
+        String adminId = adminUser != null ? adminUser.getUserId() : "u_admin_001";
+
+        List<NavCategory> categories = categoryMapper.selectList(
+                new LambdaQueryWrapper<NavCategory>()
+                        .eq(NavCategory::getUserId, adminId)
+                        .orderByAsc(NavCategory::getSortOrder));
         if (categories.isEmpty()) {
             return new ArrayList<>();
         }
 
-        List<String> categoryIds = categories.stream().map(RecommendCategory::getCategoryId).collect(Collectors.toList());
+        List<String> categoryIds = categories.stream().map(NavCategory::getCategoryId).collect(Collectors.toList());
         List<RecommendShortcut> sites = recommendShortcutMapper.selectList(
                 new LambdaQueryWrapper<RecommendShortcut>()
                         .in(RecommendShortcut::getCategoryId, categoryIds)
@@ -224,11 +228,12 @@ public class NavCategoryService {
         if (!isAdmin(userId)) {
             throw new BizException(ResultCode.FORBIDDEN);
         }
-        RecommendCategory cat = new RecommendCategory();
+        NavCategory cat = new NavCategory();
         cat.setCategoryId(IdUtils.genRecommendCategoryId());
+        cat.setUserId(userId);
         cat.setName(req.getName());
         cat.setSortOrder(req.getSortOrder() != null ? req.getSortOrder() : BigDecimal.ZERO);
-        recommendCategoryMapper.insert(cat);
+        categoryMapper.insert(cat);
 
         RecommendCategoryRespDTO vo = new RecommendCategoryRespDTO();
         vo.setCategoryId(cat.getCategoryId());
@@ -244,13 +249,13 @@ public class NavCategoryService {
         if (!isAdmin(userId)) {
             throw new BizException(ResultCode.FORBIDDEN);
         }
-        RecommendCategory cat = recommendCategoryMapper.selectById(categoryId);
-        if (cat == null) {
+        NavCategory cat = categoryMapper.selectById(categoryId);
+        if (cat == null || !cat.getUserId().equals(userId)) {
             throw new BizException(ResultCode.NOT_FOUND);
         }
         if (req.getName() != null) cat.setName(req.getName());
         if (req.getSortOrder() != null) cat.setSortOrder(req.getSortOrder());
-        recommendCategoryMapper.updateById(cat);
+        categoryMapper.updateById(cat);
     }
 
     @Transactional
@@ -258,11 +263,11 @@ public class NavCategoryService {
         if (!isAdmin(userId)) {
             throw new BizException(ResultCode.FORBIDDEN);
         }
-        RecommendCategory cat = recommendCategoryMapper.selectById(categoryId);
-        if (cat == null) {
+        NavCategory cat = categoryMapper.selectById(categoryId);
+        if (cat == null || !cat.getUserId().equals(userId)) {
             throw new BizException(ResultCode.NOT_FOUND);
         }
         recommendShortcutMapper.delete(new LambdaQueryWrapper<RecommendShortcut>().eq(RecommendShortcut::getCategoryId, categoryId));
-        recommendCategoryMapper.deleteById(categoryId);
+        categoryMapper.deleteById(categoryId);
     }
 }

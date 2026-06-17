@@ -15,13 +15,11 @@ import com.navatation.business.dto.req.nav.SortReqDTO;
 import com.navatation.business.dto.req.nav.UpdateShortcutReqDTO;
 import com.navatation.business.entity.nav.NavCategory;
 import com.navatation.business.entity.nav.NavHomeShortcut;
-import com.navatation.business.entity.recommend.RecommendCategory;
 import com.navatation.business.entity.recommend.RecommendShortcut;
 import com.navatation.business.entity.user.User;
 import com.navatation.business.helper.FaviconFetcherHelper;
 import com.navatation.business.mapper.NavCategoryMapper;
 import com.navatation.business.mapper.NavHomeShortcutMapper;
-import com.navatation.business.mapper.RecommendCategoryMapper;
 import com.navatation.business.mapper.RecommendShortcutMapper;
 import com.navatation.business.mapper.UserMapper;
 import com.navatation.common.BizException;
@@ -57,7 +55,6 @@ public class NavShortcutService {
 
     private final NavCategoryMapper categoryMapper;
     private final NavHomeShortcutMapper shortcutMapper;
-    private final RecommendCategoryMapper recommendCategoryMapper;
     private final RecommendShortcutMapper recommendShortcutMapper;
     private final UserMapper userMapper;
     private final FaviconFetcherHelper faviconFetcherHelper;
@@ -104,15 +101,17 @@ public class NavShortcutService {
 
         if (!StringUtils.hasText(categoryId)) {
             if (admin) {
-                RecommendCategory defaultCat = recommendCategoryMapper.selectOne(
-                        new LambdaQueryWrapper<RecommendCategory>()
-                                .eq(RecommendCategory::getName, NavConstants.DEFAULT_CATEGORY_NAME).last("LIMIT 1"));
+                NavCategory defaultCat = categoryMapper.selectOne(
+                        new LambdaQueryWrapper<NavCategory>()
+                                .eq(NavCategory::getUserId, userId)
+                                .eq(NavCategory::getName, NavConstants.DEFAULT_CATEGORY_NAME).last("LIMIT 1"));
                 if (defaultCat == null) {
-                    defaultCat = new RecommendCategory();
+                    defaultCat = new NavCategory();
                     defaultCat.setCategoryId(IdUtils.genCategoryId());
+                    defaultCat.setUserId(userId);
                     defaultCat.setName(NavConstants.DEFAULT_CATEGORY_NAME);
                     defaultCat.setSortOrder(BigDecimal.ZERO);
-                    recommendCategoryMapper.insert(defaultCat);
+                    categoryMapper.insert(defaultCat);
                 }
                 categoryId = defaultCat.getCategoryId();
             } else {
@@ -132,8 +131,8 @@ public class NavShortcutService {
             }
         } else {
             if (admin) {
-                RecommendCategory cat = recommendCategoryMapper.selectById(categoryId);
-                if (cat == null) throw new BizException(ResultCode.NOT_FOUND);
+                NavCategory cat = categoryMapper.selectById(categoryId);
+                if (cat == null || !cat.getUserId().equals(userId)) throw new BizException(ResultCode.NOT_FOUND);
             } else {
                 NavCategory cat = categoryMapper.selectById(categoryId);
                 if (cat == null || !cat.getUserId().equals(userId)) throw new BizException(ResultCode.NOT_FOUND);
@@ -386,7 +385,7 @@ public class NavShortcutService {
             throw new BizException(ResultCode.FORBIDDEN);
         }
 
-        RecommendCategory category = recommendCategoryMapper.selectById(categoryId);
+        NavCategory category = categoryMapper.selectById(categoryId);
         if (category == null) {
             throw new BizException(ResultCode.NOT_FOUND.getCode(), "推荐分类不存在");
         }

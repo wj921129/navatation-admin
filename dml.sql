@@ -13,7 +13,6 @@ TRUNCATE TABLE navatation_nav_home_shortcut;
 TRUNCATE TABLE navatation_nav_category;
 TRUNCATE TABLE navatation_user_config;
 TRUNCATE TABLE navatation_recommend_config;
-TRUNCATE TABLE navatation_recommend_category;
 TRUNCATE TABLE navatation_recommend_shortcut;
 TRUNCATE TABLE navatation_recommend_todo_item;
 TRUNCATE TABLE navatation_recommend_widget;
@@ -27,15 +26,15 @@ TRUNCATE TABLE navatation_user;
 INSERT INTO navatation_recommend_config (row_id, config_id, search_engine, background_image, background_type, search_box_width, search_box_height, search_box_margin_top, icon_size, icon_radius, icon_spacing_x, icon_spacing_y, icon_text_gap, text_size, icons_margin_top, icons_margin_x, theme, deleted, created_at, updated_at) VALUES
   (1,'RCG0000000000000000001','google','/uploads/sys_data/bg_img/wallpaper_16.jpg','URL',46,58,251,64,50,18,15,12,14,78,6,'system',0,'2026-06-16 22:13:19','2026-06-16 22:41:17');
 
-INSERT INTO navatation_recommend_category (row_id, category_id, name, sort_order, deleted, created_at, updated_at) VALUES
-  (1,'RC1','看视频',0.00,0,'2026-06-16 22:13:19','2026-06-16 22:13:19'),
-  (2,'RC2','AI工具',1.00,0,'2026-06-16 22:13:19','2026-06-16 22:13:19'),
-  (3,'RC3','Web开发',2.00,0,'2026-06-16 22:13:19','2026-06-16 22:13:19'),
-  (4,'RC4','购物',3.00,0,'2026-06-16 22:13:19','2026-06-16 22:13:19'),
-  (5,'RC5','新闻资讯',4.00,0,'2026-06-16 22:13:19','2026-06-16 22:13:19'),
-  (6,'RC6','游戏',5.00,0,'2026-06-16 22:13:19','2026-06-16 22:13:19'),
-  (7,'RC7','音乐',6.00,0,'2026-06-16 22:13:19','2026-06-16 22:13:19'),
-  (8,'RC8','办公效率',7.00,0,'2026-06-16 22:13:19','2026-06-16 22:13:19');
+INSERT INTO navatation_nav_category (row_id, category_id, user_id, name, sort_order, deleted, created_at, updated_at) VALUES
+  (1,'RC1','u_admin_001','看视频',0.00,0,'2026-06-16 22:13:19','2026-06-16 22:13:19'),
+  (2,'RC2','u_admin_001','AI工具',1.00,0,'2026-06-16 22:13:19','2026-06-16 22:13:19'),
+  (3,'RC3','u_admin_001','Web开发',2.00,0,'2026-06-16 22:13:19','2026-06-16 22:13:19'),
+  (4,'RC4','u_admin_001','购物',3.00,0,'2026-06-16 22:13:19','2026-06-16 22:13:19'),
+  (5,'RC5','u_admin_001','新闻资讯',4.00,0,'2026-06-16 22:13:19','2026-06-16 22:13:19'),
+  (6,'RC6','u_admin_001','游戏',5.00,0,'2026-06-16 22:13:19','2026-06-16 22:13:19'),
+  (7,'RC7','u_admin_001','音乐',6.00,0,'2026-06-16 22:13:19','2026-06-16 22:13:19'),
+  (8,'RC8','u_admin_001','办公效率',7.00,0,'2026-06-16 22:13:19','2026-06-16 22:13:19');
 
 INSERT INTO navatation_recommend_shortcut (row_id, shortcut_id, category_id, name, url, icon_type, icon_value, icon_color, sort_order, deleted, created_at, updated_at) VALUES
   (1,'RS1','RC1','YouTube','https://youtube.com','FAVICON','/uploads/icon/sys/youtube.com_14dd5266.ico','#FF0000',7.00,0,'2026-06-16 22:13:19','2026-06-16 22:22:38'),

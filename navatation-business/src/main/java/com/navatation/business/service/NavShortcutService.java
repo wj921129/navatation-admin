@@ -103,12 +103,11 @@ public class NavShortcutService {
             if (admin) {
                 NavCategory defaultCat = categoryMapper.selectOne(
                         new LambdaQueryWrapper<NavCategory>()
-                                .eq(NavCategory::getUserId, userId)
                                 .eq(NavCategory::getName, NavConstants.DEFAULT_CATEGORY_NAME).last("LIMIT 1"));
                 if (defaultCat == null) {
                     defaultCat = new NavCategory();
                     defaultCat.setCategoryId(IdUtils.genCategoryId());
-                    defaultCat.setUserId(userId);
+
                     defaultCat.setName(NavConstants.DEFAULT_CATEGORY_NAME);
                     defaultCat.setSortOrder(BigDecimal.ZERO);
                     categoryMapper.insert(defaultCat);
@@ -117,12 +116,11 @@ public class NavShortcutService {
             } else {
                 NavCategory defaultCat = categoryMapper.selectOne(
                         new LambdaQueryWrapper<NavCategory>()
-                                .eq(NavCategory::getUserId, userId)
                                 .eq(NavCategory::getName, NavConstants.DEFAULT_CATEGORY_NAME));
                 if (defaultCat == null) {
                     defaultCat = new NavCategory();
                     defaultCat.setCategoryId(IdUtils.genCategoryId());
-                    defaultCat.setUserId(userId);
+
                     defaultCat.setName(NavConstants.DEFAULT_CATEGORY_NAME);
                     defaultCat.setSortOrder(BigDecimal.ZERO);
                     categoryMapper.insert(defaultCat);
@@ -132,10 +130,10 @@ public class NavShortcutService {
         } else {
             if (admin) {
                 NavCategory cat = categoryMapper.selectById(categoryId);
-                if (cat == null || !cat.getUserId().equals(userId)) throw new BizException(ResultCode.NOT_FOUND);
+                if (cat == null) throw new BizException(ResultCode.NOT_FOUND);
             } else {
                 NavCategory cat = categoryMapper.selectById(categoryId);
-                if (cat == null || !cat.getUserId().equals(userId)) throw new BizException(ResultCode.NOT_FOUND);
+                if (cat == null) throw new BizException(ResultCode.NOT_FOUND);
             }
         }
 

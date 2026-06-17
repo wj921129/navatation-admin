@@ -186,27 +186,15 @@ public class AuthService {
         }
         userConfigMapper.insert(config);
 
-        // 3. 同步首页导航网址与分类，若无数据则降级创建默认常用分类
-        User adminUser = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getRole, "ADMIN").last("LIMIT 1"));
-        String adminId = adminUser != null ? adminUser.getUserId() : "u_admin_001";
-
+        // 3. 同步首页导航网址与分类下的快捷方式
         List<NavCategory> recommendCategories = navCategoryMapper.selectList(
                 new LambdaQueryWrapper<NavCategory>()
-                        .eq(NavCategory::getUserId, adminId)
                         .orderByAsc(NavCategory::getSortOrder));
 
-        List<NavCategory> saveCategories = new ArrayList<>();
         List<NavHomeShortcut> saveShortcuts = new ArrayList<>();
 
         if (recommendCategories != null && !recommendCategories.isEmpty()) {
             for (NavCategory recCat : recommendCategories) {
-                NavCategory userCat = new NavCategory();
-                userCat.setCategoryId(IdUtils.genCategoryId());
-                userCat.setUserId(user.getUserId());
-                userCat.setName(recCat.getName());
-                userCat.setSortOrder(recCat.getSortOrder());
-                saveCategories.add(userCat);
-
                 List<RecommendShortcut> recShortcuts = recommendShortcutMapper.selectList(
                         new LambdaQueryWrapper<RecommendShortcut>()
                                 .eq(RecommendShortcut::getCategoryId, recCat.getCategoryId())
@@ -215,7 +203,7 @@ public class AuthService {
                     for (RecommendShortcut recShortcut : recShortcuts) {
                         NavHomeShortcut userShortcut = new NavHomeShortcut();
                         userShortcut.setShortcutId(IdUtils.genShortcutId());
-                        userShortcut.setCategoryId(userCat.getCategoryId());
+                        userShortcut.setCategoryId(recCat.getCategoryId());
                         userShortcut.setUserId(user.getUserId());
                         userShortcut.setName(recShortcut.getName());
                         userShortcut.setUrl(recShortcut.getUrl());
@@ -228,18 +216,8 @@ public class AuthService {
                     }
                 }
             }
-        } else {
-            NavCategory defaultCategory = new NavCategory();
-            defaultCategory.setCategoryId(IdUtils.genCategoryId());
-            defaultCategory.setUserId(user.getUserId());
-            defaultCategory.setName("常用");
-            defaultCategory.setSortOrder(java.math.BigDecimal.ZERO);
-            saveCategories.add(defaultCategory);
         }
 
-        if (!CollectionUtils.isEmpty(saveCategories)) {
-            Db.saveBatch(saveCategories);
-        }
         if (!CollectionUtils.isEmpty(saveShortcuts)) {
             Db.saveBatch(saveShortcuts);
         }

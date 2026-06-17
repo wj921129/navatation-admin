@@ -22,7 +22,6 @@ public class NavCategory {
     @TableId(type = IdType.INPUT)
     private String categoryId;
     
-    private String userId;
     private String name;
     private BigDecimal sortOrder;
 

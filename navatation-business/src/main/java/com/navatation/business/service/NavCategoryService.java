@@ -198,7 +198,7 @@ public class NavCategoryService {
             RecommendCategoryRespDTO vo = new RecommendCategoryRespDTO();
             vo.setCategoryId(cat.getCategoryId());
             vo.setCategoryName(cat.getName());
-            vo.setCategoryIcon(null); // icon 已移除
+            vo.setCategoryIcon(cat.getIcon());
             vo.setSortOrder(cat.getSortOrder());
             List<RecommendSiteRespDTO> siteVOs = siteMap.getOrDefault(cat.getCategoryId(), new ArrayList<>()).stream().map(site -> {
                 RecommendSiteRespDTO siteVO = new RecommendSiteRespDTO();
@@ -225,13 +225,14 @@ public class NavCategoryService {
         NavCategory cat = new NavCategory();
         cat.setCategoryId(IdUtils.genRecommendCategoryId());
         cat.setName(req.getName());
+        cat.setIcon(req.getIcon());
         cat.setSortOrder(req.getSortOrder() != null ? req.getSortOrder() : BigDecimal.ZERO);
         categoryMapper.insert(cat);
 
         RecommendCategoryRespDTO vo = new RecommendCategoryRespDTO();
         vo.setCategoryId(cat.getCategoryId());
         vo.setCategoryName(cat.getName());
-        vo.setCategoryIcon(null);
+        vo.setCategoryIcon(cat.getIcon());
         vo.setSortOrder(cat.getSortOrder());
         vo.setSites(new ArrayList<>());
         return vo;
@@ -247,6 +248,7 @@ public class NavCategoryService {
             throw new BizException(ResultCode.NOT_FOUND);
         }
         if (req.getName() != null) cat.setName(req.getName());
+        if (req.getIcon() != null) cat.setIcon(req.getIcon());
         if (req.getSortOrder() != null) cat.setSortOrder(req.getSortOrder());
         categoryMapper.updateById(cat);
     }

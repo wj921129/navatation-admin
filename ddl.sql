@@ -26,6 +26,7 @@ CREATE TABLE `navatation_nav_category` (
   `row_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `category_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
   `name` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `icon` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `sort_order` decimal(10,2) NOT NULL DEFAULT '0.00',
   `deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT '逻辑删除：0-正常, 1-已删除',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,

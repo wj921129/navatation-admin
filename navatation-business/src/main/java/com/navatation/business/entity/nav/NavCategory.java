@@ -23,6 +23,7 @@ public class NavCategory {
     private String categoryId;
     
     private String name;
+    private String icon;
     private BigDecimal sortOrder;
 
     /** 逻辑删除：0-正常, 1-已删除 */

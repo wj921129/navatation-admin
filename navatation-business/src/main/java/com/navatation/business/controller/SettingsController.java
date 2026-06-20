@@ -64,6 +64,18 @@ public class SettingsController {
         return Result.success("配置更新成功", null);
     }
 
+    @PatchMapping("/search-engine")
+    public Result<?> switchSearchEngine(@RequestHeader("Authorization") String auth,
+                                        @RequestParam("engine") String engine) {
+        String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
+        log.info("切换搜索引擎 入参:userId={}, engine={}", userId, engine);
+        SettingsReqDTO req = new SettingsReqDTO();
+        req.setSearchEngine(engine);
+        settingsService.patchSettings(userId, req);
+        log.info("切换搜索引擎 出参:success=true");
+        return Result.success("搜索引擎切换成功", null);
+    }
+
     @PostMapping("/wallpaper/upload")
     public Result<WallpaperRespDTO> uploadWallpaper(@RequestHeader("Authorization") String auth,
                                                 @RequestParam("file") MultipartFile file) {

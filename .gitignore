@@ -1,3 +1,38 @@
+# 忽略所有子目录/文件
+*
+# 豁免 navatation-business 子模块
+!navatation-business/
+!navatation-business/.gitignore
+# 保留此 .gitignore 自身
+!.gitignore
+
+# Compiled class file
+*.class
+.idea/
+target/
+log/
+
+# Log file
+*.log
+
+# BlueJ files
+*.ctxt
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# virtual machine crash logs
+hs_err_pid*
+replay_pid*
 # Compiled class file
 *.class
 .idea/

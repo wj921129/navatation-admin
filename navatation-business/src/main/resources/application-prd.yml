@@ -1,0 +1,10 @@
+# 生产环境配置
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/navatation?useSSL=false&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: Wanggy@fuioupay.com
+
+logging:
+  level:
+    com.navatation: INFO

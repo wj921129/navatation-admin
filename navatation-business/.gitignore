@@ -1,0 +1,10 @@
+# 忽略所有内容
+*
+# 豁免多环境配置文件
+!src/
+!src/main/
+!src/main/resources/
+!src/main/resources/application*.yml
+!src/main/resources/logback-spring.xml
+# 保留此 .gitignore 自身
+!.gitignore

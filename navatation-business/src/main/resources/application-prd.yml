@@ -4,6 +4,18 @@ spring:
     url: jdbc:mysql://localhost:3306/navatation?useSSL=false&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
     username: root
     password: Wanggy@fuioupay.com
+  data:
+    redis:
+      password: Wanggy@fuioupay.com
+
+app:
+  jwt:
+    secret: NavPrdJwt2026Secret_a8f3c7e9d1b5f4a2e6c8d0b3f7a9e1c5d3b7a9f0e2c4d6b8a1f3e5c7d9b0a2
+  upload:
+    icon-path: /www/wwwroot/navatation/data/user_data/icon
+    wallpaper-path: /www/wwwroot/navatation/data/user_data/bg_custom
+    local-wallpaper-path: /www/wwwroot/navatation/data/sys_data/bg_img
+    sys-icon-path: /www/wwwroot/navatation/data/sys_data/icon
 
 logging:
   level:

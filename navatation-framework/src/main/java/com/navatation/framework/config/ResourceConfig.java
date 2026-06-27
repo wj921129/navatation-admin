@@ -27,21 +27,29 @@ public class ResourceConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        String iconAbsolutePath = java.nio.file.Paths.get(iconPath).toAbsolutePath().normalize().toUri().toString();
-        String wallpaperAbsolutePath = java.nio.file.Paths.get(wallpaperPath).toAbsolutePath().normalize().toUri().toString();
-        String localWallpaperAbsolutePath = java.nio.file.Paths.get(localWallpaperPath).toAbsolutePath().normalize().toUri().toString();
-
         registry.addResourceHandler("/uploads/icon/custom/**")
-                .addResourceLocations(iconAbsolutePath);
+                .addResourceLocations(getResourceLocation(iconPath));
 
         registry.addResourceHandler("/uploads/bg_custom/**")
-                .addResourceLocations(wallpaperAbsolutePath);
+                .addResourceLocations(getResourceLocation(wallpaperPath));
 
         registry.addResourceHandler("/uploads/sys_data/bg_img/**")
-                .addResourceLocations(localWallpaperAbsolutePath);
+                .addResourceLocations(getResourceLocation(localWallpaperPath));
 
-        String sysIconAbsolutePath = java.nio.file.Paths.get(sysIconPath).toAbsolutePath().normalize().toUri().toString();
         registry.addResourceHandler("/uploads/icon/sys/**")
-                .addResourceLocations(sysIconAbsolutePath);
+                .addResourceLocations(getResourceLocation(sysIconPath));
+    }
+
+    private String getResourceLocation(String path) {
+        String absolutePath = java.nio.file.Paths.get(path).toAbsolutePath().normalize().toString();
+        // 替换 Windows 反斜杠为正斜杠，生成标准的 file 路径
+        absolutePath = absolutePath.replace("\\", "/");
+        if (!absolutePath.startsWith("/")) {
+            absolutePath = "/" + absolutePath;
+        }
+        if (!absolutePath.endsWith("/")) {
+            absolutePath = absolutePath + "/";
+        }
+        return "file:" + absolutePath;
     }
 }

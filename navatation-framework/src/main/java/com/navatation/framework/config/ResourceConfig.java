@@ -2,8 +2,11 @@ package com.navatation.framework.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.CacheControl;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * 静态资源映射配置
@@ -27,8 +30,8 @@ public class ResourceConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        org.springframework.http.CacheControl cacheControl = org.springframework.http.CacheControl
-                .maxAge(30, java.util.concurrent.TimeUnit.DAYS)
+        CacheControl cacheControl = CacheControl
+                .maxAge(30, TimeUnit.DAYS)
                 .cachePublic();
 
         registry.addResourceHandler("/uploads/icon/custom/**")

@@ -27,17 +27,25 @@ public class ResourceConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        org.springframework.http.CacheControl cacheControl = org.springframework.http.CacheControl
+                .maxAge(30, java.util.concurrent.TimeUnit.DAYS)
+                .cachePublic();
+
         registry.addResourceHandler("/uploads/icon/custom/**")
-                .addResourceLocations(getResourceLocation(iconPath));
+                .addResourceLocations(getResourceLocation(iconPath))
+                .setCacheControl(cacheControl);
 
         registry.addResourceHandler("/uploads/bg_custom/**")
-                .addResourceLocations(getResourceLocation(wallpaperPath));
+                .addResourceLocations(getResourceLocation(wallpaperPath))
+                .setCacheControl(cacheControl);
 
         registry.addResourceHandler("/uploads/sys_data/bg_img/**")
-                .addResourceLocations(getResourceLocation(localWallpaperPath));
+                .addResourceLocations(getResourceLocation(localWallpaperPath))
+                .setCacheControl(cacheControl);
 
         registry.addResourceHandler("/uploads/icon/sys/**")
-                .addResourceLocations(getResourceLocation(sysIconPath));
+                .addResourceLocations(getResourceLocation(sysIconPath))
+                .setCacheControl(cacheControl);
     }
 
     private String getResourceLocation(String path) {

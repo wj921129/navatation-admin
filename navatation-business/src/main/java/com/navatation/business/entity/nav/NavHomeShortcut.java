@@ -27,6 +27,8 @@ public class NavHomeShortcut implements com.navatation.business.entity.BaseShort
     private String iconType;
     private String iconValue;
     private String iconColor;
+    private String type;
+    private String parentId;
     private BigDecimal sortOrder;
     private Long clickCount;
     private LocalDateTime lastClickAt;

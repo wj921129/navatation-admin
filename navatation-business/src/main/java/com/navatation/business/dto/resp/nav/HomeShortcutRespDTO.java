@@ -12,4 +12,8 @@ public class HomeShortcutRespDTO {
     private String iconValue;
     private String iconColor;
     private BigDecimal sortOrder;
+    private String type;
+    private String stackId;
+    private String stackName;
+    private java.util.List<HomeShortcutRespDTO> children;
 }

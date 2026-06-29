@@ -276,6 +276,15 @@ public class NavController {
         return Result.success(result);
     }
 
+    @PutMapping("/home-shortcuts/batch")
+    public Result<?> batchSaveHomeShortcuts(@RequestHeader("Authorization") String auth,
+                                            @RequestBody @Valid com.navatation.business.dto.req.nav.BatchSaveHomeShortcutReqDTO req) {
+        String userId = jwtTokenProvider.getUserIdFromAuthHeader(auth);
+        log.info("批量保存首页网址 入参:userId={}, count={}", userId, req.getShortcuts() != null ? req.getShortcuts().size() : 0);
+        homeShortcutService.batchSaveHomeShortcuts(userId, req.getShortcuts());
+        return Result.success("批量保存成功", null);
+    }
+
     @PostMapping("/home-shortcuts")
     public Result<HomeShortcutRespDTO> addHomeShortcut(@RequestHeader("Authorization") String auth,
                                                   @RequestBody HomeShortcutReqDTO req) {

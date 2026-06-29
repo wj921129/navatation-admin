@@ -28,7 +28,6 @@ public class RecommendHomeShortcut {
     private String iconValue;
     private String iconColor;
     private String type;
-    private String parentId;
     private BigDecimal sortOrder;
 
     

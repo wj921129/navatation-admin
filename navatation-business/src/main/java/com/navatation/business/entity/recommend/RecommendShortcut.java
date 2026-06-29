@@ -26,8 +26,6 @@ public class RecommendShortcut {
     private String iconType;
     private String iconValue;
     private String iconColor;
-    private String type;
-    private String parentId;
     private BigDecimal sortOrder;
 
     /** 逻辑删除：0-正常, 1-已删除 */

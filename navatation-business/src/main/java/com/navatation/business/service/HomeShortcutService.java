@@ -48,18 +48,58 @@ public class HomeShortcutService {
 
     public List<HomeShortcutRespDTO> getHomeShortcuts(String userId) {
         if (isAdmin(userId)) {
-            return recommendHomeShortcutMapper.selectList(
+            List<RecommendHomeShortcut> all = recommendHomeShortcutMapper.selectList(
                     new LambdaQueryWrapper<RecommendHomeShortcut>()
                             .orderByAsc(RecommendHomeShortcut::getSortOrder)
-            ).stream().map(this::toVO).collect(Collectors.toList());
+            );
+            return buildNestedRecommendShortcuts(all);
         }
 
-        return navHomeShortcutMapper.selectList(
+        List<NavHomeShortcut> all = navHomeShortcutMapper.selectList(
                 new LambdaQueryWrapper<NavHomeShortcut>()
                         .eq(NavHomeShortcut::getUserId, userId)
                         .isNull(NavHomeShortcut::getCategoryId)
                         .orderByAsc(NavHomeShortcut::getSortOrder)
-        ).stream().map(this::toVO).collect(Collectors.toList());
+        );
+        return buildNestedNavShortcuts(all);
+    }
+
+    private List<HomeShortcutRespDTO> buildNestedRecommendShortcuts(List<RecommendHomeShortcut> all) {
+        Map<String, List<HomeShortcutRespDTO>> stackMap = all.stream()
+                .filter(s -> s.getStackId() != null && !s.getStackId().isEmpty())
+                .map(this::toVO)
+                .collect(Collectors.groupingBy(HomeShortcutRespDTO::getStackId));
+
+        return all.stream()
+                .filter(s -> s.getStackId() == null || s.getStackId().isEmpty())
+                .map(s -> {
+                    HomeShortcutRespDTO vo = toVO(s);
+                    if ("stack".equals(s.getType())) {
+                        List<HomeShortcutRespDTO> children = stackMap.getOrDefault(s.getShortcutId(), new java.util.ArrayList<>());
+                        vo.setChildren(children);
+                    }
+                    return vo;
+                })
+                .collect(Collectors.toList());
+    }
+
+    private List<HomeShortcutRespDTO> buildNestedNavShortcuts(List<NavHomeShortcut> all) {
+        Map<String, List<HomeShortcutRespDTO>> stackMap = all.stream()
+                .filter(s -> s.getStackId() != null && !s.getStackId().isEmpty())
+                .map(this::toVO)
+                .collect(Collectors.groupingBy(HomeShortcutRespDTO::getStackId));
+
+        return all.stream()
+                .filter(s -> s.getStackId() == null || s.getStackId().isEmpty())
+                .map(s -> {
+                    HomeShortcutRespDTO vo = toVO(s);
+                    if ("stack".equals(s.getType())) {
+                        List<HomeShortcutRespDTO> children = stackMap.getOrDefault(s.getShortcutId(), new java.util.ArrayList<>());
+                        vo.setChildren(children);
+                    }
+                    return vo;
+                })
+                .collect(Collectors.toList());
     }
 
     public HomeShortcutRespDTO addHomeShortcut(String userId, HomeShortcutReqDTO req) {
@@ -137,6 +177,141 @@ public class HomeShortcutService {
         navHomeShortcutMapper.deleteById(shortcutId);
     }
 
+    public void batchSaveHomeShortcuts(String userId, List<HomeShortcutReqDTO> reqs) {
+        if (reqs == null) {
+            reqs = new java.util.ArrayList<>();
+        }
+
+        // 扁平化，保存原始顺序
+        List<HomeShortcutReqDTO> flatReqs = new java.util.ArrayList<>();
+        BigDecimal order = BigDecimal.ZERO;
+        for (HomeShortcutReqDTO top : reqs) {
+            top.setSortOrder(order);
+            top.setStackId(null);
+            if (top.getType() == null) {
+                top.setType(top.getChildren() != null && !top.getChildren().isEmpty() ? "stack" : "single");
+            }
+            if ("stack".equals(top.getType()) && top.getShortcutId() == null) {
+                top.setShortcutId(IdUtils.genShortcutId());
+            }
+            flatReqs.add(top);
+            order = order.add(BigDecimal.ONE);
+            
+            if ("stack".equals(top.getType()) && top.getChildren() != null) {
+                BigDecimal childOrder = BigDecimal.ZERO;
+                for (HomeShortcutReqDTO child : top.getChildren()) {
+                    child.setSortOrder(childOrder);
+                    child.setStackId(top.getShortcutId());
+                    child.setStackName(top.getName());
+                    child.setType("single");
+                    flatReqs.add(child);
+                    childOrder = childOrder.add(BigDecimal.ONE);
+                }
+            }
+        }
+
+        if (isAdmin(userId)) {
+            batchSaveRecommend(flatReqs);
+            redisTemplate.opsForHash().delete("navatation:guest_config", "home_shortcuts");
+            return;
+        }
+
+        batchSaveNav(userId, flatReqs);
+    }
+
+    private void batchSaveRecommend(List<HomeShortcutReqDTO> flatReqs) {
+        List<RecommendHomeShortcut> existing = recommendHomeShortcutMapper.selectList(
+            new LambdaQueryWrapper<RecommendHomeShortcut>()
+        );
+        Map<String, RecommendHomeShortcut> existingMap = existing.stream()
+            .collect(Collectors.toMap(RecommendHomeShortcut::getShortcutId, x -> x));
+
+        for (HomeShortcutReqDTO req : flatReqs) {
+            String sid = req.getShortcutId();
+            if (sid != null && existingMap.containsKey(sid)) {
+                // Update
+                RecommendHomeShortcut hs = existingMap.get(sid);
+                hs.setName(req.getName());
+                hs.setUrl(req.getUrl());
+                hs.setIconType(req.getIconType());
+                hs.setIconValue(localizeIcon(req.getIconType(), req.getIconValue(), req.getUrl()));
+                hs.setIconColor(req.getIconColor());
+                hs.setSortOrder(req.getSortOrder());
+                hs.setType(req.getType());
+                hs.setStackId(req.getStackId());
+                hs.setStackName(req.getStackName());
+                recommendHomeShortcutMapper.updateById(hs);
+                existingMap.remove(sid);
+            } else {
+                // Insert
+                RecommendHomeShortcut hs = new RecommendHomeShortcut();
+                hs.setShortcutId(sid != null ? sid : IdUtils.genShortcutId());
+                hs.setName(req.getName());
+                hs.setUrl(req.getUrl());
+                hs.setIconType(req.getIconType() != null ? req.getIconType() : "BUILTIN");
+                hs.setIconValue(localizeIcon(hs.getIconType(), req.getIconValue(), req.getUrl()));
+                hs.setIconColor(req.getIconColor());
+                hs.setSortOrder(req.getSortOrder() != null ? req.getSortOrder() : BigDecimal.ZERO);
+                hs.setType(req.getType() != null ? req.getType() : "single");
+                hs.setStackId(req.getStackId());
+                hs.setStackName(req.getStackName());
+                recommendHomeShortcutMapper.insert(hs);
+            }
+        }
+
+        // Delete removed
+        for (String removeId : existingMap.keySet()) {
+            recommendHomeShortcutMapper.deleteById(removeId);
+        }
+    }
+
+    private void batchSaveNav(String userId, List<HomeShortcutReqDTO> flatReqs) {
+        List<NavHomeShortcut> existing = navHomeShortcutMapper.selectList(
+            new LambdaQueryWrapper<NavHomeShortcut>().eq(NavHomeShortcut::getUserId, userId).isNull(NavHomeShortcut::getCategoryId)
+        );
+        Map<String, NavHomeShortcut> existingMap = existing.stream()
+            .collect(Collectors.toMap(NavHomeShortcut::getShortcutId, x -> x));
+
+        for (HomeShortcutReqDTO req : flatReqs) {
+            String sid = req.getShortcutId();
+            if (sid != null && existingMap.containsKey(sid)) {
+                // Update
+                NavHomeShortcut hs = existingMap.get(sid);
+                hs.setName(req.getName());
+                hs.setUrl(req.getUrl());
+                hs.setIconType(req.getIconType());
+                hs.setIconValue(localizeIcon(req.getIconType(), req.getIconValue(), req.getUrl()));
+                hs.setIconColor(req.getIconColor());
+                hs.setSortOrder(req.getSortOrder());
+                hs.setType(req.getType());
+                hs.setStackId(req.getStackId());
+                hs.setStackName(req.getStackName());
+                navHomeShortcutMapper.updateById(hs);
+                existingMap.remove(sid);
+            } else {
+                // Insert
+                NavHomeShortcut hs = new NavHomeShortcut();
+                hs.setShortcutId(sid != null ? sid : IdUtils.genShortcutId());
+                hs.setUserId(userId);
+                hs.setName(req.getName());
+                hs.setUrl(req.getUrl());
+                hs.setIconType(req.getIconType() != null ? req.getIconType() : "BUILTIN");
+                hs.setIconValue(localizeIcon(hs.getIconType(), req.getIconValue(), req.getUrl()));
+                hs.setIconColor(req.getIconColor());
+                hs.setSortOrder(req.getSortOrder() != null ? req.getSortOrder() : BigDecimal.ZERO);
+                hs.setType(req.getType() != null ? req.getType() : "single");
+                hs.setStackId(req.getStackId());
+                hs.setStackName(req.getStackName());
+                navHomeShortcutMapper.insert(hs);
+            }
+        }
+
+        // Delete removed
+        for (String removeId : existingMap.keySet()) {
+            navHomeShortcutMapper.deleteById(removeId);
+        }
+    }
+
     private HomeShortcutRespDTO toVO(RecommendHomeShortcut hs) {
         HomeShortcutRespDTO vo = new HomeShortcutRespDTO();
         vo.setShortcutId(hs.getShortcutId());
@@ -145,6 +320,9 @@ public class HomeShortcutService {
         vo.setIconType(hs.getIconType());
         vo.setIconColor(hs.getIconColor());
         vo.setSortOrder(hs.getSortOrder());
+        vo.setType(hs.getType());
+        vo.setStackId(hs.getStackId());
+        vo.setStackName(hs.getStackName());
 
         String iconValue = hs.getIconValue();
         if ("FAVICON".equals(hs.getIconType()) && iconValue != null && (iconValue.startsWith("http://") || iconValue.startsWith("https://"))) {
@@ -193,6 +371,9 @@ public class HomeShortcutService {
         vo.setIconType(hs.getIconType());
         vo.setIconColor(hs.getIconColor());
         vo.setSortOrder(hs.getSortOrder());
+        vo.setType(hs.getType());
+        vo.setStackId(hs.getStackId());
+        vo.setStackName(hs.getStackName());
 
         String iconValue = hs.getIconValue();
         if ("FAVICON".equals(hs.getIconType()) && iconValue != null && (iconValue.startsWith("http://") || iconValue.startsWith("https://"))) {

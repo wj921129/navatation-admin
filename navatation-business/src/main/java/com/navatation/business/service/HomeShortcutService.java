@@ -13,7 +13,9 @@ import com.navatation.common.BizException;
 import com.navatation.common.IdUtils;
 import com.navatation.common.ResultCode;
 import java.math.BigDecimal;
+import com.navatation.business.helper.FaviconFetcherHelper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -22,12 +24,14 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class HomeShortcutService {
 
     private final NavHomeShortcutMapper navHomeShortcutMapper;
     private final RecommendHomeShortcutMapper recommendHomeShortcutMapper;
     private final UserMapper userMapper;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final FaviconFetcherHelper faviconFetcherHelper;
 
     private boolean isAdmin(String userId) {
         User user = userMapper.selectById(userId);
@@ -57,7 +61,7 @@ public class HomeShortcutService {
             hs.setName(req.getName());
             hs.setUrl(req.getUrl());
             hs.setIconType(req.getIconType() != null ? req.getIconType() : "BUILTIN");
-            hs.setIconValue(req.getIconValue());
+            hs.setIconValue(localizeIcon(hs.getIconType(), req.getIconValue(), req.getUrl()));
             hs.setIconColor(req.getIconColor());
             hs.setSortOrder(req.getSortOrder() != null ? req.getSortOrder() : BigDecimal.ZERO);
             recommendHomeShortcutMapper.insert(hs);
@@ -71,7 +75,7 @@ public class HomeShortcutService {
         hs.setName(req.getName());
         hs.setUrl(req.getUrl());
         hs.setIconType(req.getIconType() != null ? req.getIconType() : "BUILTIN");
-        hs.setIconValue(req.getIconValue());
+        hs.setIconValue(localizeIcon(hs.getIconType(), req.getIconValue(), req.getUrl()));
         hs.setIconColor(req.getIconColor());
         hs.setSortOrder(req.getSortOrder() != null ? req.getSortOrder() : BigDecimal.ZERO);
         navHomeShortcutMapper.insert(hs);
@@ -86,6 +90,9 @@ public class HomeShortcutService {
             if (req.getUrl() != null) hs.setUrl(req.getUrl());
             if (req.getIconType() != null) hs.setIconType(req.getIconType());
             if (req.getIconValue() != null) hs.setIconValue(req.getIconValue());
+            
+            hs.setIconValue(localizeIcon(hs.getIconType(), hs.getIconValue(), hs.getUrl()));
+
             if (req.getIconColor() != null) hs.setIconColor(req.getIconColor());
             if (req.getSortOrder() != null) hs.setSortOrder(req.getSortOrder());
             recommendHomeShortcutMapper.updateById(hs);
@@ -99,6 +106,9 @@ public class HomeShortcutService {
         if (req.getUrl() != null) hs.setUrl(req.getUrl());
         if (req.getIconType() != null) hs.setIconType(req.getIconType());
         if (req.getIconValue() != null) hs.setIconValue(req.getIconValue());
+        
+        hs.setIconValue(localizeIcon(hs.getIconType(), hs.getIconValue(), hs.getUrl()));
+
         if (req.getIconColor() != null) hs.setIconColor(req.getIconColor());
         if (req.getSortOrder() != null) hs.setSortOrder(req.getSortOrder());
         navHomeShortcutMapper.updateById(hs);
@@ -125,9 +135,20 @@ public class HomeShortcutService {
         vo.setName(hs.getName());
         vo.setUrl(hs.getUrl());
         vo.setIconType(hs.getIconType());
-        vo.setIconValue(hs.getIconValue());
         vo.setIconColor(hs.getIconColor());
         vo.setSortOrder(hs.getSortOrder());
+
+        String iconValue = hs.getIconValue();
+        if ("FAVICON".equals(hs.getIconType()) && iconValue != null && (iconValue.startsWith("http://") || iconValue.startsWith("https://"))) {
+            String localPath = localizeIcon(hs.getIconType(), iconValue, hs.getUrl());
+            if (!iconValue.equals(localPath)) {
+                hs.setIconValue(localPath);
+                recommendHomeShortcutMapper.updateById(hs);
+                redisTemplate.opsForHash().delete("navatation:guest_config", "home_shortcuts");
+                iconValue = localPath;
+            }
+        }
+        vo.setIconValue(iconValue);
         return vo;
     }
 
@@ -137,9 +158,53 @@ public class HomeShortcutService {
         vo.setName(hs.getName());
         vo.setUrl(hs.getUrl());
         vo.setIconType(hs.getIconType());
-        vo.setIconValue(hs.getIconValue());
         vo.setIconColor(hs.getIconColor());
         vo.setSortOrder(hs.getSortOrder());
+
+        String iconValue = hs.getIconValue();
+        if ("FAVICON".equals(hs.getIconType()) && iconValue != null && (iconValue.startsWith("http://") || iconValue.startsWith("https://"))) {
+            String localPath = localizeIcon(hs.getIconType(), iconValue, hs.getUrl());
+            if (!iconValue.equals(localPath)) {
+                hs.setIconValue(localPath);
+                navHomeShortcutMapper.updateById(hs);
+                iconValue = localPath;
+            }
+        }
+        vo.setIconValue(iconValue);
         return vo;
+    }
+
+    private String localizeIcon(String iconType, String iconValue, String shortcutUrl) {
+        if (!"FAVICON".equals(iconType) || iconValue == null || iconValue.isEmpty()) {
+            return iconValue;
+        }
+        if (!iconValue.startsWith("http://") && !iconValue.startsWith("https://")) {
+            return iconValue;
+        }
+        String host = null;
+        try {
+            if (shortcutUrl != null && !shortcutUrl.isEmpty()) {
+                if (!shortcutUrl.startsWith("http://") && !shortcutUrl.startsWith("https://")) {
+                    shortcutUrl = "http://" + shortcutUrl;
+                }
+                host = new java.net.URI(shortcutUrl).getHost();
+            }
+            if (host == null) {
+                host = new java.net.URI(iconValue).getHost();
+            }
+        } catch (Exception e) {
+            log.warn("解析 host 失败 shortcutUrl: {}, iconValue: {}", shortcutUrl, iconValue, e);
+        }
+
+        if (host == null || host.isEmpty()) {
+            host = "unknown_host";
+        }
+
+        try {
+            return faviconFetcherHelper.downloadToLocal(iconValue, host);
+        } catch (Exception e) {
+            log.warn("本地化图标异常 iconValue: {}, host: {}", iconValue, host, e);
+            return iconValue;
+        }
     }
 }

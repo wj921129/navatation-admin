@@ -20,7 +20,6 @@ public class RecommendHomeShortcut {
     @TableId(type = IdType.INPUT)
     private String shortcutId;
     
-    private String type;
     private String stackId;
     private String stackName;
     private String name;
@@ -28,6 +27,8 @@ public class RecommendHomeShortcut {
     private String iconType;
     private String iconValue;
     private String iconColor;
+    private String type;
+    private String parentId;
     private BigDecimal sortOrder;
 
     

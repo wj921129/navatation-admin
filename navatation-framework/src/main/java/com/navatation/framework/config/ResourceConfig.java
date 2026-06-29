@@ -2,8 +2,11 @@ package com.navatation.framework.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.CacheControl;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * 静态资源映射配置
@@ -27,21 +30,37 @@ public class ResourceConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        String iconAbsolutePath = java.nio.file.Paths.get(iconPath).toAbsolutePath().normalize().toUri().toString();
-        String wallpaperAbsolutePath = java.nio.file.Paths.get(wallpaperPath).toAbsolutePath().normalize().toUri().toString();
-        String localWallpaperAbsolutePath = java.nio.file.Paths.get(localWallpaperPath).toAbsolutePath().normalize().toUri().toString();
+        CacheControl cacheControl = CacheControl
+                .maxAge(30, TimeUnit.DAYS)
+                .cachePublic();
 
         registry.addResourceHandler("/uploads/icon/custom/**")
-                .addResourceLocations(iconAbsolutePath);
+                .addResourceLocations(getResourceLocation(iconPath))
+                .setCacheControl(cacheControl);
 
         registry.addResourceHandler("/uploads/bg_custom/**")
-                .addResourceLocations(wallpaperAbsolutePath);
+                .addResourceLocations(getResourceLocation(wallpaperPath))
+                .setCacheControl(cacheControl);
 
         registry.addResourceHandler("/uploads/sys_data/bg_img/**")
-                .addResourceLocations(localWallpaperAbsolutePath);
+                .addResourceLocations(getResourceLocation(localWallpaperPath))
+                .setCacheControl(cacheControl);
 
-        String sysIconAbsolutePath = java.nio.file.Paths.get(sysIconPath).toAbsolutePath().normalize().toUri().toString();
         registry.addResourceHandler("/uploads/icon/sys/**")
-                .addResourceLocations(sysIconAbsolutePath);
+                .addResourceLocations(getResourceLocation(sysIconPath))
+                .setCacheControl(cacheControl);
+    }
+
+    private String getResourceLocation(String path) {
+        String absolutePath = java.nio.file.Paths.get(path).toAbsolutePath().normalize().toString();
+        // 替换 Windows 反斜杠为正斜杠，生成标准的 file 路径
+        absolutePath = absolutePath.replace("\\", "/");
+        if (!absolutePath.startsWith("/")) {
+            absolutePath = "/" + absolutePath;
+        }
+        if (!absolutePath.endsWith("/")) {
+            absolutePath = absolutePath + "/";
+        }
+        return "file:" + absolutePath;
     }
 }

@@ -16,10 +16,12 @@ import java.math.BigDecimal;
 import com.navatation.business.helper.FaviconFetcherHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,6 +34,12 @@ public class HomeShortcutService {
     private final UserMapper userMapper;
     private final RedisTemplate<String, Object> redisTemplate;
     private final FaviconFetcherHelper faviconFetcherHelper;
+
+    @Qualifier("iconDownloadExecutor")
+    private final Executor iconDownloadExecutor;
+
+    private final java.util.Set<String> downloadingUrls = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private final java.util.Map<String, Long> downloadFailRetryTime = new java.util.concurrent.ConcurrentHashMap<>();
 
     private boolean isAdmin(String userId) {
         User user = userMapper.selectById(userId);
@@ -140,12 +148,37 @@ public class HomeShortcutService {
 
         String iconValue = hs.getIconValue();
         if ("FAVICON".equals(hs.getIconType()) && iconValue != null && (iconValue.startsWith("http://") || iconValue.startsWith("https://"))) {
-            String localPath = localizeIcon(hs.getIconType(), iconValue, hs.getUrl());
-            if (!iconValue.equals(localPath)) {
-                hs.setIconValue(localPath);
-                recommendHomeShortcutMapper.updateById(hs);
-                redisTemplate.opsForHash().delete("navatation:guest_config", "home_shortcuts");
-                iconValue = localPath;
+            // 检查该 URL 是否在冷却退避中
+            Long retryTime = downloadFailRetryTime.get(iconValue);
+            if (retryTime != null && System.currentTimeMillis() < retryTime) {
+                // 处于退避冷却期内，跳过下载
+                vo.setIconValue(iconValue);
+                return vo;
+            }
+
+            // 若可下载，通过 downloadingUrls.add(iconValue) 进行并发加锁
+            if (downloadingUrls.add(iconValue)) {
+                String finalIconValue = iconValue;
+                iconDownloadExecutor.execute(() -> {
+                    try {
+                        String localVal = localizeIcon(hs.getIconType(), finalIconValue, hs.getUrl());
+                        if (localVal != null && !localVal.equals(finalIconValue)) {
+                            // 下载成功：更新数据库，清理游客缓存
+                            hs.setIconValue(localVal);
+                            recommendHomeShortcutMapper.updateById(hs);
+                            redisTemplate.opsForHash().delete("navatation:guest_config", "home_shortcuts");
+                            downloadFailRetryTime.remove(finalIconValue); // 清理失败冷却
+                        } else {
+                            // 未能成功本地化（如 downloadToLocal 返回原外部链接，视同下载失败）
+                            downloadFailRetryTime.put(finalIconValue, System.currentTimeMillis() + 30 * 60 * 1000); // 冷却 30 分钟
+                        }
+                    } catch (Exception e) {
+                        log.warn("异步自愈下载常用图标失败: {}, 冷却 30 分钟", e.getMessage());
+                        downloadFailRetryTime.put(finalIconValue, System.currentTimeMillis() + 30 * 60 * 1000);
+                    } finally {
+                        downloadingUrls.remove(finalIconValue); // 释放下载锁
+                    }
+                });
             }
         }
         vo.setIconValue(iconValue);
@@ -163,11 +196,36 @@ public class HomeShortcutService {
 
         String iconValue = hs.getIconValue();
         if ("FAVICON".equals(hs.getIconType()) && iconValue != null && (iconValue.startsWith("http://") || iconValue.startsWith("https://"))) {
-            String localPath = localizeIcon(hs.getIconType(), iconValue, hs.getUrl());
-            if (!iconValue.equals(localPath)) {
-                hs.setIconValue(localPath);
-                navHomeShortcutMapper.updateById(hs);
-                iconValue = localPath;
+            // 检查该 URL 是否在冷却退避中
+            Long retryTime = downloadFailRetryTime.get(iconValue);
+            if (retryTime != null && System.currentTimeMillis() < retryTime) {
+                // 处于退避冷却期内，跳过下载
+                vo.setIconValue(iconValue);
+                return vo;
+            }
+
+            // 若可下载，通过 downloadingUrls.add(iconValue) 进行并发加锁
+            if (downloadingUrls.add(iconValue)) {
+                String finalIconValue = iconValue;
+                iconDownloadExecutor.execute(() -> {
+                    try {
+                        String localVal = localizeIcon(hs.getIconType(), finalIconValue, hs.getUrl());
+                        if (localVal != null && !localVal.equals(finalIconValue)) {
+                            // 下载成功：更新数据库
+                            hs.setIconValue(localVal);
+                            navHomeShortcutMapper.updateById(hs);
+                            downloadFailRetryTime.remove(finalIconValue); // 清理失败冷却
+                        } else {
+                            // 未能成功本地化（如 downloadToLocal 返回原外部链接，视同下载失败）
+                            downloadFailRetryTime.put(finalIconValue, System.currentTimeMillis() + 30 * 60 * 1000); // 冷却 30 分钟
+                        }
+                    } catch (Exception e) {
+                        log.warn("异步自愈下载常用图标失败: {}, 冷却 30 分钟", e.getMessage());
+                        downloadFailRetryTime.put(finalIconValue, System.currentTimeMillis() + 30 * 60 * 1000);
+                    } finally {
+                        downloadingUrls.remove(finalIconValue); // 释放下载锁
+                    }
+                });
             }
         }
         vo.setIconValue(iconValue);

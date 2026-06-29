@@ -47,12 +47,20 @@ public class HomeShortcutServiceTest {
     @Mock
     private FaviconFetcherHelper faviconFetcherHelper;
 
+    @Mock
+    private java.util.concurrent.Executor iconDownloadExecutor;
+
     @InjectMocks
     private HomeShortcutService homeShortcutService;
 
     @BeforeEach
     public void setUp() {
         lenient().when(redisTemplate.opsForHash()).thenReturn(hashOperations);
+        lenient().doAnswer(invocation -> {
+            Runnable runnable = invocation.getArgument(0);
+            runnable.run();
+            return null;
+        }).when(iconDownloadExecutor).execute(any(Runnable.class));
     }
 
     @Test
@@ -128,7 +136,45 @@ public class HomeShortcutServiceTest {
         List<HomeShortcutRespDTO> list = homeShortcutService.getHomeShortcuts("2");
 
         assertEquals(1, list.size());
-        assertEquals("/uploads/icon/sys/baidu.com_456.png", list.get(0).getIconValue());
+        // 异步非阻塞：第一次获取应该依然是旧值
+        assertEquals("https://baidu.com/favicon.ico", list.get(0).getIconValue());
+        // 验证确实调用了异步更新
         verify(navHomeShortcutMapper, times(1)).updateById(hs);
+        // 检查 hs 的 iconValue 是否已更新为本地化路径，为下一次查询做准备
+        assertEquals("/uploads/icon/sys/baidu.com_456.png", hs.getIconValue());
+    }
+
+    @Test
+    public void testGetHomeShortcuts_SelfHealing_RetryCooldown() {
+        User user = new User();
+        user.setUserId("2");
+        user.setRole("USER");
+        when(userMapper.selectById("2")).thenReturn(user);
+
+        NavHomeShortcut hs = new NavHomeShortcut();
+        hs.setShortcutId("shortcut-1");
+        hs.setUserId("2");
+        hs.setName("Baidu");
+        hs.setUrl("https://baidu.com");
+        hs.setIconType("FAVICON");
+        hs.setIconValue("https://baidu.com/favicon.ico");
+        hs.setSortOrder(BigDecimal.ZERO);
+
+        when(navHomeShortcutMapper.selectList(any())).thenReturn(Collections.singletonList(hs));
+
+        // 第一次下载失败，返回原来的 url
+        when(faviconFetcherHelper.downloadToLocal("https://baidu.com/favicon.ico", "baidu.com"))
+                .thenReturn("https://baidu.com/favicon.ico");
+
+        // 第一次调用，应该触发下载但因为下载返回原值导致失败，进入 30 分钟冷却
+        List<HomeShortcutRespDTO> list1 = homeShortcutService.getHomeShortcuts("2");
+        assertEquals("https://baidu.com/favicon.ico", list1.get(0).getIconValue());
+        verify(faviconFetcherHelper, times(1)).downloadToLocal("https://baidu.com/favicon.ico", "baidu.com");
+
+        // 第二次调用，应该直接跳过下载（在冷却中）
+        reset(faviconFetcherHelper); // 重置 mock
+        List<HomeShortcutRespDTO> list2 = homeShortcutService.getHomeShortcuts("2");
+        assertEquals("https://baidu.com/favicon.ico", list2.get(0).getIconValue());
+        verify(faviconFetcherHelper, never()).downloadToLocal(anyString(), anyString());
     }
 }

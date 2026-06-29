@@ -22,6 +22,9 @@ public class NavHomeShortcut implements com.navatation.business.entity.BaseShort
 
     private String categoryId;
     private String userId;
+    private String type;
+    private String stackId;
+    private String stackName;
     private String name;
     private String url;
     private String iconType;

@@ -49,8 +49,11 @@ CREATE TABLE `navatation_nav_home_shortcut` (
   `shortcut_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
   `category_id` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '分类ID，NULL表示不属于任何分类',
   `user_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `type` varchar(8) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'single' COMMENT '类型：single-普通图标, stack-堆叠组',
+  `stack_id` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '所属堆叠组ID，NULL表示顶层项',
+  `stack_name` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '堆叠组名称（仅type=stack时有值）',
   `name` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `url` varchar(2048) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `url` varchar(2048) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   `icon_type` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'BUILTIN',
   `icon_value` varchar(2048) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `icon_color` varchar(7) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -65,7 +68,8 @@ CREATE TABLE `navatation_nav_home_shortcut` (
   PRIMARY KEY (`row_id`),
   UNIQUE KEY `uk_shortcut_id` (`shortcut_id`),
   KEY `idx_user_id` (`user_id`),
-  KEY `idx_category_id` (`category_id`)
+  KEY `idx_category_id` (`category_id`),
+  KEY `idx_stack_id` (`stack_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=248 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -112,8 +116,11 @@ DROP TABLE IF EXISTS `navatation_recommend_home_shortcut`;
 CREATE TABLE `navatation_recommend_home_shortcut` (
   `row_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `shortcut_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `type` varchar(8) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'single' COMMENT '类型：single-普通图标, stack-堆叠组',
+  `stack_id` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '所属堆叠组ID，NULL表示顶层项',
+  `stack_name` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '堆叠组名称（仅type=stack时有值）',
   `name` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `url` varchar(2048) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `url` varchar(2048) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   `icon_type` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'BUILTIN',
   `icon_value` varchar(2048) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `icon_color` varchar(7) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -123,7 +130,8 @@ CREATE TABLE `navatation_recommend_home_shortcut` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`row_id`),
-  UNIQUE KEY `uk_shortcut_id` (`shortcut_id`)
+  UNIQUE KEY `uk_shortcut_id` (`shortcut_id`),
+  KEY `idx_stack_id` (`stack_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -139,7 +147,7 @@ CREATE TABLE `navatation_recommend_shortcut` (
   `shortcut_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
   `category_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
   `name` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `url` varchar(2048) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `url` varchar(2048) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   `icon_type` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'BUILTIN',
   `icon_value` varchar(2048) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `icon_color` varchar(7) COLLATE utf8mb4_unicode_ci DEFAULT NULL,

@@ -28,6 +28,12 @@ public interface BaseShortcut {
     String getIconColor();
     void setIconColor(String iconColor);
     
+    String getType();
+    void setType(String type);
+    
+    String getParentId();
+    void setParentId(String parentId);
+    
     BigDecimal getSortOrder();
     void setSortOrder(BigDecimal sortOrder);
     

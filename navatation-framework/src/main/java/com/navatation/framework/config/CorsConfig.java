@@ -16,10 +16,8 @@ public class CorsConfig {
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
-        // 允许前端开发地址
-        config.addAllowedOrigin("http://localhost:5173");
-        config.addAllowedOrigin("http://127.0.0.1:5173");
-        config.addAllowedOrigin("http://localhost:3000");
+        // 允许所有前端开发地址和部署地址
+        config.addAllowedOriginPattern("*");
         // 允许所有常用 HTTP 方法
         config.addAllowedMethod("GET");
         config.addAllowedMethod("POST");

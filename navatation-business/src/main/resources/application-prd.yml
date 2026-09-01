@@ -1,27 +1,59 @@
 # 生产环境配置
 server:
+  port: 8080
   compression:
     enabled: true
     mime-types: application/json,application/javascript,text/css,text/html,image/svg+xml
     min-response-size: 1024
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
 spring:
+  application:
+    name: navatation-server
   datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/navatation?useSSL=false&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
     username: root
     password: Wanggy@fuioupay.com
   data:
     redis:
+      host: localhost
+      port: 6379
       password: Wanggy@fuioupay.com
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
 
 app:
-  jwt:
-    secret: NavPrdJwt2026Secret_a8f3c7e9d1b5f4a2e6c8d0b3f7a9e1c5d3b7a9f0e2c4d6b8a1f3e5c7d9b0a2
+  rsa:
+    key-path: ./rsa
   upload:
     icon-path: /www/wwwroot/navatation/data/user_data/icon
     wallpaper-path: /www/wwwroot/navatation/data/user_data/bg_custom
     local-wallpaper-path: /www/wwwroot/navatation/data/sys_data/bg_img
     sys-icon-path: /www/wwwroot/navatation/data/sys_data/icon
+  jwt:
+    secret: NavPrdJwt2026Secret_a8f3c7e9d1b5f4a2e6c8d0b3f7a9e1c5d3b7a9f0e2c4d6b8a1f3e5c7d9b0a2
+    access-token-expire: 7200
+    refresh-token-expire: 604800
 
 logging:
   level:
     com.navatation: INFO
+

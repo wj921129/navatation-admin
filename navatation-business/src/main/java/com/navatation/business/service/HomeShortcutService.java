@@ -21,6 +21,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
@@ -138,7 +139,7 @@ public class HomeShortcutService {
             if (req.getUrl() != null) hs.setUrl(req.getUrl());
             if (req.getIconType() != null) hs.setIconType(req.getIconType());
             if (req.getIconValue() != null) hs.setIconValue(req.getIconValue());
-            
+
             hs.setIconValue(localizeIcon(hs.getIconType(), hs.getIconValue(), hs.getUrl()));
 
             if (req.getIconColor() != null) hs.setIconColor(req.getIconColor());
@@ -154,7 +155,7 @@ public class HomeShortcutService {
         if (req.getUrl() != null) hs.setUrl(req.getUrl());
         if (req.getIconType() != null) hs.setIconType(req.getIconType());
         if (req.getIconValue() != null) hs.setIconValue(req.getIconValue());
-        
+
         hs.setIconValue(localizeIcon(hs.getIconType(), hs.getIconValue(), hs.getUrl()));
 
         if (req.getIconColor() != null) hs.setIconColor(req.getIconColor());
@@ -196,7 +197,7 @@ public class HomeShortcutService {
             }
             flatReqs.add(top);
             order = order.add(BigDecimal.ONE);
-            
+
             if ("stack".equals(top.getType()) && top.getChildren() != null) {
                 BigDecimal childOrder = BigDecimal.ZERO;
                 for (HomeShortcutReqDTO child : top.getChildren()) {
